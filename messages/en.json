@@ -1,0 +1,45 @@
+{
+  "Navigation": {
+    "home": "Home",
+    "explore": "Destination",
+    "experiences": "Experiences",
+    "planTrip": "Plan Your Trip",
+    "blogs": "Blogs",
+    "search": "Search",
+    "signin": "Sign In",
+    "bookGramstay": "Book Your Stay"
+  },
+  "HomePage": {
+    "title": "Welcome to MPTourify",
+    "description": "Discover the best tourism experiences across India"
+  },
+  "Explore": {
+    "title": "Explore India",
+    "subtitle": "Discover destinations across different regions",
+    "regions": {
+      "north": "North",
+      "northeast": "North East",
+      "east": "East",
+      "central": "Central",
+      "west": "West",
+      "south": "South"
+    },
+    "selectDestination": "Select a destination to explore",
+    "viewMap": "View on Map"
+  },
+  "Dropdown": {
+    "statesAndUTs": "States and UTs",
+    "destinations": "Destinations",
+    "nationalParks": "National Parks",
+    "popularDestinationsSoon": "Popular destinations coming soon...",
+    "nationalParksSoon": "National parks guide coming soon..."
+  },
+  "RegionNames": {
+    "north": "North",
+    "northeast": "North East",
+    "east": "East",
+    "central": "Central",
+    "west": "West",
+    "south": "South"
+  }
+}

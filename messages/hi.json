@@ -1,0 +1,45 @@
+{
+  "Navigation": {
+    "home": "होम",
+    "explore": "गंतव्य",
+    "experiences": "अनुभव",
+    "planTrip": "अपनी यात्रा की योजना बनाएं",
+    "blogs": "ब्लॉग्स",
+    "search": "खोज",
+    "signin": "साइन इन करें",
+    "bookGramstay": "रहने की जगह बुक करें"
+  },
+  "HomePage": {
+    "title": "MPTourify में आपका स्वागत है",
+    "description": "भारत भर में सर्वश्रेष्ठ पर्यटन अनुभवों की खोज करें"
+  },
+  "Explore": {
+    "title": "भारत की खोज करें",
+    "subtitle": "विभिन्न क्षेत्रों में गंतव्य की खोज करें",
+    "regions": {
+      "north": "उत्तर",
+      "northeast": "उत्तर पूर्व",
+      "east": "पूर्व",
+      "central": "मध्य",
+      "west": "पश्चिम",
+      "south": "दक्षिण"
+    },
+    "selectDestination": "खोज करने के लिए एक गंतव्य चुनें",
+    "viewMap": "मानचित्र पर देखें"
+  },
+  "Dropdown": {
+    "statesAndUTs": "राज्य और केंद्र शासित प्रदेश",
+    "destinations": "गंतव्य",
+    "nationalParks": "राष्ट्रीय पार्क",
+    "popularDestinationsSoon": "लोकप्रिय गंतव्य जल्द आएंगे...",
+    "nationalParksSoon": "राष्ट्रीय पार्क गाइड जल्द आएगी..."
+  },
+  "RegionNames": {
+    "north": "उत्तर",
+    "northeast": "उत्तर पूर्व",
+    "east": "पूर्व",
+    "central": "मध्य",
+    "west": "पश्चिम",
+    "south": "दक्षिण"
+  }
+}
