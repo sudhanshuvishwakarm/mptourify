@@ -1,16 +1,24 @@
+import HomeAbout from '@/components/HomeAbout';
+import HomeHero from '@/components/HomeHero';
+import HomeMpOverview from '@/components/HomeMpOverview';
 import { useTranslations } from 'next-intl';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 export default function HomePage() {
   const h = useTranslations('HomePage');
   const n = useTranslations('Navigation');
-  
+  const colors = {
+    saffron: '#F3902C',
+    green: '#339966',
+    skyBlue: '#33CCFF',
+    white: '#FFFFFF',
+    lightGray: '#FFF7EB',
+    darkGray: '#333333'
+  };
   return (
-    <div style={{ padding: '20px' }}>
-      <h1>{h('title')}</h1>
-      <p>{h('description')}</p>
-      <p>{n('home')}</p>
-
-    </div>
+    <>
+      <HomeHero/>
+      <HomeAbout/>
+      <HomeMpOverview/>
+    </>
   );
 }

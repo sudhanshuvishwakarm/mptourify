@@ -1,45 +1,71 @@
 {
   "Navigation": {
     "home": "होम",
-    "explore": "गंतव्य",
-    "experiences": "अनुभव",
-    "planTrip": "अपनी यात्रा की योजना बनाएं",
-    "blogs": "ब्लॉग्स",
-    "search": "खोज",
-    "signin": "साइन इन करें",
-    "bookGramstay": "रहने की जगह बुक करें"
+    "districts": "हमारा जिला",
+    "panchayats": "हमारी पंचायत",
+    "heritage": "इतिहास",
+    "gallery": "गैलरी",
+    "news": "न्यूज़ / अपडेट्स",
+    "about": "हमारे बारे में",
+    "contact": "संपर्क करें"
   },
   "HomePage": {
     "title": "MPTourify में आपका स्वागत है",
     "description": "भारत भर में सर्वश्रेष्ठ पर्यटन अनुभवों की खोज करें"
   },
-  "Explore": {
-    "title": "भारत की खोज करें",
-    "subtitle": "विभिन्न क्षेत्रों में गंतव्य की खोज करें",
-    "regions": {
-      "north": "उत्तर",
-      "northeast": "उत्तर पूर्व",
-      "east": "पूर्व",
-      "central": "मध्य",
-      "west": "पश्चिम",
-      "south": "दक्षिण"
-    },
-    "selectDestination": "खोज करने के लिए एक गंतव्य चुनें",
-    "viewMap": "मानचित्र पर देखें"
+  "DistrictsPage": {
+    "title": "मेरा प्रदेश मेरा जिला",
+    "subtitle": "मध्य प्रदेश के सभी जिलों की खोज करें",
+    "selectDistrict": "किसी भी जिले पर क्लिक करें और खोज करें",
+    "description": "मध्य प्रदेश का इंटरएक्टिव मानचित्र"
   },
-  "Dropdown": {
-    "statesAndUTs": "राज्य और केंद्र शासित प्रदेश",
-    "destinations": "गंतव्य",
-    "nationalParks": "राष्ट्रीय पार्क",
-    "popularDestinationsSoon": "लोकप्रिय गंतव्य जल्द आएंगे...",
-    "nationalParksSoon": "राष्ट्रीय पार्क गाइड जल्द आएगी..."
-  },
-  "RegionNames": {
-    "north": "उत्तर",
-    "northeast": "उत्तर पूर्व",
-    "east": "पूर्व",
-    "central": "मध्य",
-    "west": "पश्चिम",
-    "south": "दक्षिण"
+  "Districts": {
+    "indore": "इंदौर",
+    "bhopal": "भोपाल",
+    "jabalpur": "जबलपुर",
+    "gwalior": "ग्वालियर",
+    "ujjain": "उज्जैन",
+    "khajuraho": "खजुराहो",
+    "mandu": "मांडू",
+    "pachmarhi": "पचमढ़ी",
+    "omkareshwar": "ओंकारेश्वर",
+    "kanha": "कान्हा",
+    "satna": "सतना",
+    "rewa": "रीवा",
+    "shahdol": "शहडोल",
+    "singrauli": "सिंगरौली",
+    "seoni": "सिवनी",
+    "mandla": "मंडला",
+    "dindori": "डिंडोरी",
+    "chhindwara": "छिंदवाड़ा",
+    "balaghat": "बालाघाट",
+    "nagpur": "नागपुर",
+    "betul": "बेतूल",
+    "hoshangabad": "होशंगाबाद",
+    "itarsi": "इटारसी",
+    "raisen": "राईसेन",
+    "sehore": "सीहोर",
+    "vidisha": "विदिशा",
+    "damoh": "दमोह",
+    "panna": "पन्ना",
+    "tikamgarh": "टीकमगढ़",
+    "niwari": "निवाड़ी",
+    "chhatarpur": "छतरपुर",
+    "morena": "मुरैना",
+    "bhind": "भिंड",
+    "guna": "गुना",
+    "ashoknagar": "अशोकनगर",
+    "shivpuri": "शिवपुरी",
+    "datia": "दतिया",
+    "agar": "आगर",
+    "malwa": "मालवा",
+    "mandsaur": "मंदसौर",
+    "neemuch": "नीमच",
+    "ratlam": "रतलाम",
+    "dewas": "देवास",
+    "dhar": "धार",
+    "burhanpur": "बुरहानपुर",
+    "khandwa": "खंडवा",
+    "khargone": "खरगोन"
   }
 }

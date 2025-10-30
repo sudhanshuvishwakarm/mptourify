@@ -1,4 +1,5 @@
 import "./globals.css";
+import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
@@ -9,7 +10,6 @@ export const metadata = {
 };
 
 export default async function RootLayout({ children }) {
-  // This will automatically get messages based on the locale from i18n/request.js
   const messages = await getMessages();
 
   return (
@@ -18,6 +18,7 @@ export default async function RootLayout({ children }) {
         <NextIntlClientProvider messages={messages}>
           <Navbar/>
           {children}
+          <Footer/>
         </NextIntlClientProvider>
       </body>
     </html>

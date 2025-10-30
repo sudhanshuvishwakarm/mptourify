@@ -16,9 +16,16 @@ export default function LanguageSwitcher() {
     setIsOpen(false);
     router.refresh();
   };
-
+  const colors = {
+    saffron: '#F3902C',
+    green: '#339966',
+    skyBlue: '#33CCFF',
+    white: '#FFFFFF',
+    bgColor: '#FFF7EB',
+    darkGray: '#333333'
+  };
   const languages = [
-    { code: 'en', name: 'EN', flag: '🇺🇸' },
+    { code: 'en', name: 'EN', flag: '🇮🇳' },
     { code: 'hi', name: 'HI', flag: '🇮🇳' },
   ];
 
@@ -36,51 +43,52 @@ export default function LanguageSwitcher() {
   }, []);
 
   return (
-    <div
-      ref={dropdownRef}
-      className="relative border-2 border-solid border-[#015e6c] rounded-lg"
-    >
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-opacity-10 transition-all duration-200"
-        style={{ color: '#015E6C' }}
-      >
-        <span className="text-sm font-semibold">{currentLanguage.name}</span>
-        <ChevronDown
-          size={16}
-          className={`transition-transform duration-200 ${
-            isOpen ? 'rotate-180' : 'rotate-0'
-          }`}
-        />
-      </button>
+  <div
+  ref={dropdownRef}
+  className="relative"
+>
+  <button
+    onClick={() => setIsOpen(!isOpen)}
+    className="flex items-center gap-2 px-3 py-2.5 rounded-lg font-bold text-white transition-all duration-300 hover:shadow-lg"
+    style={{ backgroundColor: colors.green }}
+  >
+    <span className="text-sm">{currentLanguage.name}</span>
+    <ChevronDown
+      size={16}
+      className={`transition-transform duration-200 ${
+        isOpen ? 'rotate-180' : 'rotate-0'
+      }`}
+    />
+  </button>
 
-      {isOpen && (
-        <div
-          className="absolute top-full right-0 mt-1 bg-white rounded-lg shadow-lg z-50 overflow-hidden border"
-          style={{ borderColor: '#015E6C' }}
+  {isOpen && (
+    <div
+      className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg z-50 overflow-hidden border"
+      style={{ borderColor: colors.green }}
+    >
+      {languages.map((language) => (
+        <button
+          key={language.code}
+          onClick={() => switchLanguage(language.code)}
+          className="w-full flex items-center gap-2 px-4 py-2 text-left transition-all duration-150 text-sm font-semibold hover:bg-green-50"
+          style={{
+            color: selectedLang === language.code ? colors.green : '#333',
+            backgroundColor:
+              selectedLang === language.code ? '#ECFDF5' : 'white',
+          }}
         >
-          {languages.map((language) => (
-            <button
-              key={language.code}
-              onClick={() => switchLanguage(language.code)}
-              className="w-full flex items-center gap-2 px-4 py-2 text-left hover:bg-opacity-5 transition-colors duration-150 text-sm font-medium"
-              style={{
-                backgroundColor:
-                  selectedLang === language.code ? '#FFF5F4' : 'white',
-                color: selectedLang === language.code ? '#015E6C' : '#333',
-              }}
-            >
-              <span className="text-base">{language.flag}</span>
-              <span>{language.name}</span>
-              {selectedLang === language.code && (
-                <span className="ml-auto text-xs" style={{ color: '#015E6C' }}>
-                  ✓
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
+          <span className="text-base emoji">{language.flag}</span>
+          <span>{language.name}</span>
+          {selectedLang === language.code && (
+            <span className="ml-auto text-xs" style={{ color: colors.green }}>
+              ✓
+            </span>
+          )}
+        </button>
+      ))}
     </div>
+  )}
+</div>
+
   );
 }
