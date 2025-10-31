@@ -1,6 +1,7 @@
 import HomeAbout from '@/components/HomeAbout';
 import HomeHero from '@/components/HomeHero';
 import HomeMpOverview from '@/components/HomeMpOverview';
+import HomeNavigationTiles from '@/components/HomeNavigationTiles';
 import { useTranslations } from 'next-intl';
 
 export default function HomePage() {
@@ -19,6 +20,7 @@ export default function HomePage() {
       <HomeHero/>
       <HomeAbout/>
       <HomeMpOverview/>
+      <HomeNavigationTiles/>
     </>
   );
 }
