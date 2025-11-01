@@ -1,8 +1,10 @@
 import "./globals.css";
-import Footer from "@/components/Footer";
-import Navbar from "@/components/Navbar";
+import Footer from "@/components/layouts/Footer";
+import Navbar from "@/components/layouts/Navbar";
+import { ToastContainer } from "react-toastify";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
+import { Providers } from "@/redux/Providers";
 
 export const metadata = {
   title: "Create Next App",
@@ -15,11 +17,14 @@ export default async function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <NextIntlClientProvider messages={messages}>
-          <Navbar/>
-          {children}
-          <Footer/>
-        </NextIntlClientProvider>
+        <Providers>
+          <NextIntlClientProvider messages={messages}>
+            <Navbar />
+            {children}
+            <Footer />
+          </NextIntlClientProvider>
+        </Providers>
+        <ToastContainer />
       </body>
     </html>
   );
