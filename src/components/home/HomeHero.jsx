@@ -24,7 +24,7 @@ export default function HomeHero() {
   };
 
   return (
-    <div className="w-full min-h-screen" style={{ backgroundColor: colors.bgColor }}>
+    <div className="w-full min-h-screen" style={{ backgroundColor: colors.white }}>
 
       <section className="w-full relative overflow-hidden">
         <div className="absolute inset-0 opacity-5" style={{

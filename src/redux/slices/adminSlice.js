@@ -32,7 +32,7 @@ export const logoutAdmin = createAsyncThunk(
     'admin/logoutAdmin',
     async (_, { rejectWithValue }) => {
         try {
-            const res = await axios.post('/api/admin/logout');
+            const res = await axios.get('/api/admin/logout');
             return res.data;
         } catch (error) {
             return rejectWithValue(error.response?.data || error.message);
@@ -242,6 +242,19 @@ const adminSlice = createSlice({
             })
 
             // GET ALL ADMINS
+            // .addCase(fetchAllAdmins.pending, (state) => {
+            //     state.loading = true;
+            //     state.error = null;
+            // })
+            // .addCase(fetchAllAdmins.fulfilled, (state, action) => {
+            //     state.loading = false;
+            //     state.admins = action.payload.admins || [];
+            //     state.stats = action.payload.stats;
+            // })
+            // .addCase(fetchAllAdmins.rejected, (state, action) => {
+            //     state.loading = false;
+            //     state.error = action.payload;
+            // })
             .addCase(fetchAllAdmins.pending, (state) => {
                 state.loading = true;
                 state.error = null;

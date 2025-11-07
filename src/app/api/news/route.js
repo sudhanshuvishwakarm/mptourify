@@ -126,7 +126,7 @@ export async function POST(request) {
         }
 
         // VALIDATE STATUS
-        const validStatuses = ['published', 'draft', 'scheduled'];
+        const validStatuses = ['published', 'draft'];
         if (status && !validStatuses.includes(status)) {
             return NextResponse.json(
                 { 
@@ -202,11 +202,12 @@ export async function GET(request) {
         let query = {};
         
         // Default: only show published news for public
-        if (status && ['published', 'draft', 'scheduled'].includes(status)) {
+        if (status && ['published', 'draft'].includes(status)) {
             query.status = status;
-        } else {
-            query.status = 'published';
-        }
+        } 
+        // else {
+        //     query.status = 'published';
+        // }
         
         if (category) {
             query.category = category;

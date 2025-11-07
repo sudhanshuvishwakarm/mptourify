@@ -1,6 +1,5 @@
+
 import "./globals.css";
-import Footer from "@/components/layouts/Footer";
-import Navbar from "@/components/layouts/Navbar";
 import { ToastContainer } from "react-toastify";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
@@ -19,9 +18,7 @@ export default async function RootLayout({ children }) {
       <body>
         <Providers>
           <NextIntlClientProvider messages={messages}>
-            <Navbar />
             {children}
-            <Footer />
           </NextIntlClientProvider>
         </Providers>
         <ToastContainer />

@@ -43,7 +43,7 @@ export default function HomeAbout() {
 
   return (
     <div className="w-full min-h-screen" style={{ backgroundColor: colors.bgColor }}>
-      <section className="w-full py-16 md:py-24 px-4 md:px-8" style={{ backgroundColor: colors.white }}>
+      <section className="w-full py-16 md:py-24 px-4 md:px-8" style={{ backgroundColor: colors.bgColor }}>
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
             

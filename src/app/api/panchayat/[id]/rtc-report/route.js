@@ -2,8 +2,8 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/dbConfig/dbConnect.js";
 import { getAdmin } from "@/utils/getAdmin.js";
-import GramPanchayat from "@/models/panchayatModel.js";
 import mongoose from "mongoose";
+import GramPanchayat from "@/models/panchayatModel.js";
 
 connectDB();
 

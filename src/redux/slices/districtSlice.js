@@ -1,19 +1,41 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-// CREATE DISTRICT
+// // CREATE DISTRICT
+// export const createDistrict = createAsyncThunk(
+//     'district/createDistrict',
+//     async (districtData, { rejectWithValue }) => {
+//         try {
+//             const res = await axios.post('/api/district', districtData);
+//             return res.data;
+//         } catch (error) {
+//             return rejectWithValue(error.response?.data || error.message);
+//         }
+//     }
+// );
 export const createDistrict = createAsyncThunk(
     'district/createDistrict',
     async (districtData, { rejectWithValue }) => {
         try {
-            const res = await axios.post('/api/district', districtData);
+            let res;
+            
+            // Check if it's FormData (file upload) or JSON
+            if (districtData instanceof FormData) {
+                res = await axios.post('/api/district', districtData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+            } else {
+                res = await axios.post('/api/district', districtData);
+            }
+            
             return res.data;
         } catch (error) {
             return rejectWithValue(error.response?.data || error.message);
         }
     }
 );
-
 // FETCH ALL DISTRICTS
 export const fetchDistricts = createAsyncThunk(
     'district/fetchDistricts',
