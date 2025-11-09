@@ -1,12 +1,9 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, MapPin, Landmark, Leaf, Palette, Calendar, Globe } from 'lucide-react';
+import { ArrowRight, Globe } from 'lucide-react';
 
 export default function HomeHero() {
-  const h = useTranslations('HomePage');
-  const t = useTranslations('Navigation');
   const router = useRouter();
 
   const colors = {

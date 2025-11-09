@@ -1,94 +1,77 @@
 'use client';
-
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import { ChevronDown } from 'lucide-react';
+import { useTranslation } from './TranslationProvider';
 
 export default function LanguageSwitcher() {
-  const router = useRouter();
+  const { currentLanguage, switchLanguage, isTranslating } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedLang, setSelectedLang] = useState('en');
   const dropdownRef = useRef(null);
 
-  const switchLanguage = (locale) => {
-    document.cookie = `locale=${locale}; path=/; max-age=31536000`;
-    setSelectedLang(locale);
-    setIsOpen(false);
-    router.refresh();
-  };
-  const colors = {
-    saffron: '#F3902C',
-    green: '#339966',
-    skyBlue: '#33CCFF',
-    white: '#FFFFFF',
-    bgColor: '#FFF7EB',
-    darkGray: '#333333'
-  };
   const languages = [
-    { code: 'en', name: 'EN', flag: '🇮🇳' },
-    { code: 'hi', name: 'HI', flag: '🇮🇳' },
+    { code: 'en', name: 'EN', fullName: 'English', flag: '🇮🇳' },
+    { code: 'hi', name: 'हिं', fullName: 'हिंदी', flag: '🇮🇳' },
   ];
 
-  const currentLanguage = languages.find((lang) => lang.code === selectedLang);
+  const currentLanguageObj = languages.find((lang) => lang.code === currentLanguage);
 
-  // 🔹 Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsOpen(false);
       }
     };
+    
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleLanguageSwitch = (langCode) => {
+    if (langCode !== currentLanguage && !isTranslating) {
+      switchLanguage(langCode);
+      setIsOpen(false);
+    }
+  };
+
   return (
-  <div
-  ref={dropdownRef}
-  className="relative"
->
-  <button
-    onClick={() => setIsOpen(!isOpen)}
-    className="flex items-center gap-2 px-3 py-2.5 rounded-lg font-bold text-white transition-all duration-300 hover:shadow-lg"
-    style={{ backgroundColor: colors.green }}
-  >
-    <span className="text-sm">{currentLanguage.name}</span>
-    <ChevronDown
-      size={16}
-      className={`transition-transform duration-200 ${
-        isOpen ? 'rotate-180' : 'rotate-0'
-      }`}
-    />
-  </button>
+    <div ref={dropdownRef} className="relative z-50">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        disabled={isTranslating}
+        className="flex items-center gap-2 px-2 py-2 rounded-lg font-bold text-white transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed bg-green-600 hover:bg-green-700"
+      >
+        <span className="text-lg">{currentLanguageObj?.flag}</span>
+        <span className="text-sm">
+          {isTranslating ? 'Translating...' : (currentLanguageObj?.name || 'English')}
+        </span>
+        <ChevronDown
+          size={16}
+          className={`transition-transform duration-200 ${
+            isOpen ? 'rotate-180' : 'rotate-0'
+          }`}
+        />
+      </button>
 
-  {isOpen && (
-    <div
-      className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg z-50 overflow-hidden border"
-      style={{ borderColor: colors.green }}
-    >
-      {languages.map((language) => (
-        <button
-          key={language.code}
-          onClick={() => switchLanguage(language.code)}
-          className="w-full flex items-center gap-2 px-4 py-2 text-left transition-all duration-150 text-sm font-semibold hover:bg-green-50"
-          style={{
-            color: selectedLang === language.code ? colors.green : '#333',
-            backgroundColor:
-              selectedLang === language.code ? '#ECFDF5' : 'white',
-          }}
-        >
-          <span className="text-base emoji">{language.flag}</span>
-          <span>{language.name}</span>
-          {selectedLang === language.code && (
-            <span className="ml-auto text-xs" style={{ color: colors.green }}>
-              ✓
-            </span>
-          )}
-        </button>
-      ))}
+      {isOpen && (
+        <div className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-xl overflow-hidden border border-gray-200 min-w-[160px]">
+          {languages.map((language) => (
+            <button
+              key={language.code}
+              onClick={() => handleLanguageSwitch(language.code)}
+              disabled={isTranslating || currentLanguage === language.code}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all duration-150 text-sm font-semibold hover:bg-green-50 disabled:opacity-50 disabled:cursor-not-allowed ${
+                currentLanguage === language.code ? 'bg-green-50' : ''
+              }`}
+            >
+              <span className="text-xl">{language.flag}</span>
+              <span className="flex-1 text-gray-800">{language.fullName}</span>
+              {currentLanguage === language.code && (
+                <span className="text-green-600 text-base font-bold">✓</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
-  )}
-</div>
-
   );
 }

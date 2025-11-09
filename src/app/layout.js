@@ -1,9 +1,8 @@
-
+// layout.jsx
 import "./globals.css";
 import { ToastContainer } from "react-toastify";
-import { NextIntlClientProvider } from "next-intl";
-import { getMessages } from "next-intl/server";
 import { Providers } from "@/redux/Providers";
+import TranslationProvider from "@/components/layouts/TranslationProvider.jsx";
 
 export const metadata = {
   title: "Create Next App",
@@ -11,15 +10,13 @@ export const metadata = {
 };
 
 export default async function RootLayout({ children }) {
-  const messages = await getMessages();
-
   return (
     <html lang="en">
       <body>
         <Providers>
-          <NextIntlClientProvider messages={messages}>
+          <TranslationProvider>
             {children}
-          </NextIntlClientProvider>
+          </TranslationProvider>
         </Providers>
         <ToastContainer />
       </body>

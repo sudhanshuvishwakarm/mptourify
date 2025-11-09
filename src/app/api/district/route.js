@@ -8,7 +8,6 @@ import cloudinary from "@/config/cloudinary.js";
 connectDB();
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-// CREATE NEW DISTRICT
 export async function POST(request) {
     try {
         // CHECK IF CURRENT USER IS ADMIN

@@ -1,11 +1,8 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 
 export default function HomeAbout() {
-  const h = useTranslations('HomePage');
-  const t = useTranslations('Navigation');
   const router = useRouter();
 
   const places = [

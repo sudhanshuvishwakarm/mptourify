@@ -68,7 +68,7 @@ export default function AdminNewsPage() {
     if (success) {
       toast.success('Action completed successfully!');
       dispatch(clearSuccess());
-      
+
       const params = { page: filters.page, limit: 20 };
       if (filters.category) params.category = filters.category;
       if (filters.status) params.status = filters.status;
@@ -118,9 +118,9 @@ export default function AdminNewsPage() {
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-IN', { 
-      day: 'numeric', 
-      month: 'short', 
+    return date.toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
       year: 'numeric'
     });
   };
@@ -160,13 +160,13 @@ export default function AdminNewsPage() {
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
       {/* HEADER */}
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: { xs: 'column', sm: 'row' }, 
-        justifyContent: 'space-between', 
-        alignItems: { xs: 'flex-start', sm: 'center' }, 
-        gap: 2, 
-        mb: 4 
+      <Box sx={{
+        display: 'flex',
+        flexDirection: { xs: 'column', sm: 'row' },
+        justifyContent: 'space-between',
+        alignItems: { xs: 'flex-start', sm: 'center' },
+        gap: 2,
+        mb: 4
       }}>
         <Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
@@ -196,11 +196,11 @@ export default function AdminNewsPage() {
       </Box>
 
       {/* STATS & FILTERS IN ONE ROW */}
-      <Box sx={{ 
-        display: 'flex', 
-        gap: 3, 
-        mb: 4, 
-        flexDirection: { xs: 'column', md: 'row' } 
+      <Box sx={{
+        display: 'flex',
+        gap: 3,
+        mb: 4,
+        flexDirection: { xs: 'column', md: 'row' }
       }}>
         {/* STATS CARD */}
         {/* <Box sx={{ width: { xs: '100%', md: '20%' } }}>
@@ -229,24 +229,24 @@ export default function AdminNewsPage() {
 
         {/* FILTERS CARD */}
         <Box sx={{ width: { xs: '100%', md: '100%' } }}>
-          <Card sx={{ 
-            p: { xs: 2, sm: 3 }, 
-            border: '1px solid #144ae920', 
-            height: '100%' 
+          <Card sx={{
+            p: { xs: 2, sm: 3 },
+            border: '1px solid #144ae920',
+            height: '100%'
           }}>
-            <Box sx={{ 
-              display: 'flex', 
-              gap: { xs: 2, sm: 2, md: 2 }, 
-              alignItems: 'center', 
+            <Box sx={{
+              display: 'flex',
+              gap: { xs: 2, sm: 2, md: 2 },
+              alignItems: 'center',
               flexDirection: { xs: 'column', sm: 'row' },
               flexWrap: 'wrap'
             }}>
               {/* SEARCH FIELD - Flexible width */}
-              <Box sx={{ 
+              <Box sx={{
                 flex: 1,
                 minWidth: { xs: '100%', sm: '200px' },
-                display: 'flex', 
-                alignItems: 'center' 
+                display: 'flex',
+                alignItems: 'center'
               }}>
                 <TextField
                   label="Search"
@@ -256,19 +256,19 @@ export default function AdminNewsPage() {
                   placeholder="Search by title or content..."
                   startIcon={<Search size={20} color="#144ae9" />}
                   fullWidth
-                  sx={{ 
-                    '& .MuiInputBase-root': { 
-                      height: { xs: '48px', sm: '56px' } 
-                    } 
+                  sx={{
+                    '& .MuiInputBase-root': {
+                      height: { xs: '48px', sm: '56px' }
+                    }
                   }}
                 />
               </Box>
 
               {/* CATEGORY FILTER */}
-              <Box sx={{ 
+              <Box sx={{
                 width: { xs: '100%', sm: '180px', md: '180px' },
-                display: 'flex', 
-                alignItems: 'center' 
+                display: 'flex',
+                alignItems: 'center'
               }}>
                 <SelectField
                   label="Category"
@@ -276,19 +276,19 @@ export default function AdminNewsPage() {
                   onChange={(e) => setFilters({ ...filters, category: e.target.value })}
                   options={categoryOptions}
                   fullWidth
-                  sx={{ 
-                    '& .MuiInputBase-root': { 
-                      height: { xs: '48px', sm: '56px' } 
-                    } 
+                  sx={{
+                    '& .MuiInputBase-root': {
+                      height: { xs: '48px', sm: '56px' }
+                    }
                   }}
                 />
               </Box>
 
               {/* STATUS FILTER */}
-              <Box sx={{ 
+              <Box sx={{
                 width: { xs: '100%', sm: '180px', md: '180px' },
-                display: 'flex', 
-                alignItems: 'center' 
+                display: 'flex',
+                alignItems: 'center'
               }}>
                 <SelectField
                   label="Status"
@@ -296,24 +296,24 @@ export default function AdminNewsPage() {
                   onChange={(e) => setFilters({ ...filters, status: e.target.value })}
                   options={statusOptions}
                   fullWidth
-                  sx={{ 
-                    '& .MuiInputBase-root': { 
-                      height: { xs: '48px', sm: '56px' } 
-                    } 
+                  sx={{
+                    '& .MuiInputBase-root': {
+                      height: { xs: '48px', sm: '56px' }
+                    }
                   }}
                 />
               </Box>
 
               {/* BUTTONS - Fixed width */}
-              <Box sx={{ 
-                display: 'flex', 
+              <Box sx={{
+                display: 'flex',
                 alignItems: 'center',
                 width: { xs: '100%', sm: 'auto' },
                 mt: { xs: 1, sm: 0 }
               }}>
-                <Box sx={{ 
-                  display: 'flex', 
-                  gap: 1, 
+                <Box sx={{
+                  display: 'flex',
+                  gap: 1,
                   flexDirection: 'row',
                   width: { xs: '100%', sm: 'auto' }
                 }}>
@@ -394,21 +394,21 @@ export default function AdminNewsPage() {
                 </TableHead>
                 <TableBody>
                   {news.map((article) => (
-                    <TableRow 
+                    <TableRow
                       key={article._id}
-                      sx={{ 
+                      sx={{
                         '&:last-child td, &:last-child th': { border: 0 },
                         '&:hover': { backgroundColor: '#144ae905' }
                       }}
                     >
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Box sx={{ 
-                            width: 64, 
-                            height: 64, 
-                            backgroundColor: '#144ae910', 
-                            borderRadius: 2, 
-                            overflow: 'hidden', 
+                          <Box sx={{
+                            width: 64,
+                            height: 64,
+                            backgroundColor: '#144ae910',
+                            borderRadius: 2,
+                            overflow: 'hidden',
                             flexShrink: 0,
                             border: '1px solid #144ae920'
                           }}>
@@ -419,24 +419,36 @@ export default function AdminNewsPage() {
                                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                               />
                             ) : (
-                              <Box sx={{ 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                justifyContent: 'center', 
-                                width: '100%', 
-                                height: '100%' 
+                              <Box sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: '100%',
+                                height: '100%'
                               }}>
                                 <Newspaper size={24} color="#144ae9" />
                               </Box>
                             )}
                           </Box>
                           <Box sx={{ minWidth: 0, flex: 1 }}>
-                            <Typography variant="body1" fontWeight={600} color="text.primary" noWrap>
-                              {article.title}
+                            <Typography
+                              variant="body1"
+                              fontWeight={600}
+                              color="text.primary"
+                              noWrap
+                            >
+                              {article.title.split(' ').slice(0, 5).join(' ')}{article.title.split(' ').length > 5 ? '...' : ''}
                             </Typography>
-                            <Typography variant="body2" color="text.secondary" noWrap sx={{ mt: 0.5 }}>
-                              {article.excerpt}
+
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              noWrap
+                              sx={{ mt: 0.5 }}
+                            >
+                              {article.excerpt.split(' ').slice(0, 8).join(' ')}{article.excerpt.split(' ').length > 8 ? '...' : ''}
                             </Typography>
+
                             {article.featured && (
                               <Chip
                                 label="⭐ Featured"
@@ -472,9 +484,9 @@ export default function AdminNewsPage() {
                           size="small"
                           icon={
                             article.status === 'published' ? <CheckCircle size={14} /> :
-                          
-                            // article.status === 'scheduled' ? <Clock size={14} /> :
-                            <XCircle size={14} />
+
+                              // article.status === 'scheduled' ? <Clock size={14} /> :
+                              <XCircle size={14} />
                           }
                           sx={getStatusColor(article.status)}
                         />
@@ -540,11 +552,11 @@ export default function AdminNewsPage() {
 
             {/* PAGINATION */}
             {totalPages > 1 && (
-              <Box sx={{ 
-                p: 3, 
-                borderTop: '1px solid #144ae920', 
-                display: 'flex', 
-                alignItems: 'center', 
+              <Box sx={{
+                p: 3,
+                borderTop: '1px solid #144ae920',
+                display: 'flex',
+                alignItems: 'center',
                 justifyContent: 'space-between',
                 flexDirection: { xs: 'column', sm: 'row' },
                 gap: 2

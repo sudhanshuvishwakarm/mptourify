@@ -247,7 +247,7 @@ export async function DELETE(request, context) {
             const urlParts = media.fileUrl.split('/');
             const publicIdWithExtension = urlParts[urlParts.length - 1];
             const publicId = publicIdWithExtension.split('.')[0];
-            const folder = 'mp-tourify';
+            const folder = 'mptourify';
             
             const fullPublicId = `${folder}/${publicId}`;
             

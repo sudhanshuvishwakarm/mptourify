@@ -514,7 +514,9 @@ export async function DELETE(request, context) {
             { status: 500 }
         );
     }
-}// // GET, UPDATE, DELETE DISTRICT BY ID
+}
+
+// // GET, UPDATE, DELETE DISTRICT BY ID
 // import { NextResponse } from "next/server";
 // import { connectDB } from "@/dbConfig/dbConnect.js";
 // import { isAdmin } from "@/utils/getAdmin.js";

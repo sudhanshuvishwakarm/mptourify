@@ -1,13 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { Menu, X, Phone } from 'lucide-react';
 import LanguageSwitcher from './LanguageSwitcher';
 
 export default function Navbar() {
-  const t = useTranslations();
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -22,13 +20,13 @@ export default function Navbar() {
   };
 
   const navLinks = [
-    { label: t('Navigation.home'), href: '/', icon: null },
-    { label: t('Navigation.districts'), href: '/mera-pradesh', icon: null },
-    { label: t('Navigation.panchayats'), href: '/panchayats', icon: null },
-    { label: t('Navigation.heritage'), href: '/heritage', icon: null },
-    { label: t('Navigation.gallery'), href: '/gallery', icon: null },
-    { label: t('Navigation.news'), href: '/news', icon: null },
-    { label: t('Navigation.about'), href: '/about', icon: null },
+    { label: 'Home', href: '/', icon: null },
+    { label: 'Our Districts', href: '/mera-pradesh', icon: null },
+    { label: 'Our Panchayats', href: '/panchayats', icon: null },
+    { label: 'State Heritage', href: '/heritage', icon: null },
+    { label: 'Gallery', href: '/gallery', icon: null },
+    { label: 'News', href: '/news', icon: null },
+    { label: 'About Us', href: '/about', icon: null },
   ];
 
   const handleNavigation = (href) => {
@@ -65,7 +63,7 @@ export default function Navbar() {
               <button
                 key={idx}
                 onClick={() => handleNavigation(link.href)}
-                className="font-semibold transition-all duration-300 py-2 px-1 hover:opacity-80"
+                className="font-bold transition-all duration-300 py-2 px-1 hover:opacity-80"
                 style={{ color: colors.white }}
               >
                 {link.label}
@@ -82,7 +80,7 @@ export default function Navbar() {
               onClick={() => handleNavigation('/contact')}
             >
               <Phone size={18} />
-              {t('Navigation.contact')}
+              Contact
             </button>
           </div>
         </div>
@@ -141,7 +139,7 @@ export default function Navbar() {
                 onClick={() => handleNavigation('/contact')}
               >
                 <Phone size={18} />
-                {t('Navigation.contact')}
+                Contact
               </button>
             </div>
           </div>
@@ -150,6 +148,162 @@ export default function Navbar() {
     </nav>
   );
 }// 'use client';
+
+// import { useState } from 'react';
+// import { useTranslations } from 'next-intl';
+// import { useRouter } from 'next/navigation';
+// import { Menu, X, Phone } from 'lucide-react';
+// import LanguageSwitcher from './LanguageSwitcher';
+
+// export default function Navbar() {
+//   const t = useTranslations();
+//   const router = useRouter();
+//   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+//   // Color Scheme
+//   const colors = {
+//     saffron: '#F3902C',
+//     green: '#339966',
+//     skyBlue: '#33CCFF',
+//     white: '#FFFFFF',
+//     bgColor: '#FFF7EB',
+//     darkGray: '#333333'
+//   };
+
+//   const navLinks = [
+//     { label: t('Navigation.home'), href: '/', icon: null },
+//     { label: t('Navigation.districts'), href: '/mera-pradesh', icon: null },
+//     { label: t('Navigation.panchayats'), href: '/panchayats', icon: null },
+//     { label: t('Navigation.heritage'), href: '/heritage', icon: null },
+//     { label: t('Navigation.gallery'), href: '/gallery', icon: null },
+//     { label: t('Navigation.news'), href: '/news', icon: null },
+//     { label: t('Navigation.about'), href: '/about', icon: null },
+//   ];
+
+//   const handleNavigation = (href) => {
+//     router.push(href);
+//     setIsMenuOpen(false);
+//   };
+
+//   return (
+//     <nav 
+//       className="w-full shadow-lg sticky top-0 z-50"
+//       style={{ backgroundColor: colors.saffron }}
+//     >
+//       <div className="mx-auto px-4 md:px-8 lg:px-16">
+//         {/* Desktop Navbar */}
+//         <div className="hidden lg:flex items-center justify-between h-20">
+//           {/* Logo */}
+//           <div 
+//             className="flex items-center gap-3 text-2xl font-bold cursor-pointer hover:opacity-80 transition-opacity"
+//             style={{ color: colors.white }}
+//             onClick={() => handleNavigation('/')}
+//           >
+//             <div 
+//               className="w-11 h-11 rounded-lg flex items-center justify-center font-bold text-white text-sm"
+//               style={{ backgroundColor: colors.green }}
+//             >
+//               MP
+//             </div>
+//             <span>Tourify</span>
+//           </div>
+
+//           {/* Desktop Menu */}
+//           <div className="flex items-center gap-5">
+//             {navLinks.map((link, idx) => (
+//               <button
+//                 key={idx}
+//                 onClick={() => handleNavigation(link.href)}
+//                 className="font-semibold transition-all duration-300 py-2 px-1 hover:opacity-80"
+//                 style={{ color: colors.white }}
+//               >
+//                 {link.label}
+//               </button>
+//             ))}
+//           </div>
+
+//           {/* Desktop Right Icons */}
+//           <div className="flex items-center gap-4">
+//             <LanguageSwitcher />
+//             <button 
+//               className="px-6 py-2.5 rounded-lg font-bold text-white transition-all duration-300 hover:shadow-lg flex items-center gap-2"
+//               style={{ backgroundColor: colors.green }}
+//               onClick={() => handleNavigation('/contact')}
+//             >
+//               <Phone size={18} />
+//               {t('Navigation.contact')}
+//             </button>
+//           </div>
+//         </div>
+
+//         {/* Mobile Navbar */}
+//         <div className="lg:hidden flex items-center justify-between h-16">
+//           {/* Mobile Logo */}
+//           <div 
+//             className="flex items-center gap-2 text-xl font-bold cursor-pointer"
+//             style={{ color: colors.white }}
+//             onClick={() => handleNavigation('/')}
+//           >
+//             <div 
+//               className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-white text-sm"
+//               style={{ backgroundColor: colors.green }}
+//             >
+//               MP
+//             </div>
+//             <span>Tourify</span>
+//           </div>
+
+//           <div className="flex items-center gap-3">
+//             <LanguageSwitcher />
+//             <button
+//               onClick={() => setIsMenuOpen(!isMenuOpen)}
+//               className="p-1.5 rounded-lg transition-all duration-300"
+//               style={{ color: colors.white }}
+//             >
+//               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+//             </button>
+//           </div>
+//         </div>
+
+//         {/* Mobile Menu */}
+//         {isMenuOpen && (
+//           <div 
+//             className="lg:hidden pb-4 animate-in slide-in-from-top-2 duration-300"
+//             style={{ backgroundColor: colors.white }}
+//           >
+//             {navLinks.map((link, idx) => (
+//               <button
+//                 key={idx}
+//                 onClick={() => handleNavigation(link.href)}
+//                 className="w-full text-left px-4 py-3 font-semibold transition-all duration-300"
+//                 style={{ color: colors.green }}
+//               >
+//                 {link.label}
+//               </button>
+//             ))}
+
+//             {/* Mobile Bottom Contact Button */}
+//             <div className="border-t mt-2 pt-2 px-4">
+//               <button 
+//                 className="w-full px-4 py-3 rounded-lg font-bold text-white transition-all duration-300 flex items-center justify-center gap-2"
+//                 style={{ backgroundColor: colors.green }}
+//                 onClick={() => handleNavigation('/contact')}
+//               >
+//                 <Phone size={18} />
+//                 {t('Navigation.contact')}
+//               </button>
+//             </div>
+//           </div>
+//         )}
+//       </div>
+//     </nav>
+//   );
+// }
+
+
+
+
+// 'use client';
 
 // import { useState } from 'react';
 // import { useTranslations } from 'next-intl';

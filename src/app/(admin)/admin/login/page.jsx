@@ -181,7 +181,7 @@ export default function AdminLogin() {
       </div>
 
       {/* RIGHT SIDE - IMAGE */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 items-center justify-center p-12 relative overflow-hidden">
+      {/* <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 items-center justify-center p-12 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full blur-3xl"></div>
           <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full blur-3xl"></div>
@@ -213,7 +213,63 @@ export default function AdminLogin() {
             </div>
           </div>
         </div>
+      </div> */}<div className="hidden lg:flex lg:w-1/2 items-center justify-center p-12 relative overflow-hidden min-h-[600px]">
+  {/* Background Image with Overlay */}
+  <div 
+    className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+    style={{
+      backgroundImage: 'url("/images/adminlogin.png")', 
+    }}
+  >
+    {/* Dark Overlay for better text readability */}
+    <div className="absolute inset-0 bg-blue-900/50 "></div>
+  </div>
+
+  {/* Content */}
+  <div className="relative z-10 text-center text-white w-full max-w-md">
+    {/* Logo/Badge */}
+    <div className="mb-8 transform hover:scale-105 transition-transform duration-300">
+     
+      <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
+        Welcome to MP Tourify
+      </h2>
+      <p className="text-lg text-blue-100 leading-relaxed">
+        Digital documentation of every district and gram panchayat of Madhya Pradesh
+      </p>
+    </div>
+
+    {/* Stats Grid */}
+    <div className="grid grid-cols-3 gap-4 mt-12">
+      <div className="bg-white/15 backdrop-blur-md rounded-xl p-4 border border-white/20 shadow-lg hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-1">
+        <div className="text-3xl font-bold text-white mb-1">52</div>
+        <div className="text-xs font-medium text-blue-100 uppercase tracking-wider">Districts</div>
       </div>
+      <div className="bg-white/15 backdrop-blur-md rounded-xl p-4 border border-white/20 shadow-lg hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-1">
+        <div className="text-3xl font-bold text-white mb-1">23K+</div>
+        <div className="text-xs font-medium text-blue-100 uppercase tracking-wider">Panchayats</div>
+      </div>
+      <div className="bg-white/15 backdrop-blur-md rounded-xl p-4 border border-white/20 shadow-lg hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-1">
+        <div className="text-3xl font-bold text-white mb-1">500+</div>
+        <div className="text-xs font-medium text-blue-100 uppercase tracking-wider">Heritage Sites</div>
+      </div>
+    </div>
+
+    {/* Additional Feature Badges */}
+    <div className="flex justify-center gap-3 mt-8">
+      <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs text-white border border-white/30">
+        🗺️ Interactive Maps
+      </span>
+      <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs text-white border border-white/30">
+        📱 Digital Guide
+      </span>
+      <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs text-white border border-white/30">
+        🏛️ Heritage
+      </span>
+    </div>
+  </div>
+
+  {/* Floating Elements */}
+</div>
     </div>
   );
 }// 'use client'

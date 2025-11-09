@@ -763,7 +763,10 @@ export default function CreateDistrictPage() {
       </Box>
     </Box>
   );
-}// 'use client'
+}
+
+
+// 'use client'
 // import { useState, useEffect } from 'react';
 // import { useDispatch, useSelector } from 'react-redux';
 // import { useRouter } from 'next/navigation';

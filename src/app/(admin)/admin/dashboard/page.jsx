@@ -11,6 +11,7 @@ import {
   Users,
   TrendingUp
 } from 'lucide-react';
+import Loader from '@/components/ui/Loader';
 
 export default function AdminDashboard() {
   const dispatch = useDispatch();
@@ -161,7 +162,11 @@ export default function AdminDashboard() {
       )}
     </div>
   );
-}// 'use client'
+}
+
+
+
+// 'use client'
 // import { useEffect } from 'react';
 // import { useDispatch, useSelector } from 'react-redux';
 // import { fetchOverviewStats } from '@/redux/slices/statsSlice';

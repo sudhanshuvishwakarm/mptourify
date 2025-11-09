@@ -41,38 +41,15 @@ const gramPanchayatSchema = new mongoose.Schema({
     population: {
         type: Number
     },
-    // Religious / Heritage Places
-    religiousPlaces: [{
-        name: String,
-        type: {
-            type: String,
-            enum: ['temple', 'mosque', 'gurudwara', 'church', 'other']
-        },
-        description: String,
-        images: [String]
-    }],
-    // Water Bodies
-    waterBodies: [{
-        name: String,
-        type: {
-            type: String,
-            enum: ['river', 'lake', 'waterfall', 'pond']
-        },
-        description: String,
-        images: [String]
-    }],
-    // Local Art, Cuisine, Traditions
-    localArt: [{
+    localArt: {
         type: String
-    }],
-    localCuisine: [{
-        name: String,
-        description: String,
-        image: String
-    }],
-    traditions: [{
+    },
+    localCuisine: {
+        type: String 
+    },
+    traditions: {
         type: String
-    }],
+    },
     // Photo Gallery (5–10 images)
     photoGallery: [{
         type: mongoose.Schema.Types.ObjectId,
