@@ -12,7 +12,7 @@ export default function Navbar() {
   // Color Scheme
   const colors = {
     saffron: '#F3902C',
-    green: '#339966',
+    green: '#138808',
     skyBlue: '#33CCFF',
     white: '#FFFFFF',
     bgColor: '#FFF7EB',
@@ -21,7 +21,7 @@ export default function Navbar() {
 
   const navLinks = [
     { label: 'Home', href: '/', icon: null },
-    { label: 'Our Districts', href: '/mera-pradesh', icon: null },
+    { label: 'Our Districts', href: '/districts', icon: null },
     { label: 'Our Panchayats', href: '/panchayats', icon: null },
     { label: 'State Heritage', href: '/heritage', icon: null },
     { label: 'Gallery', href: '/gallery', icon: null },
@@ -172,7 +172,7 @@ export default function Navbar() {
 
 //   const navLinks = [
 //     { label: t('Navigation.home'), href: '/', icon: null },
-//     { label: t('Navigation.districts'), href: '/mera-pradesh', icon: null },
+//     { label: t('Navigation.districts'), href: '/districts', icon: null },
 //     { label: t('Navigation.panchayats'), href: '/panchayats', icon: null },
 //     { label: t('Navigation.heritage'), href: '/heritage', icon: null },
 //     { label: t('Navigation.gallery'), href: '/gallery', icon: null },

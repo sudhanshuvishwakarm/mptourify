@@ -20,7 +20,7 @@ export default function HomeNavigationTiles() {
     { 
       title: 'Mera Pradesh Mera Jila', 
       icon: '🗺️', 
-      href: '/mera-pradesh', 
+      href: '/districts', 
       desc: 'Explore All Districts',
       color: colors.saffron
     },

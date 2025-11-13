@@ -37,7 +37,8 @@ export default function AllAdminsPage() {
     search: ''
   });
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-   const [hasFetched, setHasFetched] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
+
   useEffect(() => {
     if (!hasFetched && admins.length === 0) {
       dispatch(fetchAllAdmins({}));
@@ -60,7 +61,7 @@ export default function AllAdminsPage() {
       toast.error(error.message || 'Something went wrong');
       dispatch(clearError());
     }
-  }, [success, error, dispatch,filters.role, filters.status, filters.search]);
+  }, [success, error, dispatch]);
 
   const handleSearch = () => {
     const params = {};
@@ -106,14 +107,23 @@ export default function AllAdminsPage() {
   ];
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 } }}>
+    <div>
+    {loading && (
+        <div className="fixed inset-0 z-[9999]">
+          <Loader message={"Loading Users..."} />
+        </div>
+      )}
+
+     <Box sx={{ p: { xs: 2, md: 3 } }}>
+      {/* LOADER - Positioned like login page */}
+      
       {/* HEADER */}
-      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2, mb: 4 }}>
+      {/* <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2, mb: 4 }}>
         <Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
             <Users size={32} color="#144ae9" />
             <Typography variant="h4" fontWeight={700} color="text.primary">
-              Users Management
+              Users Management ({stats?.activeCount})
             </Typography>
           </Box>
           <Typography variant="body2" color="text.secondary">
@@ -134,11 +144,37 @@ export default function AllAdminsPage() {
             Add New User
           </Button>
         </Link>
-      </Box>
-
+      </Box> */}
+<Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2, mb: 4 }}>
+  <Box>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+      <Users size={28} color="#144ae9" className="sm:w-8 sm:h-8" />
+      <Typography variant="h4" fontWeight={700} color="text.primary" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
+        Users Management ({stats?.activeCount || 0})
+      </Typography>
+    </Box>
+    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+      Manage admins and RTCs
+    </Typography>
+  </Box>
+  <Link href="/admin/users/create" style={{ textDecoration: 'none' }}>
+    <Button 
+      startIcon={<Plus size={20} />} 
+      size="large"
+      sx={{ 
+        backgroundColor: '#144ae9',
+        '&:hover': {
+          backgroundColor: '#0d3ec7'
+        }
+      }}
+    >
+      Add New User
+    </Button>
+  </Link>
+</Box>
       {/* STATS */}
       {stats && (
-        <Grid container spacing={3} sx={{ mb: 4 , width: '100%'}}>
+        <Grid container spacing={3} sx={{ mb: 4, width: '100%' }}>
           <Grid item xs={12} sm={6} md={3}>
             <StatCard 
               label="Total Admins" 
@@ -166,99 +202,149 @@ export default function AllAdminsPage() {
         </Grid>
       )}
 
-      {/* FILTERS */}
-    <Card
-  sx={{
-    mb: 4,
-    border: '1px solid',
-    borderColor: '#144ae9' + '20',
-    p: 2,
-  }}
->
-  <Grid container spacing={3} alignItems="center">
-    <Grid item xs={12} md={6}>
-      <TextField
-        label="Search"
-        value={filters.search}
-        onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-        placeholder="Search by name, email, or employee ID..."
-        startIcon={<Search size={20} color="#144ae9" />}
-        fullWidth
-      />
-    </Grid>
-
-    <Grid item xs={12} sm={6} md={3}>
-      <SelectField
-        label="Role"
-        value={filters.role}
-        onChange={(e) => setFilters({ ...filters, role: e.target.value })}
-        options={roleOptions}
-        fullWidth
-      />
-    </Grid>
-
-    <Grid item xs={12} sm={6} md={3}>
-      <SelectField
-        label="Status"
-        value={filters.status}
-        onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-        options={statusOptions}
-        fullWidth
-      />
-    </Grid>
-
-    {/* Buttons — responsive layout */}
-    <Grid item xs={12}>
-      <Box
-        sx={{
+      {/* FILTERS - Uniform with News Page */}
+      <Card sx={{
+        p: { xs: 2, sm: 3 },
+        border: '1px solid #144ae920',
+        mb: 4
+      }}>
+        <Box sx={{
           display: 'flex',
-          justifyContent: { xs: 'flex-start', md: 'flex-end' }, // 👈 right only on desktop
-          flexWrap: 'wrap',
-          gap: 2,
-          mt: { xs: 2, md: 0 },
-        }}
-      >
-        <Button
-          onClick={handleSearch}
-          disabled={loading}
-          startIcon={<Filter size={18} />}
-          sx={{
-            backgroundColor: '#144ae9',
-            color: '#fff',
-            '&:hover': {
-              backgroundColor: '#0d3ec7',
-            },
-          }}
-        >
-          Apply Filters
-        </Button>
+          gap: { xs: 2, sm: 2, md: 2 },
+          alignItems: 'center',
+          flexDirection: { xs: 'column', sm: 'row' },
+          flexWrap: 'wrap'
+        }}>
+          {/* SEARCH FIELD - Flexible width */}
+          <Box sx={{
+            flex: 1,
+            minWidth: { xs: '100%', sm: '200px' },
+            display: 'flex',
+            alignItems: 'center'
+          }}>
+            <TextField
+              label="Search"
+              value={filters.search}
+              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              placeholder="Search by name, email, or employee ID..."
+              startIcon={<Search size={20} color="#144ae9" />}
+              fullWidth
+              sx={{
+                '& .MuiInputBase-root': {
+                  height: { xs: '48px', sm: '56px' }
+                }
+              }}
+            />
+          </Box>
 
-        <Button
-          variant="outlined"
-          onClick={handleReset}
-          sx={{
-            borderColor: '#144ae9',
-            color: '#144ae9',
-            '&:hover': {
-              borderColor: '#0d3ec7',
-              backgroundColor: '#144ae9' + '10',
-            },
-          }}
-        >
-          Reset
-        </Button>
-      </Box>
-    </Grid>
-  </Grid>
-</Card>
+          {/* ROLE FILTER */}
+          <Box sx={{
+            width: { xs: '100%', sm: '180px', md: '180px' },
+            display: 'flex',
+            alignItems: 'center'
+          }}>
+            <SelectField
+              label="Role"
+              value={filters.role}
+              onChange={(e) => setFilters({ ...filters, role: e.target.value })}
+              options={roleOptions}
+              fullWidth
+              sx={{
+                '& .MuiInputBase-root': {
+                  height: { xs: '48px', sm: '56px' }
+                }
+              }}
+            />
+          </Box>
 
+          {/* STATUS FILTER */}
+          <Box sx={{
+            width: { xs: '100%', sm: '180px', md: '180px' },
+            display: 'flex',
+            alignItems: 'center'
+          }}>
+            <SelectField
+              label="Status"
+              value={filters.status}
+              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+              options={statusOptions}
+              fullWidth
+              sx={{
+                '& .MuiInputBase-root': {
+                  height: { xs: '48px', sm: '56px' }
+                }
+              }}
+            />
+          </Box>
+
+          {/* BUTTONS - Fixed width */}
+          <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
+            width: { xs: '100%', sm: 'auto' },
+            mt: { xs: 1, sm: 0 }
+          }}>
+            <Box sx={{
+              display: 'flex',
+              gap: 1,
+              flexDirection: 'row',
+              width: { xs: '100%', sm: 'auto' }
+            }}>
+              <Button
+                onClick={handleSearch}
+                disabled={loading}
+                startIcon={<Filter size={18} />}
+                size="large"
+                sx={{
+                  backgroundColor: '#144ae9',
+                  color: 'white',
+                  height: { xs: '48px', sm: '56px' },
+                  minWidth: '100px',
+                  width:'120px',
+                  '&:hover': {
+                    backgroundColor: '#0d3ec7',
+                    color: 'white'
+                  },
+                  '&.Mui-disabled': {
+                    backgroundColor: '#144ae950',
+                    color: 'white'
+                  },
+                  fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                Apply
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={handleReset}
+                size="large"
+                sx={{
+                  borderColor: '#144ae9',
+                  color: '#144ae9',
+                  height: { xs: '48px', sm: '56px' },
+                  minWidth: '100px',
+                  width:'120px',
+                  '&:hover': {
+                    borderColor: '#0d3ec7',
+                    backgroundColor: '#144ae910',
+                    color: '#0d3ec7'
+                  },
+                  fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                Reset
+              </Button>
+            </Box>
+          </Box>
+        </Box>
+      </Card>
 
       {/* USERS GRID */}
       <Card sx={{ border: '1px solid', borderColor: '#144ae9' + '20' }}>
-        {loading ? (
-          <Loader />
-        ) : admins.length === 0 ? (
+        {admins.length === 0 && !loading ? (
           <Box sx={{ textAlign: 'center', py: 8 }}>
             <Users size={48} color="#144ae9" style={{ marginBottom: 16, opacity: 0.5 }} />
             <Typography variant="body1" color="text.secondary">
@@ -378,8 +464,396 @@ export default function AllAdminsPage() {
         icon={<Trash2 size={24} color="#144ae9" />}
       />
     </Box>
+    </div>
+   
   );
 }
+
+
+// 'use client'
+// import { useEffect, useState } from 'react';
+// import { useDispatch, useSelector } from 'react-redux';
+// import { fetchAllAdmins, deleteAdmin, updateAdminStatus, clearError, clearSuccess, } from '@/redux/slices/adminSlice';
+// import { toast } from 'react-toastify';
+// import Link from 'next/link';
+// import {
+//   Users,
+//   Plus,
+//   Search,
+//   Filter,
+//   Edit,
+//   Trash2,
+//   UserCog,
+//   CheckCircle,
+//   XCircle,
+//   Eye,
+//   Mail,
+//   Phone
+// } from 'lucide-react';
+// import { Box, Typography, IconButton, Avatar, Chip, Grid } from '@mui/material';
+// import Loader from '@/components/ui/Loader';
+// import Button from '@/components/ui/Button';
+// import Card from '@/components/ui/Card';
+// import TextField from '@/components/ui/TextField';
+// import SelectField from '@/components/ui/SelectField';
+// import StatCard from '@/components/ui/StatCard';
+// import ConfirmDialog from '@/components/ui/ConfirmDialog';
+
+// export default function AllAdminsPage() {
+//   const dispatch = useDispatch();
+//   const { admins, stats, loading, error, success } = useSelector((state) => state.admin);
+
+//   const [filters, setFilters] = useState({
+//     role: '',
+//     status: '',
+//     search: ''
+//   });
+//   const [deleteConfirm, setDeleteConfirm] = useState(null);
+//    const [hasFetched, setHasFetched] = useState(false);
+//   useEffect(() => {
+//     if (!hasFetched && admins.length === 0) {
+//       dispatch(fetchAllAdmins({}));
+//       setHasFetched(true);
+//     }
+//   }, [dispatch, hasFetched, admins.length]);
+
+//   // Handle success/error messages only
+//   useEffect(() => {
+//     if (success) {
+//       toast.success('Action completed successfully!');
+//       dispatch(clearSuccess());
+//       const params = {};
+//       if (filters.role) params.role = filters.role;
+//       if (filters.status) params.status = filters.status;
+//       if (filters.search) params.search = filters.search;
+//       dispatch(fetchAllAdmins(params));
+//     }
+//     if (error) {
+//       toast.error(error.message || 'Something went wrong');
+//       dispatch(clearError());
+//     }
+//   }, [success, error, dispatch,filters.role, filters.status, filters.search]);
+
+//   const handleSearch = () => {
+//     const params = {};
+//     if (filters.role) params.role = filters.role;
+//     if (filters.status) params.status = filters.status;
+//     if (filters.search) params.search = filters.search;
+//     dispatch(fetchAllAdmins(params));
+//   };
+
+//   const handleReset = () => {
+//     setFilters({ role: '', status: '', search: '' });
+//     dispatch(fetchAllAdmins({}));
+//   };
+
+//   const handleDelete = async (id) => {
+//     try {
+//       await dispatch(deleteAdmin(id)).unwrap();
+//       setDeleteConfirm(null);
+//     } catch (err) {
+//       console.error(err);
+//     }
+//   };
+
+//   const handleStatusToggle = async (id, currentStatus) => {
+//     const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+//     try {
+//       await dispatch(updateAdminStatus({ id, status: newStatus })).unwrap();
+//     } catch (err) {
+//       console.error(err);
+//     }
+//   };
+
+//   const roleOptions = [
+//     { value: '', label: 'All Roles' },
+//     { value: 'admin', label: 'Admin' },
+//     { value: 'rtc', label: 'RTC' }
+//   ];
+
+//   const statusOptions = [
+//     { value: '', label: 'All Status' },
+//     { value: 'active', label: 'Active' },
+//     { value: 'inactive', label: 'Inactive' }
+//   ];
+
+//   return (
+//     <Box sx={{ p: { xs: 2, md: 3 } }}>
+//       {/* HEADER */}
+//       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2, mb: 4 }}>
+//         <Box>
+//           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+//             <Users size={32} color="#144ae9" />
+//             <Typography variant="h4" fontWeight={700} color="text.primary">
+//               Users Management
+//             </Typography>
+//           </Box>
+//           <Typography variant="body2" color="text.secondary">
+//             Manage admins and RTCs
+//           </Typography>
+//         </Box>
+//         <Link href="/admin/users/create" style={{ textDecoration: 'none' }}>
+//           <Button 
+//             startIcon={<Plus size={20} />} 
+//             size="large"
+//             sx={{ 
+//               backgroundColor: '#144ae9',
+//               '&:hover': {
+//                 backgroundColor: '#0d3ec7'
+//               }
+//             }}
+//           >
+//             Add New User
+//           </Button>
+//         </Link>
+//       </Box>
+
+//       {/* STATS */}
+//       {stats && (
+//         <Grid container spacing={3} sx={{ mb: 4 , width: '100%'}}>
+//           <Grid item xs={12} sm={6} md={3}>
+//             <StatCard 
+//               label="Total Admins" 
+//               value={stats.totalAdmins || 0}
+//               icon={<UserCog size={28} />}
+//               color="#144ae9"
+//             />
+//           </Grid>
+//           <Grid item xs={12} sm={6} md={3}>
+//             <StatCard 
+//               label="Total RTCs" 
+//               value={stats.totalRTCs || 0}
+//               icon={<Users size={28} />}
+//               color="#144ae9"
+//             />
+//           </Grid>
+//           <Grid item xs={12} sm={6} md={3}>
+//             <StatCard 
+//               label="Active Users" 
+//               value={stats.activeCount || 0}
+//               icon={<CheckCircle size={28} />}
+//               color="#144ae9"
+//             />
+//           </Grid>
+//         </Grid>
+//       )}
+
+//       {/* FILTERS */}
+//     <Card
+//   sx={{
+//     mb: 4,
+//     border: '1px solid',
+//     borderColor: '#144ae9' + '20',
+//     p: 2,
+//   }}
+// >
+//   <Grid container spacing={3} alignItems="center">
+//     <Grid item xs={12} md={6}>
+//       <TextField
+//         label="Search"
+//         value={filters.search}
+//         onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+//         onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+//         placeholder="Search by name, email, or employee ID..."
+//         startIcon={<Search size={20} color="#144ae9" />}
+//         fullWidth
+//       />
+//     </Grid>
+
+//     <Grid item xs={12} sm={6} md={3}>
+//       <SelectField
+//         label="Role"
+//         value={filters.role}
+//         onChange={(e) => setFilters({ ...filters, role: e.target.value })}
+//         options={roleOptions}
+//         fullWidth
+//       />
+//     </Grid>
+
+//     <Grid item xs={12} sm={6} md={3}>
+//       <SelectField
+//         label="Status"
+//         value={filters.status}
+//         onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+//         options={statusOptions}
+//         fullWidth
+//       />
+//     </Grid>
+
+//     {/* Buttons — responsive layout */}
+//     <Grid item xs={12}>
+//       <Box
+//         sx={{
+//           display: 'flex',
+//           justifyContent: { xs: 'flex-start', md: 'flex-end' }, // 👈 right only on desktop
+//           flexWrap: 'wrap',
+//           gap: 2,
+//           mt: { xs: 2, md: 0 },
+//         }}
+//       >
+//         <Button
+//           onClick={handleSearch}
+//           disabled={loading}
+//           startIcon={<Filter size={18} />}
+//           sx={{
+//             backgroundColor: '#144ae9',
+//             color: '#fff',
+//             '&:hover': {
+//               backgroundColor: '#0d3ec7',
+//             },
+//           }}
+//         >
+//           Apply Filters
+//         </Button>
+
+//         <Button
+//           variant="outlined"
+//           onClick={handleReset}
+//           sx={{
+//             borderColor: '#144ae9',
+//             color: '#144ae9',
+//             '&:hover': {
+//               borderColor: '#0d3ec7',
+//               backgroundColor: '#144ae9' + '10',
+//             },
+//           }}
+//         >
+//           Reset
+//         </Button>
+//       </Box>
+//     </Grid>
+//   </Grid>
+// </Card>
+
+
+//       {/* USERS GRID */}
+//       <Card sx={{ border: '1px solid', borderColor: '#144ae9' + '20' }}>
+//         {loading ? (
+//           <div className="fixed inset-0 z-[9999]">
+//           <Loader message={"Users..."} />
+//         </div>
+//         ) : admins.length === 0 ? (
+//           <Box sx={{ textAlign: 'center', py: 8 }}>
+//             <Users size={48} color="#144ae9" style={{ marginBottom: 16, opacity: 0.5 }} />
+//             <Typography variant="body1" color="text.secondary">
+//               No users found
+//             </Typography>
+//           </Box>
+//         ) : (
+//           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+//             {admins.map((admin) => (
+//               <Card key={admin._id} elevation={0} sx={{ border: '1px solid', borderColor: '#144ae9' + '20', '&:hover': { borderColor: '#144ae9', boxShadow: 1 }, transition: 'all 0.2s' }}>
+//                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, gap: 2 }}>
+//                   {/* USER INFO */}
+//                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
+//                     <Avatar sx={{ width: 48, height: 48, bgcolor: '#144ae9', fontSize: '1.25rem', fontWeight: 700 }}>
+//                       {admin.name.charAt(0).toUpperCase()}
+//                     </Avatar>
+//                     <Box>
+//                       <Typography variant="subtitle1" fontWeight={600}>
+//                         {admin.name}
+//                       </Typography>
+//                       <Typography variant="caption" color="text.secondary">
+//                         {admin.employeeId || 'N/A'}
+//                       </Typography>
+//                     </Box>
+//                   </Box>
+
+//                   {/* ROLE & STATUS */}
+//                   <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+//                     <Chip
+//                       label={admin.role.toUpperCase()}
+//                       color={admin.role === 'admin' ? 'primary' : 'success'}
+//                       size="small"
+//                       sx={{ 
+//                         fontWeight: 600,
+//                         backgroundColor: admin.role === 'admin' ? '#144ae9' : '#144ae9' + '80',
+//                         color: 'white'
+//                       }}
+//                     />
+//                     <Chip
+//                       label={admin.status}
+//                       color={admin.status === 'active' ? 'success' : 'error'}
+//                       size="small"
+//                       icon={admin.status === 'active' ? <CheckCircle size={14} /> : <XCircle size={14} />}
+//                       onClick={() => handleStatusToggle(admin._id, admin.status)}
+//                       sx={{ 
+//                         fontWeight: 600, 
+//                         cursor: 'pointer',
+//                         backgroundColor: admin.status === 'active' ? '#144ae9' : '#d32f2f',
+//                         color: 'white'
+//                       }}
+//                     />
+//                   </Box>
+
+//                   {/* CONTACT INFO */}
+//                   <Box sx={{ display: { xs: 'none', lg: 'flex' }, flexDirection: 'column', gap: 0.5, minWidth: 200 }}>
+//                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+//                       <Mail size={14} color="#144ae9" />
+//                       <Typography variant="caption" color="#144ae9">
+//                         {admin.email}
+//                       </Typography>
+//                     </Box>
+//                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+//                       <Phone size={14} color="#144ae9" />
+//                       <Typography variant="caption" color="#144ae9">
+//                         {admin.phone}
+//                       </Typography>
+//                     </Box>
+//                   </Box>
+
+//                   {/* LAST LOGIN */}
+//                   <Box sx={{ display: { xs: 'none', md: 'block' }, minWidth: 100 }}>
+//                     <Typography variant="caption" color="#144ae9" sx={{ display: 'block' }}>
+//                       Last Login
+//                     </Typography>
+//                     <Typography variant="body2" fontWeight={500} color="#144ae9">
+//                       {admin.lastLogin ? new Date(admin.lastLogin).toLocaleDateString() : 'Never'}
+//                     </Typography>
+//                   </Box>
+
+//                   {/* ACTIONS */}
+//                   <Box sx={{ display: 'flex', gap: 1 }}>
+//                     <Link href={`/admin/users/${admin._id}`} style={{ textDecoration: 'none' }}>
+//                       <IconButton size="small" sx={{ color: '#144ae9' }}>
+//                         <Eye size={18} />
+//                       </IconButton>
+//                     </Link>
+//                     <Link href={`/admin/users/${admin._id}`} style={{ textDecoration: 'none' }}>
+//                       <IconButton size="small" sx={{ color: '#144ae9' }}>
+//                         <Edit size={18} />
+//                       </IconButton>
+//                     </Link>
+//                     <IconButton 
+//                       size="small" 
+//                       sx={{ color: '#d32f2f' }} 
+//                       onClick={() => setDeleteConfirm(admin._id)}
+//                     >
+//                       <Trash2 size={18} />
+//                     </IconButton>
+//                   </Box>
+//                 </Box>
+//               </Card>
+//             ))}
+//           </Box>
+//         )}
+//       </Card>
+
+//       {/* DELETE CONFIRMATION */}
+//       <ConfirmDialog
+//         open={!!deleteConfirm}
+//         onClose={() => setDeleteConfirm(null)}
+//         onConfirm={() => handleDelete(deleteConfirm)}
+//         title="Delete User"
+//         message="Are you sure you want to delete this user? This action cannot be undone."
+//         confirmText="Delete"
+//         cancelText="Cancel"
+//         confirmColor="error"
+//         icon={<Trash2 size={24} color="#144ae9" />}
+//       />
+//     </Box>
+//   );
+// }
 
 // 'use client'
 // import { useEffect, useState } from 'react';

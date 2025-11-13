@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo, useCallback } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { useParams, useRouter } from "next/navigation"
 import {
@@ -17,7 +17,6 @@ import {
   Grid,
   Card,
   Chip,
-  CircularProgress,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -41,8 +40,6 @@ import {
 } from "lucide-react"
 import { toast } from "react-toastify"
 import Link from "next/link"
-
-// Import your custom components
 import Button from "@/components/ui/Button"
 import TextField from "@/components/ui/TextField"
 import SelectField from "@/components/ui/SelectField"
@@ -105,7 +102,7 @@ export default function MediaDetailPage() {
     }
   }, [success, dispatch, params.id])
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     setSaving(true)
     try {
       const updateData = {
@@ -118,18 +115,18 @@ export default function MediaDetailPage() {
     } finally {
       setSaving(false)
     }
-  }
+  }, [formData, params.id, dispatch])
 
-  const handleApprove = async () => {
+  const handleApprove = useCallback(async () => {
     try {
       await dispatch(approveMedia(params.id)).unwrap()
       toast.success("Media approved successfully")
     } catch (error) {
       console.error('Approval failed:', error)
     }
-  }
+  }, [params.id, dispatch])
 
-  const handleReject = async () => {
+  const handleReject = useCallback(async () => {
     if (!rejectReason.trim()) {
       toast.error("Please provide a rejection reason")
       return
@@ -142,9 +139,9 @@ export default function MediaDetailPage() {
     } catch (error) {
       console.error('Rejection failed:', error)
     }
-  }
+  }, [params.id, rejectReason, dispatch])
 
-  const getStatusIcon = (status) => {
+  const getStatusIcon = useMemo(() => (status) => {
     switch (status) {
       case "approved":
         return <CheckCircle size={20} color="#10b981" />
@@ -153,9 +150,9 @@ export default function MediaDetailPage() {
       default:
         return <Clock size={20} color="#f59e0b" />
     }
-  }
+  }, [])
 
-  const getStatusColor = (status) => {
+  const getStatusColor = useMemo(() => (status) => {
     switch (status) {
       case "approved":
         return { backgroundColor: '#10b981', color: 'white' }
@@ -166,9 +163,9 @@ export default function MediaDetailPage() {
       default:
         return { backgroundColor: '#6b7280', color: 'white' }
     }
-  }
+  }, [])
 
-  const getCategoryColor = (category) => {
+  const getCategoryColor = useMemo(() => (category) => {
     switch (category) {
       case "heritage":
         return { backgroundColor: '#8b5cf6', color: 'white' }
@@ -183,9 +180,9 @@ export default function MediaDetailPage() {
       default:
         return { backgroundColor: '#6b7280', color: 'white' }
     }
-  }
+  }, [])
 
-  if (loading) {
+  if (loading && !media) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
         <Loader />
@@ -211,16 +208,23 @@ export default function MediaDetailPage() {
   }
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1200, margin: '0 auto' }}>
+    <Box sx={{ p: { xs: 2, sm: 2, md: 3 }, maxWidth: 1200, margin: '0 auto' }}>
       {/* HEADER */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4, flexWrap: 'wrap', gap: 2 }}>
+      <Box sx={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between', 
+        mb: { xs: 3, sm: 4 }, 
+        flexWrap: 'wrap', 
+        gap: 2 
+      }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Link href="/admin/media" style={{ textDecoration: 'none' }}>
             <Button 
               variant="outlined" 
               sx={{ 
                 minWidth: 'auto', 
-                p: 1.5,
+                p: { xs: 1, sm: 1.5 },
                 borderColor: '#144ae9',
                 color: '#144ae9',
                 '&:hover': {
@@ -229,37 +233,43 @@ export default function MediaDetailPage() {
                 }
               }}
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={18} className="sm:w-5 sm:h-5" />
             </Button>
           </Link>
           <Box>
-            <Typography variant="h4" fontWeight="bold" color="text.primary">
+            <Typography variant="h4" fontWeight="bold" color="text.primary" sx={{ fontSize: { xs: '1.25rem', sm: '2rem' } }}>
               Media Details
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
               Manage and review media content
             </Typography>
           </Box>
         </Box>
 
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}>
           {media.status === "pending" && (
             <>
               <Button
-                startIcon={<CheckCircle size={18} />}
+                startIcon={<CheckCircle size={16} />}
                 onClick={handleApprove}
+                fullWidth={false}
                 sx={{
                   backgroundColor: '#10b981',
+                  flex: { xs: 1, sm: 'unset' },
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
                   '&:hover': { backgroundColor: '#059669' }
                 }}
               >
                 Approve
               </Button>
               <Button
-                startIcon={<XCircle size={18} />}
+                startIcon={<XCircle size={16} />}
                 onClick={() => setOpenRejectDialog(true)}
+                fullWidth={false}
                 sx={{
                   backgroundColor: '#ef4444',
+                  flex: { xs: 1, sm: 'unset' },
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
                   '&:hover': { backgroundColor: '#dc2626' }
                 }}
               >
@@ -269,10 +279,12 @@ export default function MediaDetailPage() {
           )}
           {!edit ? (
             <Button
-              startIcon={<Edit size={18} />}
+              startIcon={<Edit size={16} />}
               onClick={() => setEdit(true)}
+              fullWidth={media.status === "pending"}
               sx={{
                 backgroundColor: '#144ae9',
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
                 '&:hover': { backgroundColor: '#0d3ec7' }
               }}
             >
@@ -281,23 +293,29 @@ export default function MediaDetailPage() {
           ) : (
             <>
               <Button
-                startIcon={saving ? <Loader /> : <Save size={18} />}
+                startIcon={saving ? null : <Save size={16} />}
                 onClick={handleSave}
                 disabled={saving}
+                fullWidth={false}
                 sx={{
                   backgroundColor: '#10b981',
+                  flex: { xs: 1, sm: 'unset' },
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
                   '&:hover': { backgroundColor: '#059669' }
                 }}
               >
-                {saving ? 'Saving...' : 'Save'}
+                {saving ? <Loader /> : 'Save'}
               </Button>
               <Button
-                startIcon={<X size={18} />}
+                startIcon={<X size={16} />}
                 onClick={() => setEdit(false)}
                 variant="outlined"
+                fullWidth={false}
                 sx={{
                   borderColor: '#6b7280',
                   color: '#6b7280',
+                  flex: { xs: 1, sm: 'unset' },
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
                   '&:hover': {
                     borderColor: '#374151',
                     backgroundColor: '#6b728010'
@@ -311,7 +329,7 @@ export default function MediaDetailPage() {
         </Box>
       </Box>
 
-      <Grid container spacing={3}>
+      <Grid container spacing={{ xs: 2, sm: 3 }}>
         {/* MEDIA PREVIEW */}
         <Grid item xs={12} lg={8}>
           <Card sx={{ border: '1px solid #144ae920', overflow: 'hidden' }}>
@@ -338,16 +356,16 @@ export default function MediaDetailPage() {
                 />
               )}
               
-              {/* BADGES OVERLAY */}
-              <Box sx={{ position: 'absolute', top: 12, left: 12, display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Box sx={{ position: 'absolute', top: { xs: 8, sm: 12 }, left: { xs: 8, sm: 12 }, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                 <Chip
-                  icon={media.fileType === "video" ? <Video size={14} /> : <ImageIcon size={14} />}
+                  icon={media.fileType === "video" ? <Video size={12} /> : <ImageIcon size={12} />}
                   label={media.fileType}
                   size="small"
                   sx={{
                     backgroundColor: media.fileType === 'video' ? '#ef4444' : '#3b82f6',
                     color: 'white',
-                    fontWeight: 600
+                    fontWeight: 600,
+                    fontSize: { xs: '0.65rem', sm: '0.75rem' }
                   }}
                 />
                 <Chip
@@ -356,19 +374,20 @@ export default function MediaDetailPage() {
                   size="small"
                   sx={{
                     ...getStatusColor(media.status),
-                    fontWeight: 600
+                    fontWeight: 600,
+                    fontSize: { xs: '0.65rem', sm: '0.75rem' }
                   }}
                 />
               </Box>
 
-              {/* CATEGORY BADGE */}
-              <Box sx={{ position: 'absolute', top: 12, right: 12 }}>
+              <Box sx={{ position: 'absolute', top: { xs: 8, sm: 12 }, right: { xs: 8, sm: 12 } }}>
                 <Chip
                   label={media.category}
                   size="small"
                   sx={{
                     ...getCategoryColor(media.category),
-                    fontWeight: 600
+                    fontWeight: 600,
+                    fontSize: { xs: '0.65rem', sm: '0.75rem' }
                   }}
                 />
               </Box>
@@ -378,33 +397,33 @@ export default function MediaDetailPage() {
 
         {/* SIDEBAR INFO */}
         <Grid item xs={12} lg={4}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 } }}>
             {/* QUICK INFO */}
-            <Card sx={{ p: 3, border: '1px solid #144ae920' }}>
-              <Typography variant="h6" fontWeight="bold" gutterBottom>
+            <Card sx={{ p: { xs: 2, sm: 3 }, border: '1px solid #144ae920' }}>
+              <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                 Quick Info
               </Typography>
               
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.5, sm: 2 } }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <User size={18} color="#144ae9" />
+                  <User size={16} color="#144ae9" className="sm:w-5 sm:h-5" />
                   <Box>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
                       Uploaded By
                     </Typography>
-                    <Typography variant="body1" fontWeight={500}>
+                    <Typography variant="body1" fontWeight={500} sx={{ fontSize: { xs: '0.85rem', sm: '1rem' } }}>
                       {media.uploadedBy?.name || 'N/A'}
                     </Typography>
                   </Box>
                 </Box>
 
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Calendar size={18} color="#144ae9" />
+                  <Calendar size={16} color="#144ae9" className="sm:w-5 sm:h-5" />
                   <Box>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
                       Upload Date
                     </Typography>
-                    <Typography variant="body1" fontWeight={500}>
+                    <Typography variant="body1" fontWeight={500} sx={{ fontSize: { xs: '0.85rem', sm: '1rem' } }}>
                       {new Date(media.createdAt).toLocaleDateString()}
                     </Typography>
                   </Box>
@@ -412,12 +431,12 @@ export default function MediaDetailPage() {
 
                 {media.captureDate && (
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Calendar size={18} color="#144ae9" />
+                    <Calendar size={16} color="#144ae9" className="sm:w-5 sm:h-5" />
                     <Box>
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
                         Capture Date
                       </Typography>
-                      <Typography variant="body1" fontWeight={500}>
+                      <Typography variant="body1" fontWeight={500} sx={{ fontSize: { xs: '0.85rem', sm: '1rem' } }}>
                         {new Date(media.captureDate).toLocaleDateString()}
                       </Typography>
                     </Box>
@@ -426,12 +445,12 @@ export default function MediaDetailPage() {
 
                 {(media.district || media.gramPanchayat) && (
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <MapPin size={18} color="#144ae9" />
+                    <MapPin size={16} color="#144ae9" className="sm:w-5 sm:h-5" />
                     <Box>
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
                         Location
                       </Typography>
-                      <Typography variant="body1" fontWeight={500}>
+                      <Typography variant="body1" fontWeight={500} sx={{ fontSize: { xs: '0.85rem', sm: '1rem' } }}>
                         {media.gramPanchayat?.name 
                           ? `${media.gramPanchayat.name}, ${media.district?.name}`
                           : media.district?.name || 'N/A'
@@ -445,10 +464,10 @@ export default function MediaDetailPage() {
 
             {/* TAGS */}
             {media.tags && media.tags.length > 0 && (
-              <Card sx={{ p: 3, border: '1px solid #144ae920' }}>
+              <Card sx={{ p: { xs: 2, sm: 3 }, border: '1px solid #144ae920' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                  <Tag size={18} color="#144ae9" />
-                  <Typography variant="h6" fontWeight="bold">
+                  <Tag size={16} color="#144ae9" className="sm:w-5 sm:h-5" />
+                  <Typography variant="h6" fontWeight="bold" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                     Tags
                   </Typography>
                 </Box>
@@ -462,7 +481,8 @@ export default function MediaDetailPage() {
                         backgroundColor: '#144ae910',
                         color: '#144ae9',
                         border: '1px solid #144ae920',
-                        fontWeight: 500
+                        fontWeight: 500,
+                        fontSize: { xs: '0.65rem', sm: '0.75rem' }
                       }}
                     />
                   ))}
@@ -474,12 +494,12 @@ export default function MediaDetailPage() {
 
         {/* MEDIA INFORMATION FORM */}
         <Grid item xs={12}>
-          <Card sx={{ p: 3, border: '1px solid #144ae920' }}>
-            <Typography variant="h5" fontWeight="bold" gutterBottom>
+          <Card sx={{ p: { xs: 2, sm: 3 }, border: '1px solid #144ae920' }}>
+            <Typography variant="h5" fontWeight="bold" gutterBottom sx={{ fontSize: { xs: '1.1rem', sm: '1.5rem' } }}>
               {edit ? "Edit Media Information" : "Media Information"}
             </Typography>
 
-            <Grid container spacing={3}>
+            <Grid container spacing={{ xs: 2, sm: 3 }}>
               <Grid item xs={12}>
                 <TextField
                   label="Title"
@@ -519,7 +539,7 @@ export default function MediaDetailPage() {
                   value={formData.photographer || ""}
                   onChange={(e) => setFormData({ ...formData, photographer: e.target.value })}
                   disabled={!edit}
-                  startIcon={<User size={20} color="#144ae9" />}
+                  startIcon={<User size={18} color="#144ae9" />}
                   fullWidth
                 />
               </Grid>
@@ -532,9 +552,7 @@ export default function MediaDetailPage() {
                   onChange={(e) => setFormData({ ...formData, captureDate: e.target.value })}
                   disabled={!edit}
                   fullWidth
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
+                  InputLabelProps={{ shrink: true }}
                 />
               </Grid>
 
@@ -544,7 +562,7 @@ export default function MediaDetailPage() {
                   value={formData.tags || ""}
                   onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
                   disabled={!edit}
-                  startIcon={<Tag size={20} color="#144ae9" />}
+                  startIcon={<Tag size={18} color="#144ae9" />}
                   fullWidth
                   helperText="Separate tags with commas"
                 />
@@ -560,17 +578,15 @@ export default function MediaDetailPage() {
         onClose={() => setOpenRejectDialog(false)} 
         maxWidth="sm" 
         fullWidth
-        PaperProps={{
-          sx: { borderRadius: 2 }
-        }}
+        PaperProps={{ sx: { borderRadius: 2, m: 2 } }}
       >
         <DialogTitle>
-          <Typography variant="h6" fontWeight="bold">
+          <Typography variant="h6" fontWeight="bold" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
             Reject Media
           </Typography>
         </DialogTitle>
         <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
             Please provide a reason for rejecting this media:
           </Typography>
           <MuiTextField
@@ -583,13 +599,14 @@ export default function MediaDetailPage() {
             placeholder="Enter the reason for rejection..."
           />
         </DialogContent>
-        <DialogActions sx={{ p: 3, gap: 1 }}>
+        <DialogActions sx={{ p: { xs: 2, sm: 3 }, gap: 1 }}>
           <Button
             onClick={() => setOpenRejectDialog(false)}
             variant="outlined"
             sx={{
               borderColor: '#6b7280',
               color: '#6b7280',
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
               '&:hover': {
                 borderColor: '#374151',
                 backgroundColor: '#6b728010'
@@ -602,6 +619,7 @@ export default function MediaDetailPage() {
             onClick={handleReject}
             sx={{
               backgroundColor: '#ef4444',
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
               '&:hover': { backgroundColor: '#dc2626' }
             }}
           >
@@ -611,7 +629,620 @@ export default function MediaDetailPage() {
       </Dialog>
     </Box>
   )
-}
+}// "use client"
+
+// import { useEffect, useState } from "react"
+// import { useDispatch, useSelector } from "react-redux"
+// import { useParams, useRouter } from "next/navigation"
+// import {
+//   fetchMediaById,
+//   updateMedia,
+//   approveMedia,
+//   rejectMedia,
+//   clearError,
+//   clearSuccess,
+// } from "@/redux/slices/mediaSlice.js"
+// import {
+//   Box,
+//   Typography,
+//   Grid,
+//   Card,
+//   Chip,
+//   CircularProgress,
+//   Dialog,
+//   DialogTitle,
+//   DialogContent,
+//   DialogActions,
+//   TextField as MuiTextField,
+// } from "@mui/material"
+// import {
+//   ArrowLeft,
+//   Edit,
+//   Save,
+//   X,
+//   CheckCircle,
+//   XCircle,
+//   Clock,
+//   MapPin,
+//   User,
+//   Calendar,
+//   Tag,
+//   Image as ImageIcon,
+//   Video,
+// } from "lucide-react"
+// import { toast } from "react-toastify"
+// import Link from "next/link"
+
+// // Import your custom components
+// import Button from "@/components/ui/Button"
+// import TextField from "@/components/ui/TextField"
+// import SelectField from "@/components/ui/SelectField"
+// import Loader from "@/components/ui/Loader"
+
+// const CATEGORIES = [
+//   { value: "heritage", label: "Heritage" },
+//   { value: "natural", label: "Natural" },
+//   { value: "cultural", label: "Cultural" },
+//   { value: "event", label: "Event" },
+//   { value: "festival", label: "Festival" }
+// ]
+
+// export default function MediaDetailPage() {
+//   const params = useParams()
+//   const router = useRouter()
+//   const dispatch = useDispatch()
+//   const { selectedMedia: media, loading, error, success } = useSelector((state) => state.media)
+
+//   const [edit, setEdit] = useState(false)
+//   const [formData, setFormData] = useState({})
+//   const [openRejectDialog, setOpenRejectDialog] = useState(false)
+//   const [rejectReason, setRejectReason] = useState("")
+//   const [saving, setSaving] = useState(false)
+
+//   useEffect(() => {
+//     if (params.id) {
+//       dispatch(fetchMediaById(params.id))
+//     }
+//   }, [dispatch, params.id])
+
+//   useEffect(() => {
+//     if (media) {
+//       setFormData({
+//         title: media.title || "",
+//         description: media.description || "",
+//         category: media.category || "",
+//         photographer: media.photographer || "",
+//         tags: media.tags?.join(", ") || "",
+//         captureDate: media.captureDate ? new Date(media.captureDate).toISOString().split('T')[0] : "",
+//       })
+//     }
+//   }, [media])
+
+//   useEffect(() => {
+//     if (error) {
+//       toast.error(error?.message || "An error occurred")
+//       dispatch(clearError())
+//     }
+//   }, [error, dispatch])
+
+//   useEffect(() => {
+//     if (success) {
+//       toast.success("Action completed successfully")
+//       dispatch(clearSuccess())
+//       setEdit(false)
+//       if (params.id) {
+//         dispatch(fetchMediaById(params.id))
+//       }
+//     }
+//   }, [success, dispatch, params.id])
+
+//   const handleSave = async () => {
+//     setSaving(true)
+//     try {
+//       const updateData = {
+//         ...formData,
+//         tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : []
+//       }
+//       await dispatch(updateMedia({ id: params.id, mediaData: updateData })).unwrap()
+//     } catch (error) {
+//       console.error('Update failed:', error)
+//     } finally {
+//       setSaving(false)
+//     }
+//   }
+
+//   const handleApprove = async () => {
+//     try {
+//       await dispatch(approveMedia(params.id)).unwrap()
+//       toast.success("Media approved successfully")
+//     } catch (error) {
+//       console.error('Approval failed:', error)
+//     }
+//   }
+
+//   const handleReject = async () => {
+//     if (!rejectReason.trim()) {
+//       toast.error("Please provide a rejection reason")
+//       return
+//     }
+//     try {
+//       await dispatch(rejectMedia({ id: params.id, reason: rejectReason })).unwrap()
+//       setOpenRejectDialog(false)
+//       setRejectReason("")
+//       toast.success("Media rejected successfully")
+//     } catch (error) {
+//       console.error('Rejection failed:', error)
+//     }
+//   }
+
+//   const getStatusIcon = (status) => {
+//     switch (status) {
+//       case "approved":
+//         return <CheckCircle size={20} color="#10b981" />
+//       case "rejected":
+//         return <XCircle size={20} color="#ef4444" />
+//       default:
+//         return <Clock size={20} color="#f59e0b" />
+//     }
+//   }
+
+//   const getStatusColor = (status) => {
+//     switch (status) {
+//       case "approved":
+//         return { backgroundColor: '#10b981', color: 'white' }
+//       case "rejected":
+//         return { backgroundColor: '#ef4444', color: 'white' }
+//       case "pending":
+//         return { backgroundColor: '#f59e0b', color: 'white' }
+//       default:
+//         return { backgroundColor: '#6b7280', color: 'white' }
+//     }
+//   }
+
+//   const getCategoryColor = (category) => {
+//     switch (category) {
+//       case "heritage":
+//         return { backgroundColor: '#8b5cf6', color: 'white' }
+//       case "natural":
+//         return { backgroundColor: '#10b981', color: 'white' }
+//       case "cultural":
+//         return { backgroundColor: '#f59e0b', color: 'white' }
+//       case "event":
+//         return { backgroundColor: '#ef4444', color: 'white' }
+//       case "festival":
+//         return { backgroundColor: '#3b82f6', color: 'white' }
+//       default:
+//         return { backgroundColor: '#6b7280', color: 'white' }
+//     }
+//   }
+
+//   if (loading) {
+//     return (
+//       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+//         <Loader />
+//       </Box>
+//     )
+//   }
+
+//   if (!media) {
+//     return (
+//       <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1200, margin: '0 auto' }}>
+//         <Card sx={{ p: 4, textAlign: 'center' }}>
+//           <Typography variant="h6" color="text.secondary">
+//             Media not found
+//           </Typography>
+//           <Link href="/admin/media" style={{ textDecoration: 'none' }}>
+//             <Button sx={{ mt: 2 }}>
+//               Back to Media
+//             </Button>
+//           </Link>
+//         </Card>
+//       </Box>
+//     )
+//   }
+
+//   return (
+//     <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1200, margin: '0 auto' }}>
+//       {/* HEADER */}
+//       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4, flexWrap: 'wrap', gap: 2 }}>
+//         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+//           <Link href="/admin/media" style={{ textDecoration: 'none' }}>
+//             <Button 
+//               variant="outlined" 
+//               sx={{ 
+//                 minWidth: 'auto', 
+//                 p: 1.5,
+//                 borderColor: '#144ae9',
+//                 color: '#144ae9',
+//                 '&:hover': {
+//                   borderColor: '#0d3ec7',
+//                   backgroundColor: '#144ae910'
+//                 }
+//               }}
+//             >
+//               <ArrowLeft size={20} />
+//             </Button>
+//           </Link>
+//           <Box>
+//             <Typography variant="h4" fontWeight="bold" color="text.primary">
+//               Media Details
+//             </Typography>
+//             <Typography variant="body2" color="text.secondary">
+//               Manage and review media content
+//             </Typography>
+//           </Box>
+//         </Box>
+
+//         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+//           {media.status === "pending" && (
+//             <>
+//               <Button
+//                 startIcon={<CheckCircle size={18} />}
+//                 onClick={handleApprove}
+//                 sx={{
+//                   backgroundColor: '#10b981',
+//                   '&:hover': { backgroundColor: '#059669' }
+//                 }}
+//               >
+//                 Approve
+//               </Button>
+//               <Button
+//                 startIcon={<XCircle size={18} />}
+//                 onClick={() => setOpenRejectDialog(true)}
+//                 sx={{
+//                   backgroundColor: '#ef4444',
+//                   '&:hover': { backgroundColor: '#dc2626' }
+//                 }}
+//               >
+//                 Reject
+//               </Button>
+//             </>
+//           )}
+//           {!edit ? (
+//             <Button
+//               startIcon={<Edit size={18} />}
+//               onClick={() => setEdit(true)}
+//               sx={{
+//                 backgroundColor: '#144ae9',
+//                 '&:hover': { backgroundColor: '#0d3ec7' }
+//               }}
+//             >
+//               Edit
+//             </Button>
+//           ) : (
+//             <>
+//               <Button
+//                 startIcon={saving ? <Loader /> : <Save size={18} />}
+//                 onClick={handleSave}
+//                 disabled={saving}
+//                 sx={{
+//                   backgroundColor: '#10b981',
+//                   '&:hover': { backgroundColor: '#059669' }
+//                 }}
+//               >
+//                 {saving ? 'Saving...' : 'Save'}
+//               </Button>
+//               <Button
+//                 startIcon={<X size={18} />}
+//                 onClick={() => setEdit(false)}
+//                 variant="outlined"
+//                 sx={{
+//                   borderColor: '#6b7280',
+//                   color: '#6b7280',
+//                   '&:hover': {
+//                     borderColor: '#374151',
+//                     backgroundColor: '#6b728010'
+//                   }
+//                 }}
+//               >
+//                 Cancel
+//               </Button>
+//             </>
+//           )}
+//         </Box>
+//       </Box>
+
+//       <Grid container spacing={3}>
+//         {/* MEDIA PREVIEW */}
+//         <Grid item xs={12} lg={8}>
+//           <Card sx={{ border: '1px solid #144ae920', overflow: 'hidden' }}>
+//             <Box sx={{ position: 'relative', backgroundColor: '#144ae905' }}>
+//               {media.fileType === "video" ? (
+//                 <video
+//                   src={media.fileUrl}
+//                   controls
+//                   style={{
+//                     width: '100%',
+//                     maxHeight: '500px',
+//                     objectFit: 'contain'
+//                   }}
+//                 />
+//               ) : (
+//                 <img
+//                   src={media.fileUrl}
+//                   alt={media.title}
+//                   style={{
+//                     width: '100%',
+//                     maxHeight: '500px',
+//                     objectFit: 'contain'
+//                   }}
+//                 />
+//               )}
+              
+//               {/* BADGES OVERLAY */}
+//               <Box sx={{ position: 'absolute', top: 12, left: 12, display: 'flex', flexDirection: 'column', gap: 1 }}>
+//                 <Chip
+//                   icon={media.fileType === "video" ? <Video size={14} /> : <ImageIcon size={14} />}
+//                   label={media.fileType}
+//                   size="small"
+//                   sx={{
+//                     backgroundColor: media.fileType === 'video' ? '#ef4444' : '#3b82f6',
+//                     color: 'white',
+//                     fontWeight: 600
+//                   }}
+//                 />
+//                 <Chip
+//                   icon={getStatusIcon(media.status)}
+//                   label={media.status}
+//                   size="small"
+//                   sx={{
+//                     ...getStatusColor(media.status),
+//                     fontWeight: 600
+//                   }}
+//                 />
+//               </Box>
+
+//               {/* CATEGORY BADGE */}
+//               <Box sx={{ position: 'absolute', top: 12, right: 12 }}>
+//                 <Chip
+//                   label={media.category}
+//                   size="small"
+//                   sx={{
+//                     ...getCategoryColor(media.category),
+//                     fontWeight: 600
+//                   }}
+//                 />
+//               </Box>
+//             </Box>
+//           </Card>
+//         </Grid>
+
+//         {/* SIDEBAR INFO */}
+//         <Grid item xs={12} lg={4}>
+//           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+//             {/* QUICK INFO */}
+//             <Card sx={{ p: 3, border: '1px solid #144ae920' }}>
+//               <Typography variant="h6" fontWeight="bold" gutterBottom>
+//                 Quick Info
+//               </Typography>
+              
+//               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+//                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+//                   <User size={18} color="#144ae9" />
+//                   <Box>
+//                     <Typography variant="body2" color="text.secondary">
+//                       Uploaded By
+//                     </Typography>
+//                     <Typography variant="body1" fontWeight={500}>
+//                       {media.uploadedBy?.name || 'N/A'}
+//                     </Typography>
+//                   </Box>
+//                 </Box>
+
+//                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+//                   <Calendar size={18} color="#144ae9" />
+//                   <Box>
+//                     <Typography variant="body2" color="text.secondary">
+//                       Upload Date
+//                     </Typography>
+//                     <Typography variant="body1" fontWeight={500}>
+//                       {new Date(media.createdAt).toLocaleDateString()}
+//                     </Typography>
+//                   </Box>
+//                 </Box>
+
+//                 {media.captureDate && (
+//                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+//                     <Calendar size={18} color="#144ae9" />
+//                     <Box>
+//                       <Typography variant="body2" color="text.secondary">
+//                         Capture Date
+//                       </Typography>
+//                       <Typography variant="body1" fontWeight={500}>
+//                         {new Date(media.captureDate).toLocaleDateString()}
+//                       </Typography>
+//                     </Box>
+//                   </Box>
+//                 )}
+
+//                 {(media.district || media.gramPanchayat) && (
+//                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+//                     <MapPin size={18} color="#144ae9" />
+//                     <Box>
+//                       <Typography variant="body2" color="text.secondary">
+//                         Location
+//                       </Typography>
+//                       <Typography variant="body1" fontWeight={500}>
+//                         {media.gramPanchayat?.name 
+//                           ? `${media.gramPanchayat.name}, ${media.district?.name}`
+//                           : media.district?.name || 'N/A'
+//                         }
+//                       </Typography>
+//                     </Box>
+//                   </Box>
+//                 )}
+//               </Box>
+//             </Card>
+
+//             {/* TAGS */}
+//             {media.tags && media.tags.length > 0 && (
+//               <Card sx={{ p: 3, border: '1px solid #144ae920' }}>
+//                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+//                   <Tag size={18} color="#144ae9" />
+//                   <Typography variant="h6" fontWeight="bold">
+//                     Tags
+//                   </Typography>
+//                 </Box>
+//                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+//                   {media.tags.map((tag, index) => (
+//                     <Chip
+//                       key={index}
+//                       label={tag}
+//                       size="small"
+//                       sx={{
+//                         backgroundColor: '#144ae910',
+//                         color: '#144ae9',
+//                         border: '1px solid #144ae920',
+//                         fontWeight: 500
+//                       }}
+//                     />
+//                   ))}
+//                 </Box>
+//               </Card>
+//             )}
+//           </Box>
+//         </Grid>
+
+//         {/* MEDIA INFORMATION FORM */}
+//         <Grid item xs={12}>
+//           <Card sx={{ p: 3, border: '1px solid #144ae920' }}>
+//             <Typography variant="h5" fontWeight="bold" gutterBottom>
+//               {edit ? "Edit Media Information" : "Media Information"}
+//             </Typography>
+
+//             <Grid container spacing={3}>
+//               <Grid item xs={12}>
+//                 <TextField
+//                   label="Title"
+//                   value={formData.title || ""}
+//                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+//                   disabled={!edit}
+//                   fullWidth
+//                 />
+//               </Grid>
+
+//               <Grid item xs={12}>
+//                 <TextField
+//                   label="Description"
+//                   value={formData.description || ""}
+//                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+//                   disabled={!edit}
+//                   multiline
+//                   rows={4}
+//                   fullWidth
+//                 />
+//               </Grid>
+
+//               <Grid item xs={12} sm={6}>
+//                 <SelectField
+//                   label="Category"
+//                   value={formData.category || ""}
+//                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+//                   options={CATEGORIES}
+//                   disabled={!edit}
+//                   fullWidth
+//                 />
+//               </Grid>
+
+//               <Grid item xs={12} sm={6}>
+//                 <TextField
+//                   label="Photographer"
+//                   value={formData.photographer || ""}
+//                   onChange={(e) => setFormData({ ...formData, photographer: e.target.value })}
+//                   disabled={!edit}
+//                   startIcon={<User size={20} color="#144ae9" />}
+//                   fullWidth
+//                 />
+//               </Grid>
+
+//               <Grid item xs={12} sm={6}>
+//                 <MuiTextField
+//                   label="Capture Date"
+//                   type="date"
+//                   value={formData.captureDate || ""}
+//                   onChange={(e) => setFormData({ ...formData, captureDate: e.target.value })}
+//                   disabled={!edit}
+//                   fullWidth
+//                   InputLabelProps={{
+//                     shrink: true,
+//                   }}
+//                 />
+//               </Grid>
+
+//               <Grid item xs={12} sm={6}>
+//                 <TextField
+//                   label="Tags (comma separated)"
+//                   value={formData.tags || ""}
+//                   onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+//                   disabled={!edit}
+//                   startIcon={<Tag size={20} color="#144ae9" />}
+//                   fullWidth
+//                   helperText="Separate tags with commas"
+//                 />
+//               </Grid>
+//             </Grid>
+//           </Card>
+//         </Grid>
+//       </Grid>
+
+//       {/* REJECT DIALOG */}
+//       <Dialog 
+//         open={openRejectDialog} 
+//         onClose={() => setOpenRejectDialog(false)} 
+//         maxWidth="sm" 
+//         fullWidth
+//         PaperProps={{
+//           sx: { borderRadius: 2 }
+//         }}
+//       >
+//         <DialogTitle>
+//           <Typography variant="h6" fontWeight="bold">
+//             Reject Media
+//           </Typography>
+//         </DialogTitle>
+//         <DialogContent>
+//           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+//             Please provide a reason for rejecting this media:
+//           </Typography>
+//           <MuiTextField
+//             fullWidth
+//             label="Rejection Reason"
+//             value={rejectReason}
+//             onChange={(e) => setRejectReason(e.target.value)}
+//             multiline
+//             rows={4}
+//             placeholder="Enter the reason for rejection..."
+//           />
+//         </DialogContent>
+//         <DialogActions sx={{ p: 3, gap: 1 }}>
+//           <Button
+//             onClick={() => setOpenRejectDialog(false)}
+//             variant="outlined"
+//             sx={{
+//               borderColor: '#6b7280',
+//               color: '#6b7280',
+//               '&:hover': {
+//                 borderColor: '#374151',
+//                 backgroundColor: '#6b728010'
+//               }
+//             }}
+//           >
+//             Cancel
+//           </Button>
+//           <Button
+//             onClick={handleReject}
+//             sx={{
+//               backgroundColor: '#ef4444',
+//               '&:hover': { backgroundColor: '#dc2626' }
+//             }}
+//           >
+//             Reject Media
+//           </Button>
+//         </DialogActions>
+//       </Dialog>
+//     </Box>
+//   )
+// }
 
 //  "use client"
 

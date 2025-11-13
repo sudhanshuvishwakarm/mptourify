@@ -37,7 +37,7 @@ export default function HomeFooter() {
 
   const footerLinks = [
     { label: 'Home', href: '/' },
-    { label: 'Districts', href: '/mera-pradesh' },
+    { label: 'Districts', href: '/districts' },
     { label: 'Panchayats', href: '/panchayats' },
     { label: 'Gallery', href: '/gallery' },
     { label: 'News', href: '/news' }

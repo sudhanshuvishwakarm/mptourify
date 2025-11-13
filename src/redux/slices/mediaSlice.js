@@ -1,15 +1,15 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 // UPLOAD MEDIA
 export const uploadMedia = createAsyncThunk(
     'media/uploadMedia',
     async (formData, { rejectWithValue }) => {
         try {
             const res = await axios.post('/api/media/upload', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
+                headers: { 'Content-Type': 'multipart/form-data' }
             });
             return res.data;
         } catch (error) {
@@ -18,27 +18,42 @@ export const uploadMedia = createAsyncThunk(
     }
 );
 
-// FETCH ALL MEDIA
+// FETCH ALL MEDIA with caching
 export const fetchMedia = createAsyncThunk(
     'media/fetchMedia',
-    async (params = {}, { rejectWithValue }) => {
+    async (params = {}, { rejectWithValue, getState }) => {
+        const state = getState().media;
+        const now = Date.now();
+        const cacheKey = JSON.stringify(params);
+        
+        if (state.mediaCache[cacheKey] && (now - state.mediaCache[cacheKey].lastFetched < CACHE_DURATION)) {
+            return { ...state.mediaCache[cacheKey].data, fromCache: true };
+        }
+        
         try {
             const queryString = new URLSearchParams(params).toString();
             const res = await axios.get(`/api/media?${queryString}`);
-            return res.data;
+            return { ...res.data, fromCache: false, cacheKey };
         } catch (error) {
             return rejectWithValue(error.response?.data || error.message);
         }
     }
 );
 
-// FETCH MEDIA BY ID
+// FETCH MEDIA BY ID with caching
 export const fetchMediaById = createAsyncThunk(
     'media/fetchMediaById',
-    async (id, { rejectWithValue }) => {
+    async (id, { rejectWithValue, getState }) => {
+        const state = getState().media;
+        const now = Date.now();
+        
+        if (state.singleMediaCache[id] && (now - state.singleMediaCache[id].lastFetched < CACHE_DURATION)) {
+            return { media: state.singleMediaCache[id].data, fromCache: true };
+        }
+        
         try {
             const res = await axios.get(`/api/media/${id}`);
-            return res.data;
+            return { ...res.data, fromCache: false, id };
         } catch (error) {
             return rejectWithValue(error.response?.data || error.message);
         }
@@ -51,7 +66,7 @@ export const updateMedia = createAsyncThunk(
     async ({ id, mediaData }, { rejectWithValue }) => {
         try {
             const res = await axios.put(`/api/media/${id}`, mediaData);
-            return res.data;
+            return { ...res.data, id };
         } catch (error) {
             return rejectWithValue(error.response?.data || error.message);
         }
@@ -64,7 +79,7 @@ export const deleteMedia = createAsyncThunk(
     async (id, { rejectWithValue }) => {
         try {
             const res = await axios.delete(`/api/media/${id}`);
-            return res.data;
+            return { ...res.data, mediaId: id };
         } catch (error) {
             return rejectWithValue(error.response?.data || error.message);
         }
@@ -119,7 +134,7 @@ export const approveMedia = createAsyncThunk(
     async (id, { rejectWithValue }) => {
         try {
             const res = await axios.put(`/api/media/${id}/approve`);
-            return res.data;
+            return { ...res.data, id };
         } catch (error) {
             return rejectWithValue(error.response?.data || error.message);
         }
@@ -132,7 +147,7 @@ export const rejectMedia = createAsyncThunk(
     async ({ id, reason }, { rejectWithValue }) => {
         try {
             const res = await axios.put(`/api/media/${id}/reject`, { reason });
-            return res.data;
+            return { ...res.data, id };
         } catch (error) {
             return rejectWithValue(error.response?.data || error.message);
         }
@@ -163,6 +178,9 @@ const initialState = {
     currentPage: 1,
     totalPages: 1,
     stats: null,
+    lastFetched: null,
+    mediaCache: {},
+    singleMediaCache: {},
 };
 
 const mediaSlice = createSlice({
@@ -182,9 +200,16 @@ const mediaSlice = createSlice({
             state.loading = false;
             state.uploadLoading = false;
             state.success = false;
+            state.mediaCache = {};
+            state.singleMediaCache = {};
         },
         setCurrentPage: (state, action) => {
             state.currentPage = action.payload;
+        },
+        clearCache: (state) => {
+            state.mediaCache = {};
+            state.singleMediaCache = {};
+            state.lastFetched = null;
         }
     },
     extraReducers: (builder) => {
@@ -198,7 +223,11 @@ const mediaSlice = createSlice({
             .addCase(uploadMedia.fulfilled, (state, action) => {
                 state.uploadLoading = false;
                 state.success = true;
-                state.media.unshift(action.payload.media);
+                if (action.payload.media) {
+                    state.media.unshift(action.payload.media);
+                    state.totalMedia += 1;
+                }
+                state.mediaCache = {};
             })
             .addCase(uploadMedia.rejected, (state, action) => {
                 state.uploadLoading = false;
@@ -207,7 +236,9 @@ const mediaSlice = createSlice({
 
             // FETCH ALL MEDIA
             .addCase(fetchMedia.pending, (state) => {
-                state.loading = true;
+                if (!state.media.length) {
+                    state.loading = true;
+                }
                 state.error = null;
             })
             .addCase(fetchMedia.fulfilled, (state, action) => {
@@ -217,6 +248,23 @@ const mediaSlice = createSlice({
                 state.currentPage = action.payload.currentPage || 1;
                 state.totalPages = action.payload.totalPages || 1;
                 state.stats = action.payload.stats;
+                
+                if (!action.payload.fromCache && action.payload.cacheKey) {
+                    state.mediaCache[action.payload.cacheKey] = {
+                        data: {
+                            media: action.payload.media,
+                            totalMedia: action.payload.totalMedia,
+                            currentPage: action.payload.currentPage,
+                            totalPages: action.payload.totalPages,
+                            stats: action.payload.stats
+                        },
+                        lastFetched: Date.now()
+                    };
+                }
+                
+                if (!action.payload.fromCache) {
+                    state.lastFetched = Date.now();
+                }
             })
             .addCase(fetchMedia.rejected, (state, action) => {
                 state.loading = false;
@@ -225,11 +273,20 @@ const mediaSlice = createSlice({
 
             // FETCH MEDIA BY ID
             .addCase(fetchMediaById.pending, (state) => {
-                state.loading = true;
+                if (!state.selectedMedia) {
+                    state.loading = true;
+                }
             })
             .addCase(fetchMediaById.fulfilled, (state, action) => {
                 state.loading = false;
                 state.selectedMedia = action.payload.media;
+                
+                if (!action.payload.fromCache && action.payload.id) {
+                    state.singleMediaCache[action.payload.id] = {
+                        data: action.payload.media,
+                        lastFetched: Date.now()
+                    };
+                }
             })
             .addCase(fetchMediaById.rejected, (state, action) => {
                 state.loading = false;
@@ -243,13 +300,24 @@ const mediaSlice = createSlice({
             .addCase(updateMedia.fulfilled, (state, action) => {
                 state.loading = false;
                 state.success = true;
-                const index = state.media.findIndex(media => media._id === action.payload.media._id);
-                if (index !== -1) {
-                    state.media[index] = action.payload.media;
+                
+                if (action.payload.media) {
+                    const idx = state.media.findIndex(m => m._id === action.payload.id);
+                    if (idx !== -1) {
+                        state.media[idx] = action.payload.media;
+                    }
+                    
+                    if (state.selectedMedia && state.selectedMedia._id === action.payload.id) {
+                        state.selectedMedia = action.payload.media;
+                    }
+                    
+                    state.singleMediaCache[action.payload.id] = {
+                        data: action.payload.media,
+                        lastFetched: Date.now()
+                    };
                 }
-                if (state.selectedMedia && state.selectedMedia._id === action.payload.media._id) {
-                    state.selectedMedia = action.payload.media;
-                }
+                
+                state.mediaCache = {};
             })
             .addCase(updateMedia.rejected, (state, action) => {
                 state.loading = false;
@@ -263,7 +331,10 @@ const mediaSlice = createSlice({
             .addCase(deleteMedia.fulfilled, (state, action) => {
                 state.loading = false;
                 state.success = true;
-                state.media = state.media.filter(media => media._id !== action.payload.mediaId);
+                state.media = state.media.filter(m => m._id !== action.payload.mediaId);
+                state.totalMedia -= 1;
+                delete state.singleMediaCache[action.payload.mediaId];
+                state.mediaCache = {};
             })
             .addCase(deleteMedia.rejected, (state, action) => {
                 state.loading = false;
@@ -317,10 +388,24 @@ const mediaSlice = createSlice({
             .addCase(approveMedia.fulfilled, (state, action) => {
                 state.loading = false;
                 state.success = true;
-                const index = state.media.findIndex(media => media._id === action.payload.media._id);
-                if (index !== -1) {
-                    state.media[index] = action.payload.media;
+                
+                if (action.payload.media) {
+                    const idx = state.media.findIndex(m => m._id === action.payload.id);
+                    if (idx !== -1) {
+                        state.media[idx] = action.payload.media;
+                    }
+                    
+                    if (state.selectedMedia && state.selectedMedia._id === action.payload.id) {
+                        state.selectedMedia = action.payload.media;
+                    }
+                    
+                    state.singleMediaCache[action.payload.id] = {
+                        data: action.payload.media,
+                        lastFetched: Date.now()
+                    };
                 }
+                
+                state.mediaCache = {};
             })
             .addCase(approveMedia.rejected, (state, action) => {
                 state.loading = false;
@@ -334,10 +419,24 @@ const mediaSlice = createSlice({
             .addCase(rejectMedia.fulfilled, (state, action) => {
                 state.loading = false;
                 state.success = true;
-                const index = state.media.findIndex(media => media._id === action.payload.media._id);
-                if (index !== -1) {
-                    state.media[index] = action.payload.media;
+                
+                if (action.payload.media) {
+                    const idx = state.media.findIndex(m => m._id === action.payload.id);
+                    if (idx !== -1) {
+                        state.media[idx] = action.payload.media;
+                    }
+                    
+                    if (state.selectedMedia && state.selectedMedia._id === action.payload.id) {
+                        state.selectedMedia = action.payload.media;
+                    }
+                    
+                    state.singleMediaCache[action.payload.id] = {
+                        data: action.payload.media,
+                        lastFetched: Date.now()
+                    };
                 }
+                
+                state.mediaCache = {};
             })
             .addCase(rejectMedia.rejected, (state, action) => {
                 state.loading = false;
@@ -351,8 +450,10 @@ const mediaSlice = createSlice({
     }
 });
 
-export const { clearError, clearSuccess, clearMedia, setCurrentPage } = mediaSlice.actions;
-export default mediaSlice.reducer;// import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+export const { clearError, clearSuccess, clearMedia, setCurrentPage, clearCache } = mediaSlice.actions;
+export default mediaSlice.reducer;
+
+// import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 // import axios from "axios";
 
 // // UPLOAD MEDIA

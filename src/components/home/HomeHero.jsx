@@ -17,7 +17,7 @@ export default function HomeHero() {
   };
 
   const handleExplore = () => {
-    router.push('/mera-pradesh');
+    router.push('/districts');
   };
 
   return (

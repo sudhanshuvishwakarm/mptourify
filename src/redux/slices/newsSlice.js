@@ -154,6 +154,7 @@ const initialState = {
     totalNews: 0,
     currentPage: 1,
     totalPages: 1,
+    lastFetched: null,
 };
 
 const newsSlice = createSlice({
@@ -200,6 +201,7 @@ const newsSlice = createSlice({
             .addCase(fetchNews.pending, (state) => {
                 state.loading = true;
                 state.error = null;
+
             })
             .addCase(fetchNews.fulfilled, (state, action) => {
                 state.loading = false;
@@ -207,6 +209,7 @@ const newsSlice = createSlice({
                 state.totalNews = action.payload.totalNews || 0;
                 state.currentPage = action.payload.currentPage || 1;
                 state.totalPages = action.payload.totalPages || 1;
+                state.lastFetched = Date.now();
             })
             .addCase(fetchNews.rejected, (state, action) => {
                 state.loading = false;
@@ -333,7 +336,10 @@ const newsSlice = createSlice({
 });
 
 export const { clearError, clearSuccess, clearNews, setCurrentPage } = newsSlice.actions;
-export default newsSlice.reducer;// import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+export default newsSlice.reducer;
+
+
+// import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 // import axios from "axios";
 
 // // CREATE NEWS

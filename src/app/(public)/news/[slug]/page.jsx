@@ -1,6 +1,5 @@
 'use client';
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter, useParams } from 'next/navigation';
 import { fetchNewsBySlug, fetchLatestNews } from '@/redux/slices/newsSlice';
@@ -11,35 +10,33 @@ export default function NewsDetailPage() {
   const dispatch = useDispatch();
   const router = useRouter();
   const params = useParams();
-  const { selectedNews, latestNews, loading, error } = useSelector((state) => state.news);
+  const { selectedNews, latestNews, loading, error, news } = useSelector((state) => state.news);
   const [shareTooltip, setShareTooltip] = useState(false);
-  const [dataLoaded, setDataLoaded] = useState(false);
 
+  // Check if news is already in the list (from news page)
+  const existingNews = useMemo(() => {
+    if (!params?.slug) return null;
+    return news.find(item => item.slug === params.slug);
+  }, [news, params?.slug]);
+
+  // Smart useEffect - only fetch if not already loaded
   useEffect(() => {
     if (params.slug) {
-      dispatch(fetchNewsBySlug(params.slug));
+      // If news is not in the list or selectedNews is different, fetch it
+      if (!existingNews || selectedNews?.slug !== params.slug) {
+        dispatch(fetchNewsBySlug(params.slug));
+      }
+      
+      // Always fetch latest news as it's time-sensitive
       dispatch(fetchLatestNews(4));
     }
-  }, [dispatch, params.slug]);
+  }, [dispatch, params.slug, existingNews, selectedNews]);
 
-  // Additional effect to track when data is actually loaded
-  useEffect(() => {
-    if (selectedNews && !loading) {
-      setDataLoaded(true);
-    }
-  }, [selectedNews, loading]);
+  // Use existing news data if available (for faster loading)
+  const currentNews = selectedNews?.slug === params?.slug ? selectedNews : existingNews;
 
-  const handleShare = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setShareTooltip(true);
-      setTimeout(() => setShareTooltip(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
-  };
-
-  const getCategoryLabel = (category) => {
+  // Memoized utility functions
+  const getCategoryLabel = useCallback((category) => {
     const map = {
       'media_coverage': 'Media Coverage',
       'press_release': 'Press Release',
@@ -47,9 +44,9 @@ export default function NewsDetailPage() {
       'update': 'Update'
     };
     return map[category] || category;
-  };
+  }, []);
 
-  const getCategoryColor = (category) => {
+  const getCategoryColor = useCallback((category) => {
     const colors = {
       'media_coverage': 'bg-blue-500',
       'press_release': 'bg-purple-500',
@@ -57,15 +54,40 @@ export default function NewsDetailPage() {
       'update': 'bg-orange-500'
     };
     return colors[category] || 'bg-[#138808]';
-  };
+  }, []);
 
-  // Show loader only on initial load, not when data is being refreshed
-  if (loading && !dataLoaded) {
+  // Memoized event handlers
+  const handleShare = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setShareTooltip(true);
+      setTimeout(() => setShareTooltip(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  }, []);
+
+  const handleBackToNews = useCallback(() => {
+    router.push('/news');
+  }, [router]);
+
+  const handleNewsNavigation = useCallback((slug) => {
+    router.push(`/news/${slug}`);
+  }, [router]);
+
+  const handleViewAllNews = useCallback(() => {
+    router.push('/news');
+  }, [router]);
+
+  // Only show loader if no data exists and still loading
+  const showLoader = loading && !currentNews;
+
+  if (showLoader) {
     return <Loader />;
   }
 
-  // Only show error state after we've attempted to load data
-  if ((error && dataLoaded) || (!loading && !selectedNews && dataLoaded)) {
+  // Show error state only if no data exists
+  if ((error && !currentNews) || (!loading && !currentNews)) {
     return (
       <div className="min-h-screen bg-[#f5fbf2] flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md text-center">
@@ -75,7 +97,7 @@ export default function NewsDetailPage() {
           <h2 className="text-2xl font-bold text-[#138808] mb-2">Article Not Found</h2>
           <p className="text-[#138808]/70 mb-6">The news article you're looking for doesn't exist or has been removed.</p>
           <button
-            onClick={() => router.push('/news')}
+            onClick={handleBackToNews}
             className="inline-flex items-center gap-2 bg-[#138808] text-white px-6 py-3 rounded-full font-semibold hover:bg-[#0d5c06] transition-colors"
           >
             <ArrowLeft size={18} />
@@ -86,9 +108,18 @@ export default function NewsDetailPage() {
     );
   }
 
-  // Don't render anything if we're still loading and no data is available yet
-  if (!selectedNews) {
-    return <Loader />;
+  // Use currentNews for rendering
+  const displayNews = currentNews;
+
+  if (!displayNews) {
+    return (
+      <div className="min-h-screen bg-[#f5fbf2] flex items-center justify-center p-4">
+        <div className="text-center bg-white rounded-2xl shadow-lg p-8 max-w-md">
+          <Newspaper size={64} className="mx-auto text-[#138808] opacity-20 mb-4" />
+          <h2 className="text-2xl font-bold text-[#138808] mb-2">Loading Article...</h2>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -97,7 +128,7 @@ export default function NewsDetailPage() {
       <div className="bg-[#138808] py-8">
         <div className="max-w-6xl mx-auto px-4">
           <button
-            onClick={() => router.push('/news')}
+            onClick={handleBackToNews}
             className="inline-flex items-center gap-2 text-white hover:text-white/80 transition-colors font-medium text-lg"
           >
             <ArrowLeft size={22} />
@@ -113,11 +144,11 @@ export default function NewsDetailPage() {
           <div className="lg:col-span-2">
             <article className="bg-white rounded-2xl shadow-lg overflow-hidden">
               {/* Featured Image */}
-              {selectedNews.featuredImage && (
+              {displayNews.featuredImage && (
                 <div className="h-96 bg-[#f5fbf2] relative overflow-hidden">
                   <img
-                    src={selectedNews.featuredImage}
-                    alt={selectedNews.title}
+                    src={displayNews.featuredImage}
+                    alt={displayNews.title}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       e.target.style.display = 'none';
@@ -126,8 +157,8 @@ export default function NewsDetailPage() {
                   
                   {/* Category Badge */}
                   <div className="absolute top-6 left-6">
-                    <span className={`${getCategoryColor(selectedNews.category)} text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg`}>
-                      {getCategoryLabel(selectedNews.category)}
+                    <span className={`${getCategoryColor(displayNews.category)} text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg`}>
+                      {getCategoryLabel(displayNews.category)}
                     </span>
                   </div>
                 </div>
@@ -137,7 +168,7 @@ export default function NewsDetailPage() {
               <div className="p-8 lg:p-12">
                 {/* Title */}
                 <h1 className="text-3xl lg:text-4xl font-bold text-[#138808] mb-6 leading-tight">
-                  {selectedNews.title}
+                  {displayNews.title}
                 </h1>
 
                 {/* Meta Information */}
@@ -145,7 +176,7 @@ export default function NewsDetailPage() {
                   <div className="flex items-center gap-2 text-[#138808]/70">
                     <Calendar size={18} />
                     <span className="font-medium">
-                      {new Date(selectedNews.createdAt).toLocaleDateString('en-US', { 
+                      {new Date(displayNews.createdAt).toLocaleDateString('en-US', { 
                         month: 'long', 
                         day: 'numeric', 
                         year: 'numeric' 
@@ -153,17 +184,12 @@ export default function NewsDetailPage() {
                     </span>
                   </div>
 
-                  {selectedNews.author?.name && (
+                  {displayNews.author?.name && (
                     <div className="flex items-center gap-2 text-[#138808]/70">
                       <User size={18} />
-                      <span className="font-medium">{selectedNews.author.name}</span>
+                      <span className="font-medium">{displayNews.author.name}</span>
                     </div>
                   )}
-
-                  {/* <div className="flex items-center gap-2 text-[#138808]/70">
-                    <Clock size={18} />
-                    <span className="font-medium">{selectedNews.views || 0} views</span>
-                  </div> */}
 
                   {/* Share Button */}
                   <div className="ml-auto relative">
@@ -183,10 +209,10 @@ export default function NewsDetailPage() {
                 </div>
 
                 {/* Excerpt */}
-                {selectedNews.excerpt && (
+                {displayNews.excerpt && (
                   <div className="bg-[#138808]/5 border-l-4 border-[#138808] p-6 mb-8 rounded-r-xl">
                     <p className="text-lg text-[#138808] font-medium italic leading-relaxed">
-                      {selectedNews.excerpt}
+                      {displayNews.excerpt}
                     </p>
                   </div>
                 )}
@@ -195,17 +221,17 @@ export default function NewsDetailPage() {
                 <div className="prose prose-lg max-w-none">
                   <div 
                     className="text-[#138808]/80 leading-relaxed space-y-4"
-                    dangerouslySetInnerHTML={{ __html: selectedNews.content }}
+                    dangerouslySetInnerHTML={{ __html: displayNews.content }}
                   />
                 </div>
 
                 {/* Tags */}
-                {selectedNews.tags && selectedNews.tags.length > 0 && (
+                {displayNews.tags && displayNews.tags.length > 0 && (
                   <div className="mt-12 pt-8 border-t border-[#138808]/10">
                     <div className="flex items-center gap-3 flex-wrap">
                       <Tag size={18} className="text-[#138808]" />
                       <div className="flex flex-wrap gap-2">
-                        {selectedNews.tags.map((tag, index) => (
+                        {displayNews.tags.map((tag, index) => (
                           <span
                             key={index}
                             className="bg-[#138808]/10 text-[#138808] px-4 py-1.5 rounded-full text-sm font-medium hover:bg-[#138808]/20 transition-colors cursor-pointer"
@@ -233,12 +259,12 @@ export default function NewsDetailPage() {
                   </h3>
                   <div className="space-y-4">
                     {latestNews
-                      .filter(item => item._id !== selectedNews._id)
+                      .filter(item => item._id !== displayNews._id)
                       .slice(0, 3)
                       .map((item) => (
                         <div
                           key={item._id}
-                          onClick={() => router.push(`/news/${item.slug}`)}
+                          onClick={() => handleNewsNavigation(item.slug)}
                           className="group cursor-pointer pb-4 border-b border-[#138808]/10 last:border-0 last:pb-0"
                         >
                           <div className="flex gap-3">
@@ -271,7 +297,7 @@ export default function NewsDetailPage() {
                       ))}
                   </div>
                   <button
-                    onClick={() => router.push('/news')}
+                    onClick={handleViewAllNews}
                     className="w-full mt-4 text-[#138808] font-semibold text-sm flex items-center justify-center gap-2 hover:gap-3 transition-all group"
                   >
                     View All News
@@ -311,6 +337,7 @@ export default function NewsDetailPage() {
 //   const params = useParams();
 //   const { selectedNews, latestNews, loading, error } = useSelector((state) => state.news);
 //   const [shareTooltip, setShareTooltip] = useState(false);
+//   const [dataLoaded, setDataLoaded] = useState(false);
 
 //   useEffect(() => {
 //     if (params.slug) {
@@ -318,6 +345,13 @@ export default function NewsDetailPage() {
 //       dispatch(fetchLatestNews(4));
 //     }
 //   }, [dispatch, params.slug]);
+
+//   // Additional effect to track when data is actually loaded
+//   useEffect(() => {
+//     if (selectedNews && !loading) {
+//       setDataLoaded(true);
+//     }
+//   }, [selectedNews, loading]);
 
 //   const handleShare = async () => {
 //     try {
@@ -349,11 +383,13 @@ export default function NewsDetailPage() {
 //     return colors[category] || 'bg-[#138808]';
 //   };
 
-//   if (loading) {
+//   // Show loader only on initial load, not when data is being refreshed
+//   if (loading && !dataLoaded) {
 //     return <Loader />;
 //   }
 
-//   if (error || !selectedNews) {
+//   // Only show error state after we've attempted to load data
+//   if ((error && dataLoaded) || (!loading && !selectedNews && dataLoaded)) {
 //     return (
 //       <div className="min-h-screen bg-[#f5fbf2] flex items-center justify-center p-4">
 //         <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md text-center">
@@ -372,6 +408,11 @@ export default function NewsDetailPage() {
 //         </div>
 //       </div>
 //     );
+//   }
+
+//   // Don't render anything if we're still loading and no data is available yet
+//   if (!selectedNews) {
+//     return <Loader />;
 //   }
 
 //   return (
@@ -443,10 +484,10 @@ export default function NewsDetailPage() {
 //                     </div>
 //                   )}
 
-//                   <div className="flex items-center gap-2 text-[#138808]/70">
+//                   {/* <div className="flex items-center gap-2 text-[#138808]/70">
 //                     <Clock size={18} />
 //                     <span className="font-medium">{selectedNews.views || 0} views</span>
-//                   </div>
+//                   </div> */}
 
 //                   {/* Share Button */}
 //                   <div className="ml-auto relative">
@@ -572,7 +613,7 @@ export default function NewsDetailPage() {
 //                 <button className="w-full bg-white text-[#138808] py-3 rounded-full font-semibold hover:bg-white/90 transition-colors">
 //                   Subscribe Now
 //                 </button>
-//               </div>
+//               </div>   
 //             </div>
 //           </div>
 //         </div>

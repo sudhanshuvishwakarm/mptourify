@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/dbConfig/dbConnect.js";
 import District from "@/models/districtModel.js";
-
+import Admin from "@/models/adminModel";
 connectDB();
 
 export async function GET(request, context) {

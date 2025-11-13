@@ -13,7 +13,7 @@ import Loader from '@/components/ui/Loader';
 export default function GalleryPage() {
   const dispatch = useDispatch();
   const router = useRouter();
-  const { media, loading, error } = useSelector((state) => state.media);
+  const { media, loading, error, lastFetched } = useSelector((state) => state.media);
   const { districts } = useSelector((state) => state.district);
   
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -39,10 +39,22 @@ export default function GalleryPage() {
     { value: 'video', label: 'Videos' }
   ], []);
 
+  // OPTIMIZED: Smart useEffect with better cache control
   useEffect(() => {
-    dispatch(fetchMedia({ limit: 50, status: 'approved' }));
-    dispatch(fetchDistricts());
-  }, [dispatch]);
+    const oneHourAgo = Date.now() - (60 * 60 * 1000); // 1 hour cache
+    
+    // Only fetch media if it's empty or data is older than 1 hour
+    const shouldFetchMedia = media.length === 0 || !lastFetched || lastFetched < oneHourAgo;
+    const shouldFetchDistricts = districts.length === 0;
+
+    if (shouldFetchMedia) {
+      dispatch(fetchMedia({ limit: 50, status: 'approved' }));
+    }
+    
+    if (shouldFetchDistricts) {
+      dispatch(fetchDistricts());
+    }
+  }, [dispatch, media.length, districts.length, lastFetched]);
 
   // Memoized district options
   const districtOptions = useMemo(() => [
@@ -82,17 +94,24 @@ export default function GalleryPage() {
     }));
   }, []);
 
-  // Memoized filtered media
+  // OPTIMIZED: Memoized filtered media with early returns
   const filteredMedia = useMemo(() => {
     return media.filter(item => {
       if (item.status !== 'approved' && item.status !== undefined) return false;
+      
+      // Early return if search term doesn't match
+      if (searchTerm && 
+          !item.title?.toLowerCase().includes(searchTerm.toLowerCase()) &&
+          !item.description?.toLowerCase().includes(searchTerm.toLowerCase()) &&
+          !item.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))) {
+        return false;
+      }
+      
       const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
       const matchesType = selectedType === 'all' || item.fileType === selectedType;
       const matchesDistrict = selectedDistrict === 'all' || item.district?._id === selectedDistrict;
-      const matchesSearch = item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           item.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-      return matchesCategory && matchesType && matchesDistrict && matchesSearch;
+      
+      return matchesCategory && matchesType && matchesDistrict;
     });
   }, [media, selectedCategory, selectedType, selectedDistrict, searchTerm]);
 
@@ -138,7 +157,10 @@ export default function GalleryPage() {
     setSelectedDistrict(e.target.value);
   }, []);
 
-  if (loading) {
+  // OPTIMIZED: Only show loader on initial load when there's no data
+  const showLoader = loading && media.length === 0;
+
+  if (showLoader) {
     return <Loader />;
   }
 
@@ -214,7 +236,7 @@ export default function GalleryPage() {
                   }}
                 />
 
-                <div className="grid grid-cols-1 gap-3">
+                <div className="grid grid-cols-1 mt-3 gap-3">
                   <SelectField
                     value={selectedCategory}
                     onChange={handleCategoryChange}
@@ -327,7 +349,7 @@ export default function GalleryPage() {
                     }}
                   />
 
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-3 mt-3 gap-3">
                     <SelectField
                       value={selectedCategory}
                       onChange={handleCategoryChange}
@@ -511,9 +533,12 @@ export default function GalleryPage() {
       </div>
     </div>
   );
-}// 'use client';
+}
 
-// import { useState, useEffect } from 'react';
+
+// 'use client';
+
+// import { useState, useEffect, useMemo, useCallback } from 'react';
 // import { useDispatch, useSelector } from 'react-redux';
 // import { useRouter } from 'next/navigation';
 // import { fetchMedia } from '@/redux/slices/mediaSlice';
@@ -526,7 +551,7 @@ export default function GalleryPage() {
 // export default function GalleryPage() {
 //   const dispatch = useDispatch();
 //   const router = useRouter();
-//   const { media, loading, error } = useSelector((state) => state.media);
+//   const { media, loading, error, lastFetched } = useSelector((state) => state.media);
 //   const { districts } = useSelector((state) => state.district);
   
 //   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -535,51 +560,46 @@ export default function GalleryPage() {
 //   const [searchTerm, setSearchTerm] = useState('');
 //   const [imageErrors, setImageErrors] = useState({});
 
-//   const categoryOptions = [
+//   // Memoized category options
+//   const categoryOptions = useMemo(() => [
 //     { value: 'all', label: 'All Categories' },
 //     { value: 'heritage', label: 'Heritage' },
 //     { value: 'natural', label: 'Natural' },
 //     { value: 'cultural', label: 'Cultural' },
 //     { value: 'event', label: 'Events' },
 //     { value: 'festival', label: 'Festivals' }
-//   ];
+//   ], []);
 
-//   const typeOptions = [
+//   // Memoized type options
+//   const typeOptions = useMemo(() => [
 //     { value: 'all', label: 'All Media' },
 //     { value: 'image', label: 'Photos' },
 //     { value: 'video', label: 'Videos' }
-//   ];
+//   ], []);
 
+//   // UPDATED: Smart useEffect with cache control
 //   useEffect(() => {
-//     dispatch(fetchMedia({ limit: 50, status: 'approved' }));
-//     dispatch(fetchDistricts());
-//   }, [dispatch]);
+//     const oneHourAgo = Date.now() - (60 * 60 * 1000); // 1 hour cache
+    
+//     // Only fetch media if it's empty or data is older than 1 hour
+//     if (media.length === 0 || !lastFetched || lastFetched < oneHourAgo) {
+//       dispatch(fetchMedia({ limit: 50, status: 'approved' }));
+//     }
+    
+//     // Only fetch districts if empty
+//     if (districts.length === 0) {
+//       dispatch(fetchDistricts());
+//     }
+//   }, [dispatch, media.length, districts.length, lastFetched]);
 
-//   const districtOptions = [
+//   // Memoized district options
+//   const districtOptions = useMemo(() => [
 //     { value: 'all', label: 'All Districts' },
 //     ...(districts?.map(d => ({ value: d._id, label: d.name })) || [])
-//   ];
+//   ], [districts]);
 
-//   // Handle image loading errors
-//   const handleImageError = (itemId) => {
-//     setImageErrors(prev => ({
-//       ...prev,
-//       [itemId]: true
-//     }));
-//   };
-
-//   const filteredMedia = media.filter(item => {
-//     if (item.status !== 'approved' && item.status !== undefined) return false;
-//     const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
-//     const matchesType = selectedType === 'all' || item.fileType === selectedType;
-//     const matchesDistrict = selectedDistrict === 'all' || item.district?._id === selectedDistrict;
-//     const matchesSearch = item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//                          item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//                          item.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-//     return matchesCategory && matchesType && matchesDistrict && matchesSearch;
-//   });
-
-//   const getCategoryColor = (category) => {
+//   // Memoized category color mapping
+//   const getCategoryColor = useCallback((category) => {
 //     const colors = {
 //       heritage: 'bg-amber-500',
 //       natural: 'bg-emerald-500',
@@ -588,9 +608,10 @@ export default function GalleryPage() {
 //       festival: 'bg-pink-500'
 //     };
 //     return colors[category] || 'bg-gray-500';
-//   };
+//   }, []);
 
-//   const getCategoryLabel = (category) => {
+//   // Memoized category label mapping
+//   const getCategoryLabel = useCallback((category) => {
 //     const labels = {
 //       heritage: 'Heritage',
 //       natural: 'Natural',
@@ -599,13 +620,76 @@ export default function GalleryPage() {
 //       festival: 'Festival'
 //     };
 //     return labels[category] || category;
-//   };
+//   }, []);
 
-//   const handleCardClick = (id) => {
+//   // Memoized image error handler
+//   const handleImageError = useCallback((itemId) => {
+//     setImageErrors(prev => ({
+//       ...prev,
+//       [itemId]: true
+//     }));
+//   }, []);
+
+//   // Memoized filtered media
+//   const filteredMedia = useMemo(() => {
+//     return media.filter(item => {
+//       if (item.status !== 'approved' && item.status !== undefined) return false;
+//       const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+//       const matchesType = selectedType === 'all' || item.fileType === selectedType;
+//       const matchesDistrict = selectedDistrict === 'all' || item.district?._id === selectedDistrict;
+//       const matchesSearch = item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+//                            item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+//                            item.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+//       return matchesCategory && matchesType && matchesDistrict && matchesSearch;
+//     });
+//   }, [media, selectedCategory, selectedType, selectedDistrict, searchTerm]);
+
+//   // Memoized card click handler
+//   const handleCardClick = useCallback((id) => {
 //     router.push(`/gallery/${id}`);
-//   };
+//   }, [router]);
 
-//   if (loading) {
+//   // Memoized clear filters handler
+//   const handleClearFilters = useCallback(() => {
+//     setSearchTerm('');
+//     setSelectedCategory('all');
+//     setSelectedType('all');
+//     setSelectedDistrict('all');
+//   }, []);
+
+//   // Memoized navigation handlers
+//   const handlePhotosNavigation = useCallback(() => {
+//     router.push('/gallery/photos');
+//   }, [router]);
+
+//   const handleVideosNavigation = useCallback(() => {
+//     router.push('/gallery/videos');
+//   }, [router]);
+
+//   // Memoized search handler
+//   const handleSearchChange = useCallback((e) => {
+//     setSearchTerm(e.target.value);
+//   }, []);
+
+//   // Memoized category change handler
+//   const handleCategoryChange = useCallback((e) => {
+//     setSelectedCategory(e.target.value);
+//   }, []);
+
+//   // Memoized type change handler
+//   const handleTypeChange = useCallback((e) => {
+//     setSelectedType(e.target.value);
+//   }, []);
+
+//   // Memoized district change handler
+//   const handleDistrictChange = useCallback((e) => {
+//     setSelectedDistrict(e.target.value);
+//   }, []);
+
+//   // Only show loader on initial load when there's no data
+//   const showLoader = loading && media.length === 0;
+
+//   if (showLoader) {
 //     return <Loader />;
 //   }
 
@@ -635,14 +719,14 @@ export default function GalleryPage() {
 //               {/* Quick Navigation Buttons - Mobile */}
 //               <div className="flex gap-3 justify-center mt-6">
 //                 <button
-//                   onClick={() => router.push('/gallery/photos')}
+//                   onClick={handlePhotosNavigation}
 //                   className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-2 rounded-xl font-semibold transition-all"
 //                 >
 //                   <ImageIcon size={16} />
 //                   <span>Photos</span>
 //                 </button>
 //                 <button
-//                   onClick={() => router.push('/gallery/videos')}
+//                   onClick={handleVideosNavigation}
 //                   className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-2 rounded-xl font-semibold transition-all"
 //                 >
 //                   <Video size={16} />
@@ -657,7 +741,7 @@ export default function GalleryPage() {
 //                 <TextField
 //                   placeholder="Search gallery..."
 //                   value={searchTerm}
-//                   onChange={(e) => setSearchTerm(e.target.value)}
+//                   onChange={handleSearchChange}
 //                   fullWidth
 //                   startIcon={<Search size={20} className="text-[#138808]" />}
 //                   sx={{
@@ -684,7 +768,7 @@ export default function GalleryPage() {
 //                 <div className="grid grid-cols-1 gap-3">
 //                   <SelectField
 //                     value={selectedCategory}
-//                     onChange={(e) => setSelectedCategory(e.target.value)}
+//                     onChange={handleCategoryChange}
 //                     options={categoryOptions}
 //                     fullWidth
 //                     sx={{
@@ -699,7 +783,7 @@ export default function GalleryPage() {
 
 //                   <SelectField
 //                     value={selectedType}
-//                     onChange={(e) => setSelectedType(e.target.value)}
+//                     onChange={handleTypeChange}
 //                     options={typeOptions}
 //                     fullWidth
 //                     sx={{
@@ -714,7 +798,7 @@ export default function GalleryPage() {
 
 //                   <SelectField
 //                     value={selectedDistrict}
-//                     onChange={(e) => setSelectedDistrict(e.target.value)}
+//                     onChange={handleDistrictChange}
 //                     options={districtOptions}
 //                     fullWidth
 //                     sx={{
@@ -758,14 +842,14 @@ export default function GalleryPage() {
 //               {/* Quick Navigation Buttons - Desktop */}
 //               <div className="flex gap-4">
 //                 <button
-//                   onClick={() => router.push('/gallery/photos')}
+//                   onClick={handlePhotosNavigation}
 //                   className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-6 py-3 rounded-xl font-semibold transition-all"
 //                 >
 //                   <ImageIcon size={20} />
 //                   <span>Browse Photos</span>
 //                 </button>
 //                 <button
-//                   onClick={() => router.push('/gallery/videos')}
+//                   onClick={handleVideosNavigation}
 //                   className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-6 py-3 rounded-xl font-semibold transition-all"
 //                 >
 //                   <Video size={20} />
@@ -781,7 +865,7 @@ export default function GalleryPage() {
 //                   <TextField
 //                     placeholder="Search gallery..."
 //                     value={searchTerm}
-//                     onChange={(e) => setSearchTerm(e.target.value)}
+//                     onChange={handleSearchChange}
 //                     fullWidth
 //                     startIcon={<Search size={20} className="text-[#138808]" />}
 //                     sx={{
@@ -797,7 +881,7 @@ export default function GalleryPage() {
 //                   <div className="grid grid-cols-3 gap-3">
 //                     <SelectField
 //                       value={selectedCategory}
-//                       onChange={(e) => setSelectedCategory(e.target.value)}
+//                       onChange={handleCategoryChange}
 //                       options={categoryOptions}
 //                       fullWidth
 //                       sx={{
@@ -812,7 +896,7 @@ export default function GalleryPage() {
 
 //                     <SelectField
 //                       value={selectedType}
-//                       onChange={(e) => setSelectedType(e.target.value)}
+//                       onChange={handleTypeChange}
 //                       options={typeOptions}
 //                       fullWidth
 //                       sx={{
@@ -827,7 +911,7 @@ export default function GalleryPage() {
 
 //                     <SelectField
 //                       value={selectedDistrict}
-//                       onChange={(e) => setSelectedDistrict(e.target.value)}
+//                       onChange={handleDistrictChange}
 //                       options={districtOptions}
 //                       fullWidth
 //                       sx={{
@@ -865,12 +949,7 @@ export default function GalleryPage() {
 //             <Camera size={48} className="mx-auto text-[#138808] opacity-20 mb-4" />
 //             <p className="text-[#138808] text-lg font-medium mb-2">No media found</p>
 //             <button
-//               onClick={() => {
-//                 setSearchTerm('');
-//                 setSelectedCategory('all');
-//                 setSelectedType('all');
-//                 setSelectedDistrict('all');
-//               }}
+//               onClick={handleClearFilters}
 //               className="text-[#138808] underline font-medium"
 //             >
 //               Clear all filters
