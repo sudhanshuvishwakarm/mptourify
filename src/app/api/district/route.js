@@ -115,11 +115,11 @@ export async function POST(request) {
                 },
                 status: formData.get('status') || 'active',
                 // Parse array fields
-                administrativeDivisions: formData.get('administrativeDivisions')?.split(',').map(item => item.trim()).filter(item => item) || [],
-                politicalConstituencies: {
-                    lokSabha: formData.get('politicalConstituencies[lokSabha]')?.split(',').map(item => item.trim()).filter(item => item) || [],
-                    vidhanSabha: formData.get('politicalConstituencies[vidhanSabha]')?.split(',').map(item => item.trim()).filter(item => item) || []
-                },
+                // administrativeDivisions: formData.get('administrativeDivisions')?.split(',').map(item => item.trim()).filter(item => item) || [],
+                // politicalConstituencies: {
+                //     lokSabha: formData.get('politicalConstituencies[lokSabha]')?.split(',').map(item => item.trim()).filter(item => item) || [],
+                //     vidhanSabha: formData.get('politicalConstituencies[vidhanSabha]')?.split(',').map(item => item.trim()).filter(item => item) || []
+                // },
                 majorRivers: formData.get('majorRivers')?.split(',').map(item => item.trim()).filter(item => item) || [],
                 hills: formData.get('hills')?.split(',').map(item => item.trim()).filter(item => item) || [],
                 naturalSpots: formData.get('naturalSpots')?.split(',').map(item => item.trim()).filter(item => item) || [],
@@ -137,8 +137,8 @@ export async function POST(request) {
             slug, 
             headerImage, 
             formationYear,
-            administrativeDivisions,
-            politicalConstituencies,
+            // administrativeDivisions,
+            // politicalConstituencies,
             area,
             population,
             coordinates,
@@ -197,8 +197,8 @@ export async function POST(request) {
             slug: slug.toLowerCase(),
             headerImage,
             formationYear,
-            administrativeDivisions: administrativeDivisions || [],
-            politicalConstituencies: politicalConstituencies || { lokSabha: [], vidhanSabha: [] },
+            // administrativeDivisions: administrativeDivisions || [],
+            // politicalConstituencies: politicalConstituencies || { lokSabha: [], vidhanSabha: [] },
             area,
             population,
             coordinates,

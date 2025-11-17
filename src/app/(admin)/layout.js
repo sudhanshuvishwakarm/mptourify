@@ -37,7 +37,9 @@ export default function AdminLayout({ children }) {
       return children;
     }
     return (
-      <Loader/>
+      <div className="fixed inset-0 z-[9999]">
+          <Loader message={"Loading..."} />
+        </div>
     );
   }
 

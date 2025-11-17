@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import District from "@/models/districtModel.js";
-import Media from "@/models/mediaModel";
 import { connectDB } from "@/dbConfig/dbConnect.js";
-import { checkRole, getAdmin } from "@/utils/getAdmin.js";
+import { checkRole } from "@/utils/getAdmin.js";
 import mongoose from "mongoose";
 import GramPanchayat from "@/models/panchayatModel.js";
+import cloudinary from "@/config/cloudinary.js";
 
 connectDB();
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function POST(request) {
     try {
@@ -14,58 +16,119 @@ export async function POST(request) {
 
         if (!hasAccess) {
             return NextResponse.json(
-                { 
-                    success: false,
-                    message: "Unauthorized. Only admins and RTCs can create panchayats." 
-                },
+                { success: false, message: "Unauthorized. Only admins and RTCs can create panchayats." },
                 { status: 403 }
             );
         }
 
-        const panchayatData = await request.json();
+        const contentType = request.headers.get('content-type');
+        
+        let panchayatData;
+        let headerImageUrl;
+
+        if (contentType && contentType.includes('multipart/form-data')) {
+            const formData = await request.formData();
+            
+            const file = formData.get('headerImage');
+            const fileUrl = formData.get('headerImageUrl');
+            const uploadMethod = formData.get('uploadMethod') || 'file';
+
+            if (uploadMethod === 'file' && file) {
+                const maxSize = 50 * 1024 * 1024;
+                if (file.size > maxSize) {
+                    return NextResponse.json(
+                        { success: false, message: "File size exceeds 50MB limit" },
+                        { status: 400 }
+                    );
+                }
+
+                const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+                if (!validTypes.includes(file.type)) {
+                    return NextResponse.json(
+                        { success: false, message: "Please select a valid image file (JPEG, PNG, WebP)" },
+                        { status: 400 }
+                    );
+                }
+
+                const bytes = await file.arrayBuffer();
+                const buffer = Buffer.from(bytes);
+
+                const uploadResult = await new Promise((resolve, reject) => {
+                    const uploadStream = cloudinary.uploader.upload_stream(
+                        {
+                            folder: 'mptourify/panchayat',
+                            resource_type: 'image',
+                            transformation: [
+                                { width: 1920, height: 1080, crop: 'limit' },
+                                { quality: 'auto:good' }
+                            ]
+                        },
+                        (error, result) => {
+                            if (error) reject(error);
+                            else resolve(result);
+                        }
+                    );
+                    uploadStream.end(buffer);
+                });
+
+                headerImageUrl = uploadResult.secure_url;
+            } else if (uploadMethod === 'url' && fileUrl) {
+                headerImageUrl = fileUrl;
+            } else {
+                return NextResponse.json(
+                    { success: false, message: "Please provide either a file or image URL" },
+                    { status: 400 }
+                );
+            }
+
+            panchayatData = {
+                name: formData.get('name'),
+                slug: formData.get('slug'),
+                headerImage: headerImageUrl,
+                district: formData.get('district'),
+                block: formData.get('block'),
+                coordinates: {
+                    lat: parseFloat(formData.get('coordinates[lat]')),
+                    lng: parseFloat(formData.get('coordinates[lng]'))
+                },
+                establishmentYear: formData.get('establishmentYear') ? parseInt(formData.get('establishmentYear')) : undefined,
+                historicalBackground: formData.get('historicalBackground'),
+                population: formData.get('population') ? parseInt(formData.get('population')) : undefined,
+                area: formData.get('area') ? parseFloat(formData.get('area')) : undefined,
+                localArt: formData.get('localArt'),
+                localCuisine: formData.get('localCuisine'),
+                traditions: formData.get('traditions'),
+                status: formData.get('status') || 'pending',
+                majorRivers: formData.get('majorRivers')?.split(',').map(item => item.trim()).filter(item => item) || [],
+                mediaGallery: []
+            };
+        } else {
+            panchayatData = await request.json();
+        }
+
         const { 
-            name,
-            slug,
-            district,
-            block,
-            coordinates,
-            establishmentYear,
-            historicalBackground,
-            population,
-            localArt,
-            localCuisine,
-            traditions,
-            photoGallery,
-            videoGallery,
-            status
+            name, slug, headerImage, district, block, coordinates,
+            establishmentYear, historicalBackground, population, area,
+            localArt, localCuisine, traditions, majorRivers, mediaGallery, status
         } = panchayatData;
 
-        if (!name || !slug || !district || !block || !coordinates) {
+        if (!name || !slug || !headerImage || !district || !block || !coordinates) {
             return NextResponse.json(
-                { 
-                    success: false,
-                    message: "Please provide required fields: name, slug, district, block, coordinates" 
-                },
+                { success: false, message: "Please provide required fields: name, slug, headerImage, district, block, coordinates" },
                 { status: 400 }
             );
         }
 
         if (!coordinates.lat || !coordinates.lng) {
             return NextResponse.json(
-                { 
-                    success: false,
-                    message: "Please provide valid coordinates (lat, lng)" 
-                },
+                { success: false, message: "Please provide valid coordinates (lat, lng)" },
                 { status: 400 }
             );
         }
 
         if (!mongoose.Types.ObjectId.isValid(district)) {
             return NextResponse.json(
-                { 
-                    success: false,
-                    message: "Invalid district ID" 
-                },
+                { success: false, message: "Invalid district ID" },
                 { status: 400 }
             );
         }
@@ -73,10 +136,7 @@ export async function POST(request) {
         const districtExists = await District.findById(district);
         if (!districtExists) {
             return NextResponse.json(
-                { 
-                    success: false,
-                    message: "District not found" 
-                },
+                { success: false, message: "District not found" },
                 { status: 404 }
             );
         }
@@ -88,10 +148,7 @@ export async function POST(request) {
 
             if (!hasDistrictAccess) {
                 return NextResponse.json(
-                    { 
-                        success: false,
-                        message: "You don't have access to create panchayats in this district" 
-                    },
+                    { success: false, message: "You don't have access to create panchayats in this district" },
                     { status: 403 }
                 );
             }
@@ -104,86 +161,64 @@ export async function POST(request) {
 
         if (existingPanchayat) {
             return NextResponse.json(
-                { 
-                    success: false,
-                    message: "Panchayat with this slug already exists in this district" 
-                },
+                { success: false, message: "Panchayat with this slug already exists in this district" },
                 { status: 409 }
             );
         }
 
-        // TEMPORARY FIX: Handle localCuisine properly
-        const cleanPanchayatData = {
+        const panchayat = await GramPanchayat.create({
             name,
             slug: slug.toLowerCase(),
+            headerImage,
             district,
             block,
             coordinates: {
                 lat: parseFloat(coordinates.lat),
                 lng: parseFloat(coordinates.lng)
             },
-            establishmentYear: establishmentYear ? parseInt(establishmentYear) : undefined,
+            establishmentYear,
             historicalBackground,
-            population: population ? parseInt(population) : undefined,
+            population,
+            area,
             localArt,
+            localCuisine,
             traditions,
-            photoGallery: photoGallery || [],
-            videoGallery: videoGallery || [],
+            majorRivers: majorRivers || [],
+            mediaGallery: mediaGallery || [],
             status: status || 'pending',
             createdBy: currentAdmin._id
-        };
-
-        // Only add localCuisine if it's a string, not an object
-        if (typeof localCuisine === 'string') {
-            cleanPanchayatData.localCuisine = localCuisine;
-        } else if (localCuisine && typeof localCuisine === 'object') {
-            // If it comes as object, convert to string
-            cleanPanchayatData.localCuisine = localCuisine.description || localCuisine.name || JSON.stringify(localCuisine);
-        }
-
-        const panchayat = await GramPanchayat.create(cleanPanchayatData);
+        });
 
         await panchayat.populate('district', 'name slug');
         await panchayat.populate('createdBy', 'name email role');
-        await panchayat.populate('photoGallery');
-        await panchayat.populate('videoGallery');
+        await panchayat.populate('mediaGallery');
 
         return NextResponse.json(
-            { 
-                success: true,
-                message: "Gram Panchayat created successfully",
-                panchayat
-            },
+            { success: true, message: "Gram Panchayat created successfully", panchayat },
             { status: 201 }
         );
-
     } catch (error) {
         console.error("Create Panchayat Error:", error);
         return NextResponse.json(
-            { 
-                success: false,
-                message: "Internal Server Error",
-                error: error.message 
-            },
+            { success: false, message: "Internal Server Error", error: error.message },
             { status: 500 }
         );
     }
 }
+
 export async function GET(request) {
     try {
         const { searchParams } = new URL(request.url);
         
-        // QUERY PARAMETERS
-        const district = searchParams.get('district'); // Filter by district ID
-        const block = searchParams.get('block'); // Filter by block name
-        const status = searchParams.get('status'); // Filter by status
-        const search = searchParams.get('search'); // Search by name
-        const sort = searchParams.get('sort') || 'name'; // Sort field
-        const order = searchParams.get('order') || 'asc'; // Sort order
+        const district = searchParams.get('district');
+        const block = searchParams.get('block');
+        const status = searchParams.get('status');
+        const search = searchParams.get('search');
+        const sort = searchParams.get('sort') || 'name';
+        const order = searchParams.get('order') || 'asc';
         const page = parseInt(searchParams.get('page')) || 1;
         const limit = parseInt(searchParams.get('limit')) || 50;
 
-        // BUILD QUERY
         let query = {};
         
         if (district && mongoose.Types.ObjectId.isValid(district)) {
@@ -206,23 +241,19 @@ export async function GET(request) {
             ];
         }
 
-        // BUILD SORT
         const sortOrder = order === 'desc' ? -1 : 1;
         const sortObj = { [sort]: sortOrder };
 
-        // CALCULATE PAGINATION
         const skip = (page - 1) * limit;
 
-        // FETCH PANCHAYATS
         const panchayats = await GramPanchayat.find(query)
-            .select('name slug district block coordinates status population createdAt')
+            .select('name slug headerImage district block coordinates status population area createdAt')
             .populate('district', 'name slug')
             .populate('createdBy', 'name email role')
             .sort(sortObj)
             .skip(skip)
             .limit(limit);
 
-        // GET TOTAL COUNT
         const totalPanchayats = await GramPanchayat.countDocuments(query);
         const totalPages = Math.ceil(totalPanchayats / limit);
 
@@ -237,19 +268,265 @@ export async function GET(request) {
             },
             { status: 200 }
         );
-
     } catch (error) {
         console.error("Get All Panchayats Error:", error);
         return NextResponse.json(
-            { 
-                success: false,
-                message: "Internal Server Error",
-                error: error.message 
-            },
+            { success: false, message: "Internal Server Error", error: error.message },
             { status: 500 }
         );
     }
-}
+}// import { NextResponse } from "next/server";
+// import District from "@/models/districtModel.js";
+// import Media from "@/models/mediaModel";
+// import { connectDB } from "@/dbConfig/dbConnect.js";
+// import { checkRole, getAdmin } from "@/utils/getAdmin.js";
+// import mongoose from "mongoose";
+// import GramPanchayat from "@/models/panchayatModel.js";
+
+// connectDB();
+
+// export async function POST(request) {
+//     try {
+//         const { hasAccess, admin: currentAdmin } = await checkRole(['admin', 'rtc']);
+
+//         if (!hasAccess) {
+//             return NextResponse.json(
+//                 { 
+//                     success: false,
+//                     message: "Unauthorized. Only admins and RTCs can create panchayats." 
+//                 },
+//                 { status: 403 }
+//             );
+//         }
+
+//         const panchayatData = await request.json();
+//         const { 
+//             name,
+//             slug,
+//             district,
+//             block,
+//             coordinates,
+//             establishmentYear,
+//             historicalBackground,
+//             population,
+//             localArt,
+//             localCuisine,
+//             traditions,
+//             photoGallery,
+//             videoGallery,
+//             status
+//         } = panchayatData;
+
+//         if (!name || !slug || !district || !block || !coordinates) {
+//             return NextResponse.json(
+//                 { 
+//                     success: false,
+//                     message: "Please provide required fields: name, slug, district, block, coordinates" 
+//                 },
+//                 { status: 400 }
+//             );
+//         }
+
+//         if (!coordinates.lat || !coordinates.lng) {
+//             return NextResponse.json(
+//                 { 
+//                     success: false,
+//                     message: "Please provide valid coordinates (lat, lng)" 
+//                 },
+//                 { status: 400 }
+//             );
+//         }
+
+//         if (!mongoose.Types.ObjectId.isValid(district)) {
+//             return NextResponse.json(
+//                 { 
+//                     success: false,
+//                     message: "Invalid district ID" 
+//                 },
+//                 { status: 400 }
+//             );
+//         }
+
+//         const districtExists = await District.findById(district);
+//         if (!districtExists) {
+//             return NextResponse.json(
+//                 { 
+//                     success: false,
+//                     message: "District not found" 
+//                 },
+//                 { status: 404 }
+//             );
+//         }
+
+//         if (currentAdmin.role === 'rtc') {
+//             const hasDistrictAccess = currentAdmin.assignedDistricts.some(
+//                 d => d.toString() === district
+//             );
+
+//             if (!hasDistrictAccess) {
+//                 return NextResponse.json(
+//                     { 
+//                         success: false,
+//                         message: "You don't have access to create panchayats in this district" 
+//                     },
+//                     { status: 403 }
+//                 );
+//             }
+//         }
+
+//         const existingPanchayat = await GramPanchayat.findOne({ 
+//             slug: slug.toLowerCase(),
+//             district: district
+//         });
+
+//         if (existingPanchayat) {
+//             return NextResponse.json(
+//                 { 
+//                     success: false,
+//                     message: "Panchayat with this slug already exists in this district" 
+//                 },
+//                 { status: 409 }
+//             );
+//         }
+
+//         // TEMPORARY FIX: Handle localCuisine properly
+//         const cleanPanchayatData = {
+//             name,
+//             slug: slug.toLowerCase(),
+//             district,
+//             block,
+//             coordinates: {
+//                 lat: parseFloat(coordinates.lat),
+//                 lng: parseFloat(coordinates.lng)
+//             },
+//             establishmentYear: establishmentYear ? parseInt(establishmentYear) : undefined,
+//             historicalBackground,
+//             population: population ? parseInt(population) : undefined,
+//             localArt,
+//             traditions,
+//             photoGallery: photoGallery || [],
+//             videoGallery: videoGallery || [],
+//             status: status || 'pending',
+//             createdBy: currentAdmin._id
+//         };
+
+//         // Only add localCuisine if it's a string, not an object
+//         if (typeof localCuisine === 'string') {
+//             cleanPanchayatData.localCuisine = localCuisine;
+//         } else if (localCuisine && typeof localCuisine === 'object') {
+//             // If it comes as object, convert to string
+//             cleanPanchayatData.localCuisine = localCuisine.description || localCuisine.name || JSON.stringify(localCuisine);
+//         }
+
+//         const panchayat = await GramPanchayat.create(cleanPanchayatData);
+
+//         await panchayat.populate('district', 'name slug');
+//         await panchayat.populate('createdBy', 'name email role');
+//         await panchayat.populate('photoGallery');
+//         await panchayat.populate('videoGallery');
+
+//         return NextResponse.json(
+//             { 
+//                 success: true,
+//                 message: "Gram Panchayat created successfully",
+//                 panchayat
+//             },
+//             { status: 201 }
+//         );
+
+//     } catch (error) {
+//         console.error("Create Panchayat Error:", error);
+//         return NextResponse.json(
+//             { 
+//                 success: false,
+//                 message: "Internal Server Error",
+//                 error: error.message 
+//             },
+//             { status: 500 }
+//         );
+//     }
+// }
+// export async function GET(request) {
+//     try {
+//         const { searchParams } = new URL(request.url);
+        
+//         // QUERY PARAMETERS
+//         const district = searchParams.get('district'); // Filter by district ID
+//         const block = searchParams.get('block'); // Filter by block name
+//         const status = searchParams.get('status'); // Filter by status
+//         const search = searchParams.get('search'); // Search by name
+//         const sort = searchParams.get('sort') || 'name'; // Sort field
+//         const order = searchParams.get('order') || 'asc'; // Sort order
+//         const page = parseInt(searchParams.get('page')) || 1;
+//         const limit = parseInt(searchParams.get('limit')) || 50;
+
+//         // BUILD QUERY
+//         let query = {};
+        
+//         if (district && mongoose.Types.ObjectId.isValid(district)) {
+//             query.district = district;
+//         }
+        
+//         if (block) {
+//             query.block = { $regex: block, $options: 'i' };
+//         }
+        
+//         if (status && ['verified', 'pending', 'draft'].includes(status)) {
+//             query.status = status;
+//         }
+        
+//         if (search) {
+//             query.$or = [
+//                 { name: { $regex: search, $options: 'i' } },
+//                 { slug: { $regex: search, $options: 'i' } },
+//                 { block: { $regex: search, $options: 'i' } }
+//             ];
+//         }
+
+//         // BUILD SORT
+//         const sortOrder = order === 'desc' ? -1 : 1;
+//         const sortObj = { [sort]: sortOrder };
+
+//         // CALCULATE PAGINATION
+//         const skip = (page - 1) * limit;
+
+//         // FETCH PANCHAYATS
+//         const panchayats = await GramPanchayat.find(query)
+//             .select('name slug district block coordinates status population createdAt')
+//             .populate('district', 'name slug')
+//             .populate('createdBy', 'name email role')
+//             .sort(sortObj)
+//             .skip(skip)
+//             .limit(limit);
+
+//         // GET TOTAL COUNT
+//         const totalPanchayats = await GramPanchayat.countDocuments(query);
+//         const totalPages = Math.ceil(totalPanchayats / limit);
+
+//         return NextResponse.json(
+//             { 
+//                 success: true,
+//                 count: panchayats.length,
+//                 totalPanchayats,
+//                 currentPage: page,
+//                 totalPages,
+//                 panchayats
+//             },
+//             { status: 200 }
+//         );
+
+//     } catch (error) {
+//         console.error("Get All Panchayats Error:", error);
+//         return NextResponse.json(
+//             { 
+//                 success: false,
+//                 message: "Internal Server Error",
+//                 error: error.message 
+//             },
+//             { status: 500 }
+//         );
+//     }
+// }
 
 
 // // CREATE & GET ALL PANCHAYATS

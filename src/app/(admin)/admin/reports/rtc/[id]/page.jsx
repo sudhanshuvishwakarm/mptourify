@@ -146,9 +146,9 @@ export default function RTCDetailPage() {
 
   if (loading && !rtc) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-        <Loader />
-      </Box>
+      <div className="fixed inset-0 z-[9999]">
+          <Loader message={"Loading..."} />
+        </div>
     );
   }
 
@@ -170,6 +170,9 @@ export default function RTCDetailPage() {
   return (
     <Box sx={{ p: { xs: 2, sm: 2, md: 3 }, maxWidth: 1200, margin: '0 auto' }}>
       {/* HEADER */}
+      {saving && <div className="fixed inset-0 z-[9999]">
+          <Loader message={"Saving..."} />
+        </div>}
       <Box sx={{ 
         display: 'flex', 
         alignItems: 'center', 
@@ -257,7 +260,7 @@ export default function RTCDetailPage() {
                   '&:hover': { backgroundColor: '#059669' }
                 }}
               >
-                {saving ? <Loader /> : 'Save'}
+                {!saving && 'Save'}
               </Button>
               <Button
                 startIcon={<X size={16} />}

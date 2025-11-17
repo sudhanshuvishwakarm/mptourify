@@ -144,7 +144,7 @@ export default function AdminContactsPage() {
         gap: 2, 
         mb: 4 
       }}>
-        <Box>
+        {/* <Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
             <Message sx={{ fontSize: 32, color: "#144ae9" }} />
             <Typography variant="h4" fontWeight={700} color="text.primary">
@@ -153,6 +153,16 @@ export default function AdminContactsPage() {
           </Box>
           <Typography variant="body2" color="text.secondary">
             Manage contact form submissions
+          </Typography>
+        </Box> */}<Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+           <Message sx={{ fontSize: 32, color: "#144ae9" }} />
+            <Typography variant="h4" fontWeight={700} color="text.primary" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
+            Contact Messages ({totalContacts || 0})
+            </Typography>
+          </Box>
+          <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+             Manage contact form submissions
           </Typography>
         </Box>
       </Box>
@@ -314,9 +324,9 @@ export default function AdminContactsPage() {
       {/* CONTACTS TABLE */}
       <Card sx={{ border: '1px solid #144ae920' }}>
         {loading && !contacts.length ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-            <Loader />
-          </Box>
+          <div className="fixed inset-0 z-[9999]">
+          <Loader message={"contacts..."} />
+        </div>
         ) : contacts.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 8 }}>
             <Message sx={{ fontSize: 48, color: "#144ae9", mb: 2, opacity: 0.5 }} />
@@ -338,9 +348,9 @@ export default function AdminContactsPage() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {contacts.map((contact) => (
+                  {contacts.map((contact,index) => (
                     <TableRow 
-                      key={contact._id}
+                      key={index}
                       sx={{ 
                         '&:last-child td, &:last-child th': { border: 0 },
                         '&:hover': { backgroundColor: '#144ae905' }

@@ -387,7 +387,9 @@ export default function AdminProfilePage() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  startIcon={loading ? <Loader /> : <Save size={20} />}
+                  startIcon={loading ? <div className="fixed inset-0 z-[9999]">
+          <Loader message={"Loading..."} />
+        </div> : <Save size={20} />}
                   size="large"
                   sx={{ 
                     backgroundColor: '#144ae9',

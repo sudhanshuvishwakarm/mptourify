@@ -21,13 +21,13 @@ const districtSchema = new mongoose.Schema({
         type: Number
     },
     // Administrative Info
-    administrativeDivisions: [{
-        type: String
-    }],
-    politicalConstituencies: {
-        lokSabha: [String],
-        vidhanSabha: [String]
-    },
+    // administrativeDivisions: [{
+    //     type: String
+    // }],
+    // politicalConstituencies: {
+    //     lokSabha: [String],
+    //     vidhanSabha: [String]
+    // },
     area: {
         type: Number // in sq km
     },
@@ -59,22 +59,22 @@ const districtSchema = new mongoose.Schema({
         type: String
     },
     // Tourist Places & Heritage Sites
-    touristPlaces: [{
-        name: String,
-        description: String,
-        images: [String],
-        category: {
-            type: String,
-            enum: ['monument', 'natural', 'religious', 'cultural']
-        }
-    }],
+    // touristPlaces: [{
+    //     name: String,
+    //     description: String,
+    //     images: [String],
+    //     category: {
+    //         type: String,
+    //         enum: ['monument', 'natural', 'religious', 'cultural']
+    //     }
+    // }],
     // Famous Personalities
-    famousPersonalities: [{
-        name: String,
-        field: String,
-        description: String,
-        image: String
-    }],
+    // famousPersonalities: [{
+    //     name: String,
+    //     field: String,
+    //     description: String,
+    //     image: String
+    // }],
     status: {
         type: String,
         enum: ['active', 'draft'],

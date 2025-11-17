@@ -8,7 +8,7 @@ export default function HomeMpOverview() {
     green: '#339966',
     skyBlue: '#33CCFF',
     white: '#FFFFFF',
-    bgColor: '#FFF7EB',
+    bgColor: '#f5fbf2',
     darkGray: '#333333',
     lightGray: '#F5F5F5'
   };

@@ -413,7 +413,7 @@ export default function DistrictDetailPage() {
               )}
 
               {/* Political Constituencies */}
-              {currentDistrict.politicalConstituencies && (
+              {/* {currentDistrict.politicalConstituencies && (
                 currentDistrict.politicalConstituencies.lokSabha?.length > 0 || 
                 currentDistrict.politicalConstituencies.vidhanSabha?.length > 0
               ) && (
@@ -452,10 +452,10 @@ export default function DistrictDetailPage() {
                     )}
                   </div>
                 </Card>
-              )}
+              )} */}
 
               {/* Administrative Divisions */}
-              {currentDistrict.administrativeDivisions && currentDistrict.administrativeDivisions.length > 0 && (
+              {/* {currentDistrict.administrativeDivisions && currentDistrict.administrativeDivisions.length > 0 && (
                 <Card>
                   <h3 className="text-2xl font-bold mb-4" style={{ color: colors.darkGray }}>
                     Administrative Divisions
@@ -472,7 +472,7 @@ export default function DistrictDetailPage() {
                     ))}
                   </div>
                 </Card>
-              )}
+              )} */}
             </div>
           )}
 

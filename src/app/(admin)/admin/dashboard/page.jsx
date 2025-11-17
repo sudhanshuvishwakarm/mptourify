@@ -72,7 +72,9 @@ export default function AdminDashboard() {
   };
 
   if (loading && !overview) {
-    return <Loader />;
+    return <div className="fixed inset-0 z-[9999]">
+          <Loader message={"Dashboard..."} />
+        </div>;
   }
 
   return (

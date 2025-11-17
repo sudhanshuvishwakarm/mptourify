@@ -168,7 +168,7 @@ export default function AdminNewsPage() {
         gap: 2,
         mb: 4
       }}>
-        <Box>
+        {/* <Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
             <Newspaper size={32} color="#144ae9" />
             <Typography variant="h4" fontWeight={700} color="text.primary">
@@ -176,6 +176,17 @@ export default function AdminNewsPage() {
             </Typography>
           </Box>
           <Typography variant="body2" color="text.secondary">
+            Manage news articles and press releases
+          </Typography>
+        </Box> */}
+           <Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+            <Newspaper size={32} color="#144ae9" />
+            <Typography variant="h4" fontWeight={700} color="text.primary" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
+              News Management ({totalNews || 0})
+            </Typography>
+          </Box>
+          <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
             Manage news articles and press releases
           </Typography>
         </Box>
@@ -371,7 +382,9 @@ export default function AdminNewsPage() {
       {/* NEWS TABLE */}
       <Card sx={{ border: '1px solid #144ae920' }}>
         {loading && !news.length ? (
-          <Loader />
+          <div className="fixed inset-0 z-[9999]">
+          <Loader message={"Loading..."} />
+        </div>
         ) : news.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 8 }}>
             <Newspaper size={48} color="#144ae9" style={{ marginBottom: 16, opacity: 0.5 }} />

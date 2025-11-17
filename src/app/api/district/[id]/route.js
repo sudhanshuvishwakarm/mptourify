@@ -224,25 +224,25 @@ export async function PUT(request, context) {
             }
 
             // Parse array fields - only update if provided
-            const administrativeDivisions = formData.get('administrativeDivisions');
-            if (administrativeDivisions !== null) {
-                updateData.administrativeDivisions = administrativeDivisions 
-                    ? administrativeDivisions.split(',').map(item => item.trim()).filter(item => item)
-                    : [];
-            }
+            // const administrativeDivisions = formData.get('administrativeDivisions');
+            // if (administrativeDivisions !== null) {
+            //     updateData.administrativeDivisions = administrativeDivisions 
+            //         ? administrativeDivisions.split(',').map(item => item.trim()).filter(item => item)
+            //         : [];
+            // }
 
-            const lokSabha = formData.get('politicalConstituencies[lokSabha]');
-            const vidhanSabha = formData.get('politicalConstituencies[vidhanSabha]');
-            if (lokSabha !== null || vidhanSabha !== null) {
-                updateData.politicalConstituencies = {
-                    lokSabha: lokSabha !== null 
-                        ? (lokSabha ? lokSabha.split(',').map(item => item.trim()).filter(item => item) : [])
-                        : existingDistrict.politicalConstituencies.lokSabha,
-                    vidhanSabha: vidhanSabha !== null
-                        ? (vidhanSabha ? vidhanSabha.split(',').map(item => item.trim()).filter(item => item) : [])
-                        : existingDistrict.politicalConstituencies.vidhanSabha
-                };
-            }
+            // const lokSabha = formData.get('politicalConstituencies[lokSabha]');
+            // const vidhanSabha = formData.get('politicalConstituencies[vidhanSabha]');
+            // if (lokSabha !== null || vidhanSabha !== null) {
+            //     updateData.politicalConstituencies = {
+            //         lokSabha: lokSabha !== null 
+            //             ? (lokSabha ? lokSabha.split(',').map(item => item.trim()).filter(item => item) : [])
+            //             : existingDistrict.politicalConstituencies.lokSabha,
+            //         vidhanSabha: vidhanSabha !== null
+            //             ? (vidhanSabha ? vidhanSabha.split(',').map(item => item.trim()).filter(item => item) : [])
+            //             : existingDistrict.politicalConstituencies.vidhanSabha
+            //     };
+            // }
 
             const majorRivers = formData.get('majorRivers');
             if (majorRivers !== null) {

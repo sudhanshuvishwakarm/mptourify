@@ -9,9 +9,10 @@
   display: none !important;
 }
 
-body {
+body,html {
   top: 0px !important;
   position: static !important;
+  overflow-x: hidden;
 }
 
 .skiptranslate {

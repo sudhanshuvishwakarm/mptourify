@@ -15,14 +15,6 @@ export default function MeraPradeshPage() {
   const [mapContainerRef, setMapContainerRef] = useState(null);
   const mapRef = useRef(null);
 
-  const colors = {
-    primary: '#138808',
-    primaryDark: '#0A5C08',
-    secondary: '#1E88E5',
-    white: '#FFFFFF',
-    bgColor: '#F8FDF7',
-    black: '#2E3A3B',
-  };
   // Filter districts based on search
   const filteredDistricts = districts.filter(district => {
     const searchLower = searchQuery.toLowerCase();
@@ -33,341 +25,211 @@ export default function MeraPradeshPage() {
     );
   });
 
-  // Fetch districts data from Redux with cache check
-  // useEffect(() => {
-  //   // Only fetch if data is not cached or older than 5 minutes
-  //   const shouldFetchDistricts = !lastFetched || (Date.now() - lastFetched) > 300000;
-  //   const shouldFetchMap = !mapLastFetched || (Date.now() - mapLastFetched) > 300000;
+  // Initialize Leaflet Map with FIXED coordinate handling
+  useEffect(() => {
+    if (!mapContainerRef) return;
 
-  //   if (shouldFetchDistricts) {
-  //     dispatch(fetchDistricts());
-  //   }
-  //   if (shouldFetchMap) {
-  //     dispatch(fetchMapCoordinates());
-  //   }
-  // }, [dispatch, lastFetched, mapLastFetched]);
-
-
-  // // Initialize Leaflet Map with FIXED coordinate handling
-  // useEffect(() => {
-  //   if (!mapContainerRef) return;
-
-  //   const loadLeaflet = async () => {
-  //     if (window.L) {
-  //       initMap();
-  //       return;
-  //     }
-
-  //     // Load Leaflet CSS
-  //     const link = document.createElement('link');
-  //     link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-  //     link.rel = 'stylesheet';
-  //     link.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
-  //     link.crossOrigin = '';
-  //     document.head.appendChild(link);
-
-  //     // Load Leaflet JS
-  //     const script = document.createElement('script');
-  //     script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-  //     script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
-  //     script.crossOrigin = '';
-  //     script.async = true;
-  //     script.onload = initMap;
-  //     script.onerror = () => console.error('Failed to load Leaflet library');
-  //     document.body.appendChild(script);
-  //   };
-
-  //   const initMap = () => {
-  //     if (!window.L || mapRef.current || !mapContainerRef) return;
-
-  //     try {
-  //       // Initialize map centered on MP
-  //       const map = window.L.map(mapContainerRef).setView([23.1815, 77.4104], 7);
-
-  //       // Add tile layer
-  //       window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  //         attribution: '© OpenStreetMap contributors',
-  //         maxZoom: 19
-  //       }).addTo(map);
-
-  //       // Green marker icon
-  //       const greenIcon = new window.L.Icon({
-  //         iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-  //         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-  //         iconSize: [25, 41],
-  //         iconAnchor: [12, 41],
-  //         popupAnchor: [1, -34],
-  //         shadowSize: [41, 41]
-  //       });
-
-  //       // Use mapDistricts if available, otherwise use districts as fallback
-  //       const districtsToShow = mapDistricts.length > 0 ? mapDistricts : districts;
-
-  //       // Add markers for each district - FIXED COORDINATE ACCESS
-  //       districtsToShow.forEach(district => {
-  //         // CORRECTLY access nested coordinates object
-  //         if (!district.coordinates || !district.coordinates.lat || !district.coordinates.lng) {
-  //           console.warn('District missing coordinates:', district.name);
-  //           return;
-  //         }
-
-  //         // Create coords array from nested object
-  //         const coords = [district.coordinates.lat, district.coordinates.lng];
-
-  //         const marker = window.L.marker(coords, {
-  //           icon: greenIcon
-  //         }).addTo(map);
-
-  //         // Add click event
-  //         marker.on('click', () => {
-  //           setSelectedDistrict(district);
-  //           map.setView(coords, 9);
-  //         });
-
-  //         // Add popup
-  //         marker.bindPopup(`
-  //           <div style="text-align: center; padding: 8px;">
-  //             <div style="font-weight: bold; color: ${colors.primary}; font-size: 16px; margin-bottom: 4px;">
-  //               ${district.name || 'District'}
-  //             </div>
-  //             <div style="color: ${colors.primaryDark}; font-size: 12px;">
-  //               ${district.nameHi || ''}
-  //             </div>
-  //             <div style="color: #666; font-size: 12px; margin-top: 4px;">
-  //               ${district.region || 'Madhya Pradesh'} Region
-  //             </div>
-  //           </div>
-  //         `);
-  //       });
-
-  //       mapRef.current = map;
-
-  //       // Fix map sizing issues
-  //       setTimeout(() => {
-  //         map.invalidateSize();
-  //       }, 100);
-
-  //       console.log('Map initialized successfully with', districtsToShow.length, 'markers');
-
-  //     } catch (error) {
-  //       console.error('Error initializing map:', error);
-  //     }
-  //   };
-
-  //   loadLeaflet();
-
-  //   // Cleanup function
-  //   return () => {
-  //     if (mapRef.current) {
-  //       mapRef.current.remove();
-  //       mapRef.current = null;
-  //     }
-  //   };
-  // }, [mapContainerRef, mapDistricts, districts, colors.primary, colors.primaryDark]);// Initialize Leaflet Map with FIXED coordinate handling
-useEffect(() => {
-  if (!mapContainerRef) return;
-
-  const loadLeaflet = async () => {
-    if (window.L) {
-      initMap();
-      return;
-    }
-
-    // Load Leaflet CSS
-    const link = document.createElement('link');
-    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-    link.rel = 'stylesheet';
-    link.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
-    link.crossOrigin = '';
-    document.head.appendChild(link);
-
-    // Load Leaflet JS
-    const script = document.createElement('script');
-    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-    script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
-    script.crossOrigin = '';
-    script.async = true;
-    script.onload = initMap;
-    script.onerror = () => console.error('Failed to load Leaflet library');
-    document.body.appendChild(script);
-  };
-
-  const initMap = () => {
-    if (!window.L || !mapContainerRef) return;
-
-    // If map already exists, just update markers and return
-    if (mapRef.current) {
-      updateMapMarkers();
-      return;
-    }
-
-    try {
-      // Initialize map centered on MP
-      const map = window.L.map(mapContainerRef).setView([23.1815, 77.4104], 7);
-
-      // Add tile layer
-      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        maxZoom: 19
-      }).addTo(map);
-
-      mapRef.current = map;
-      
-      // Initial markers setup
-      updateMapMarkers();
-
-      // Fix map sizing issues
-      setTimeout(() => {
-        map.invalidateSize();
-      }, 100);
-
-      console.log('Map initialized successfully');
-
-    } catch (error) {
-      console.error('Error initializing map:', error);
-    }
-  };
-
-  const updateMapMarkers = () => {
-    if (!mapRef.current || !window.L) return;
-
-    // Clear existing markers
-    mapRef.current.eachLayer((layer) => {
-      if (layer instanceof window.L.Marker) {
-        mapRef.current.removeLayer(layer);
-      }
-    });
-
-    // Green marker icon
-    const greenIcon = new window.L.Icon({
-      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-      iconSize: [25, 41],
-      iconAnchor: [12, 41],
-      popupAnchor: [1, -34],
-      shadowSize: [41, 41]
-    });
-
-    // Use mapDistricts if available, otherwise use districts as fallback
-    const districtsToShow = mapDistricts.length > 0 ? mapDistricts : districts;
-
-    // Add markers for each district - FIXED COORDINATE ACCESS
-    districtsToShow.forEach(district => {
-      // CORRECTLY access nested coordinates object
-      if (!district.coordinates || !district.coordinates.lat || !district.coordinates.lng) {
-        console.warn('District missing coordinates:', district.name);
+    const loadLeaflet = async () => {
+      if (window.L) {
+        initMap();
         return;
       }
 
-      // Create coords array from nested object
-      const coords = [district.coordinates.lat, district.coordinates.lng];
+      // Load Leaflet CSS
+      const link = document.createElement('link');
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      link.rel = 'stylesheet';
+      link.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
+      link.crossOrigin = '';
+      document.head.appendChild(link);
 
-      const marker = window.L.marker(coords, {
-        icon: greenIcon
-      }).addTo(mapRef.current);
+      // Load Leaflet JS
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
+      script.crossOrigin = '';
+      script.async = true;
+      script.onload = initMap;
+      script.onerror = () => console.error('Failed to load Leaflet library');
+      document.body.appendChild(script);
+    };
 
-      // Add click event
-      marker.on('click', () => {
-        setSelectedDistrict(district);
-        mapRef.current.setView(coords, 9);
+    const initMap = () => {
+      if (!window.L || !mapContainerRef) return;
+
+      // If map already exists, just update markers and return
+      if (mapRef.current) {
+        updateMapMarkers();
+        return;
+      }
+
+      try {
+        // Initialize map centered on MP
+        const map = window.L.map(mapContainerRef).setView([23.1815, 77.4104], 7);
+
+        // Add tile layer
+        window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap contributors',
+          maxZoom: 19
+        }).addTo(map);
+
+        mapRef.current = map;
+        
+        // Initial markers setup
+        updateMapMarkers();
+
+        // Fix map sizing issues
+        setTimeout(() => {
+          map.invalidateSize();
+        }, 100);
+
+        console.log('Map initialized successfully');
+
+      } catch (error) {
+        console.error('Error initializing map:', error);
+      }
+    };
+
+    const updateMapMarkers = () => {
+      if (!mapRef.current || !window.L) return;
+
+      // Clear existing markers
+      mapRef.current.eachLayer((layer) => {
+        if (layer instanceof window.L.Marker) {
+          mapRef.current.removeLayer(layer);
+        }
       });
 
-      // Add popup
-      marker.bindPopup(`
-        <div style="text-align: center; padding: 8px;">
-          <div style="font-weight: bold; color: ${colors.primary}; font-size: 16px; margin-bottom: 4px;">
-            ${district.name || 'District'}
-          </div>
-          <div style="color: ${colors.primaryDark}; font-size: 12px;">
-            ${district.nameHi || ''}
-          </div>
-          <div style="color: #666; font-size: 12px; margin-top: 4px;">
-            ${district.region || 'Madhya Pradesh'} Region
-          </div>
-        </div>
-      `);
-    });
+      // Green marker icon
+      const greenIcon = new window.L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+      });
 
-    console.log('Map markers updated with', districtsToShow.length, 'markers');
-  };
+      // Use mapDistricts if available, otherwise use districts as fallback
+      const districtsToShow = mapDistricts.length > 0 ? mapDistricts : districts;
 
-  loadLeaflet();
+      // Add markers for each district - FIXED COORDINATE ACCESS
+      districtsToShow.forEach(district => {
+        // CORRECTLY access nested coordinates object
+        if (!district.coordinates || !district.coordinates.lat || !district.coordinates.lng) {
+          console.warn('District missing coordinates:', district.name);
+          return;
+        }
 
-  // Cleanup function - ONLY run on component unmount
-  return () => {
-    if (mapRef.current) {
-      mapRef.current.remove();
-      mapRef.current = null;
-    }
-  };
-}, [mapContainerRef]); // Remove mapDistricts and districts from dependencies
+        // Create coords array from nested object
+        const coords = [district.coordinates.lat, district.coordinates.lng];
 
-// Separate useEffect to update markers when data changes
-useEffect(() => {
-  if (mapRef.current && window.L) {
-    // Use a small timeout to ensure the map is ready
-    setTimeout(() => {
-      const initMap = () => {
-        if (!window.L || !mapRef.current) return;
+        const marker = window.L.marker(coords, {
+          icon: greenIcon
+        }).addTo(mapRef.current);
 
-        // Clear existing markers
-        mapRef.current.eachLayer((layer) => {
-          if (layer instanceof window.L.Marker) {
-            mapRef.current.removeLayer(layer);
-          }
+        // Add click event
+        marker.on('click', () => {
+          setSelectedDistrict(district);
+          mapRef.current.setView(coords, 9);
         });
 
-        // Green marker icon
-        const greenIcon = new window.L.Icon({
-          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-          iconSize: [25, 41],
-          iconAnchor: [12, 41],
-          popupAnchor: [1, -34],
-          shadowSize: [41, 41]
-        });
+        // Add popup
+        marker.bindPopup(`
+          <div style="text-align: center; padding: 8px;">
+            <div style="font-weight: bold; color: #117307; font-size: 16px; margin-bottom: 4px;">
+              ${district.name || 'District'}
+            </div>
+            <div style="color: #0d5c06; font-size: 12px;">
+              ${district.nameHi || ''}
+            </div>
+            <div style="color: #666; font-size: 12px; margin-top: 4px;">
+              ${district.region || 'Madhya Pradesh'} Region
+            </div>
+          </div>
+        `);
+      });
 
-        // Use mapDistricts if available, otherwise use districts as fallback
-        const districtsToShow = mapDistricts.length > 0 ? mapDistricts : districts;
+      console.log('Map markers updated with', districtsToShow.length, 'markers');
+    };
 
-        // Add markers for each district
-        districtsToShow.forEach(district => {
-          if (!district.coordinates || !district.coordinates.lat || !district.coordinates.lng) {
-            console.warn('District missing coordinates:', district.name);
-            return;
-          }
+    loadLeaflet();
 
-          const coords = [district.coordinates.lat, district.coordinates.lng];
+    // Cleanup function - ONLY run on component unmount
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, [mapContainerRef]); // Remove mapDistricts and districts from dependencies
 
-          const marker = window.L.marker(coords, {
-            icon: greenIcon
-          }).addTo(mapRef.current);
+  // Separate useEffect to update markers when data changes
+  useEffect(() => {
+    if (mapRef.current && window.L) {
+      // Use a small timeout to ensure the map is ready
+      setTimeout(() => {
+        const initMap = () => {
+          if (!window.L || !mapRef.current) return;
 
-          marker.on('click', () => {
-            setSelectedDistrict(district);
-            mapRef.current.setView(coords, 9);
+          // Clear existing markers
+          mapRef.current.eachLayer((layer) => {
+            if (layer instanceof window.L.Marker) {
+              mapRef.current.removeLayer(layer);
+            }
           });
 
-          marker.bindPopup(`
-            <div style="text-align: center; padding: 8px;">
-              <div style="font-weight: bold; color: ${colors.primary}; font-size: 16px; margin-bottom: 4px;">
-                ${district.name || 'District'}
-              </div>
-              <div style="color: ${colors.primaryDark}; font-size: 12px;">
-                ${district.nameHi || ''}
-              </div>
-              <div style="color: #666; font-size: 12px; margin-top: 4px;">
-                ${district.region || 'Madhya Pradesh'} Region
-              </div>
-            </div>
-          `);
-        });
-      };
+          // Green marker icon
+          const greenIcon = new window.L.Icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+          });
 
-      initMap();
-    }, 100);
-  }
-}, [mapDistricts, districts, colors.primary, colors.primaryDark]); // This effect handles marker updates
+          // Use mapDistricts if available, otherwise use districts as fallback
+          const districtsToShow = mapDistricts.length > 0 ? mapDistricts : districts;
+
+          // Add markers for each district
+          districtsToShow.forEach(district => {
+            if (!district.coordinates || !district.coordinates.lat || !district.coordinates.lng) {
+              console.warn('District missing coordinates:', district.name);
+              return;
+            }
+
+            const coords = [district.coordinates.lat, district.coordinates.lng];
+
+            const marker = window.L.marker(coords, {
+              icon: greenIcon
+            }).addTo(mapRef.current);
+
+            marker.on('click', () => {
+              setSelectedDistrict(district);
+              mapRef.current.setView(coords, 9);
+            });
+
+            marker.bindPopup(`
+              <div style="text-align: center; padding: 8px;">
+                <div style="font-weight: bold; color: #117307; font-size: 16px; margin-bottom: 4px;">
+                  ${district.name || 'District'}
+                </div>
+                <div style="color: #0d5c06; font-size: 12px;">
+                  ${district.nameHi || ''}
+                </div>
+                <div style="color: #666; font-size: 12px; margin-top: 4px;">
+                  ${district.region || 'Madhya Pradesh'} Region
+                </div>
+              </div>
+            `);
+          });
+        };
+
+        initMap();
+      }, 100);
+    }
+  }, [mapDistricts, districts]); // This effect handles marker updates
 
   const handleDistrictClick = (district) => {
     setSelectedDistrict(district);
@@ -406,62 +268,46 @@ useEffect(() => {
   };
 
   return (
-    <div className="w-full min-h-screen" style={{ backgroundColor: colors.bgColor }}>
+    <div className="w-full min-h-screen bg-[#f5fbf2]">
       {/* Header */}
-      {/* <div className="py-16 px-4 md:px-8" style={{ backgroundColor: colors.primary }}>
-        <div className="max-w-7xl mx-auto relative">
+      
+      <div className="py-16 px-4 md:px-8 bg-[#117307]">
+        <div className="max-w-7xl mx-auto">
           <div className="mb-4 text-6xl">🗺️</div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4" style={{ color: colors.white }}>
-            Mera Pradesh Mera Jila
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white">
+            Our State Our Districts
           </h1>
-          <p className="text-lg" style={{ color: colors.white, opacity: 0.95 }}>
+          <p className="text-lg text-white opacity-95">
             Explore all districts of Madhya Pradesh
           </p>
-          <img 
-            src="/images/tiger.png" 
-            alt="tiger" 
-            className='h-32 md:h-40 absolute right-0 top-0 transform rotate-[3deg] drop-shadow-[0_10px_30px_rgba(0,0,0,0.3)] hidden md:block' 
-          />
+          <img src="/images/tiger.png" alt="tiger" className='h-100 right-40 absolute hidden lg:block top-13 transform rotate-[3deg] drop-shadow-[0_10px_30px_rgba(255,140,0,0.5)]' />
         </div>
-      </div> */}
-<div className="py-16 px-4 md:px-8" style={{ backgroundColor: colors.primary }}>
-           <div className="max-w-7xl px-35">
-             <div className="mb-4 text-6xl">🗺️</div>
-             <h1 className="text-4xl md:text-5xl font-bold mb-4" style={{ color: colors.white }}>
-               Our State Our Districts
-             </h1>
-             <p className="text-lg" style={{ color: colors.white, opacity: 0.95 }}>
-               Explore all districts of Madhya Pradesh
-             </p>
-             <img src="/images/tiger.png" alt="tiger" className='h-100 right-40 absolute top-13 transform rotate-[3deg] drop-shadow-[0_10px_30px_rgba(255,140,0,0.5)]' />
-           </div>
-         </div>
+      </div>
+
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-12">
         {/* Map Section */}
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-12 border-t-4 relative z-0" style={{ borderTopColor: colors.primary }}>
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-12 border-t-4 relative z-0 border-[#117307]">
           <div ref={setMapContainerRef} className="w-full h-96 md:h-[500px]" />
         </div>
 
         {/* Search Section */}
         <div className="mb-12">
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2" size={24} style={{ color: colors.primary }} />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#117307]" size={24} />
             <input
               type="text"
               placeholder="Search districts by name or region..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-6 py-4 rounded-xl border-2 focus:outline-none focus:ring-2 focus:ring-opacity-50 text-lg"
+              className="w-full pl-12 pr-6 py-4 rounded-xl border-2 focus:outline-none focus:ring-2 focus:ring-opacity-50 text-lg border-[#117307] bg-white"
               style={{
-                borderColor: colors.primary,
-                boxShadow: `0 0 0 0px ${colors.primary}33`,
-                backgroundColor: colors.white
+                boxShadow: `0 0 0 0px #11730733`,
               }}
             />
           </div>
           {searchQuery && (
-            <p className="mt-2 text-sm" style={{ color: colors.primary }}>
+            <p className="mt-2 text-sm text-[#117307]">
               Found {filteredDistricts.length} district{filteredDistricts.length !== 1 ? 's' : ''}
             </p>
           )}
@@ -469,7 +315,7 @@ useEffect(() => {
 
         {/* Districts Grid */}
         <div>
-          <h2 className="text-3xl font-bold mb-8" style={{ color: colors.primary }}>
+          <h2 className="text-3xl font-bold mb-8 text-[#117307]">
             Click on any district to explore
           </h2>
           
@@ -492,8 +338,7 @@ useEffect(() => {
                 <div
                   key={district._id}
                   onClick={() => handleDistrictClick(district)}
-                  className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer border-l-4 transform hover:-translate-y-2 overflow-hidden group"
-                  style={{ borderLeftColor: colors.primary }}
+                  className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer border-l-4 transform hover:-translate-y-2 overflow-hidden group border-[#117307]"
                 >
                   {/* District Image */}
                   <div className="h-48 overflow-hidden relative">
@@ -509,8 +354,7 @@ useEffect(() => {
                       />
                     ) : (
                       <div 
-                        className="w-full h-full flex items-center justify-center text-6xl"
-                        style={{ backgroundColor: colors.bgColor }}
+                        className="w-full h-full flex items-center justify-center text-6xl bg-[#f5fbf2]"
                       >
                         {getDistrictEmoji(district)}
                       </div>
@@ -525,18 +369,18 @@ useEffect(() => {
 
                   {/* Card Content */}
                   <div className="p-6">
-                    <div className="flex items-center gap-2 text-sm mb-3" style={{ color: colors.primaryDark }}>
+                    <div className="flex items-center gap-2 text-sm mb-3 text-[#0d5c06]">
                       <Map size={16} />
                       {district.region || 'Madhya Pradesh'} Region
                     </div>
                     {district.population && (
-                      <div className="flex items-center gap-2 text-sm mb-2" style={{ color: colors.black }}>
+                      <div className="flex items-center gap-2 text-sm mb-2 text-[#2E3A3B]">
                         <Users size={14} />
                         Population: {formatPopulation(district.population)}
                       </div>
                     )}
                     {district.area && (
-                      <div className="flex items-center gap-2 text-sm" style={{ color: colors.black }}>
+                      <div className="flex items-center gap-2 text-sm text-[#2E3A3B]">
                         <Mountain size={14} />
                         Area: {formatArea(district.area)}
                       </div>
@@ -548,7 +392,7 @@ useEffect(() => {
           ) : (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">🔍</div>
-              <p className="text-xl mb-2" style={{ color: colors.black }}>
+              <p className="text-xl mb-2 text-[#2E3A3B]">
                 {districts.length === 0 ? 'No districts found' : `No districts found matching "${searchQuery}"`}
               </p>
               <p className="text-gray-600">
@@ -583,8 +427,7 @@ useEffect(() => {
                 />
               ) : (
                 <div 
-                  className="w-full h-full flex items-center justify-center text-8xl"
-                  style={{ backgroundColor: colors.primary }}
+                  className="w-full h-full flex items-center justify-center text-8xl bg-[#117307]"
                 >
                   {getDistrictEmoji(selectedDistrict)}
                 </div>
@@ -594,7 +437,7 @@ useEffect(() => {
                 onClick={() => setSelectedDistrict(null)}
                 className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-lg hover:bg-gray-100 transition-colors z-10"
               >
-                <X size={24} style={{ color: colors.primary }} />
+                <X size={24} className="text-[#117307]" />
               </button>
               <div className="absolute bottom-6 left-6 right-6 text-white">
                 <h2 className="text-4xl font-bold mb-2">{selectedDistrict.name}</h2>
@@ -612,34 +455,34 @@ useEffect(() => {
               {/* Info Grid */}
               <div className="grid grid-cols-2 gap-6 mb-8">
                 <div>
-                  <p className="text-sm font-bold mb-2" style={{ color: colors.primary }}>
+                  <p className="text-sm font-bold mb-2 text-[#117307]">
                     ESTABLISHED
                   </p>
-                  <p className="text-lg font-semibold" style={{ color: colors.black }}>
+                  <p className="text-lg font-semibold text-[#2E3A3B]">
                     {selectedDistrict.formationYear || 'N/A'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm font-bold mb-2" style={{ color: colors.primary }}>
+                  <p className="text-sm font-bold mb-2 text-[#117307]">
                     POPULATION
                   </p>
-                  <p className="text-lg font-semibold" style={{ color: colors.black }}>
+                  <p className="text-lg font-semibold text-[#2E3A3B]">
                     {formatPopulation(selectedDistrict.population)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm font-bold mb-2" style={{ color: colors.primary }}>
+                  <p className="text-sm font-bold mb-2 text-[#117307]">
                     AREA
                   </p>
-                  <p className="text-lg font-semibold" style={{ color: colors.black }}>
+                  <p className="text-lg font-semibold text-[#2E3A3B]">
                     {formatArea(selectedDistrict.area)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm font-bold mb-2" style={{ color: colors.primary }}>
+                  <p className="text-sm font-bold mb-2 text-[#117307]">
                     REGION
                   </p>
-                  <p className="text-lg font-semibold" style={{ color: colors.black }}>
+                  <p className="text-lg font-semibold text-[#2E3A3B]">
                     {selectedDistrict.region || 'Madhya Pradesh'}
                   </p>
                 </div>
@@ -648,15 +491,14 @@ useEffect(() => {
               {/* Rivers */}
               {selectedDistrict.majorRivers && selectedDistrict.majorRivers.length > 0 && (
                 <div className="mb-8">
-                  <p className="text-sm font-bold mb-3" style={{ color: colors.primary }}>
+                  <p className="text-sm font-bold mb-3 text-[#117307]">
                     MAJOR RIVERS
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {selectedDistrict.majorRivers.map((river, idx) => (
                       <span
                         key={idx}
-                        className="px-4 py-2 rounded-full text-sm font-semibold text-white"
-                        style={{ backgroundColor: colors.secondary }}
+                        className="px-4 py-2 rounded-full text-sm font-semibold text-white bg-[#1E88E5]"
                       >
                         {river}
                       </span>
@@ -668,18 +510,17 @@ useEffect(() => {
               {/* Tourist Places */}
               {selectedDistrict.touristPlaces && selectedDistrict.touristPlaces.length > 0 && (
                 <div className="mb-8">
-                  <p className="text-sm font-bold mb-3" style={{ color: colors.primary }}>
+                  <p className="text-sm font-bold mb-3 text-[#117307]">
                     MAJOR TOURIST PLACES
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {selectedDistrict.touristPlaces.map((place, idx) => (
                       <div 
                         key={idx}
-                        className="flex items-center gap-3 p-3 rounded-lg"
-                        style={{ backgroundColor: colors.bgColor }}
+                        className="flex items-center gap-3 p-3 rounded-lg bg-[#f5fbf2]"
                       >
-                        <MapPin size={18} style={{ color: colors.primary }} />
-                        <span style={{ color: colors.black }}>
+                        <MapPin size={18} className="text-[#117307]" />
+                        <span className="text-[#2E3A3B]">
                           {typeof place === 'string' ? place : place.name}
                         </span>
                       </div>
@@ -692,15 +533,13 @@ useEffect(() => {
               <div className="flex gap-3">
                 <button 
                   onClick={() => handleViewDetails(selectedDistrict.slug)}
-                  className="flex-1 py-4 rounded-lg font-bold text-white transition-all duration-300 hover:shadow-lg text-lg"
-                  style={{ backgroundColor: colors.primary }}
+                  className="flex-1 py-4 rounded-lg font-bold text-white transition-all duration-300 hover:shadow-lg text-lg bg-[#117307]"
                 >
                   Explore District
                 </button>
                 <button 
                   onClick={() => setSelectedDistrict(null)}
-                  className="flex-1 py-4 rounded-lg font-bold transition-all duration-300 hover:shadow-lg text-lg"
-                  style={{ color: colors.primary, borderWidth: '2px', borderColor: colors.primary }}
+                  className="flex-1 py-4 rounded-lg font-bold transition-all duration-300 hover:shadow-lg text-lg text-[#117307] border-2 border-[#117307]"
                 >
                   Close
                 </button>
@@ -712,6 +551,721 @@ useEffect(() => {
     </div>
   );
 }
+
+// 'use client';
+
+// import { useState, useEffect, useRef } from 'react';
+// import { useRouter } from 'next/navigation';
+// import { useSelector, useDispatch } from 'react-redux';
+// import { X, MapPin, Search, Map, Users, Mountain } from 'lucide-react';
+// import { fetchDistricts, fetchMapCoordinates } from '@/redux/slices/districtSlice';
+
+// export default function MeraPradeshPage() {
+//   const router = useRouter();
+//   const dispatch = useDispatch();
+//   const { districts, mapDistricts, loading, lastFetched, mapLastFetched } = useSelector(state => state.district);
+//   const [selectedDistrict, setSelectedDistrict] = useState(null);
+//   const [searchQuery, setSearchQuery] = useState('');
+//   const [mapContainerRef, setMapContainerRef] = useState(null);
+//   const mapRef = useRef(null);
+
+//   const colors = {
+//     primary: '#138808',
+//     primaryDark: '#0A5C08',
+//     secondary: '#1E88E5',
+//     white: '#FFFFFF',
+//     bgColor: '#F8FDF7',
+//     black: '#2E3A3B',
+//   };
+//   // Filter districts based on search
+//   const filteredDistricts = districts.filter(district => {
+//     const searchLower = searchQuery.toLowerCase();
+//     return (
+//       district.name?.toLowerCase().includes(searchLower) ||
+//       (district.nameHi && district.nameHi.toLowerCase().includes(searchLower)) ||
+//       (district.region && district.region.toLowerCase().includes(searchLower))
+//     );
+//   });
+
+//   // Fetch districts data from Redux with cache check
+//   // useEffect(() => {
+//   //   // Only fetch if data is not cached or older than 5 minutes
+//   //   const shouldFetchDistricts = !lastFetched || (Date.now() - lastFetched) > 300000;
+//   //   const shouldFetchMap = !mapLastFetched || (Date.now() - mapLastFetched) > 300000;
+
+//   //   if (shouldFetchDistricts) {
+//   //     dispatch(fetchDistricts());
+//   //   }
+//   //   if (shouldFetchMap) {
+//   //     dispatch(fetchMapCoordinates());
+//   //   }
+//   // }, [dispatch, lastFetched, mapLastFetched]);
+
+
+//   // // Initialize Leaflet Map with FIXED coordinate handling
+//   // useEffect(() => {
+//   //   if (!mapContainerRef) return;
+
+//   //   const loadLeaflet = async () => {
+//   //     if (window.L) {
+//   //       initMap();
+//   //       return;
+//   //     }
+
+//   //     // Load Leaflet CSS
+//   //     const link = document.createElement('link');
+//   //     link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+//   //     link.rel = 'stylesheet';
+//   //     link.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
+//   //     link.crossOrigin = '';
+//   //     document.head.appendChild(link);
+
+//   //     // Load Leaflet JS
+//   //     const script = document.createElement('script');
+//   //     script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+//   //     script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
+//   //     script.crossOrigin = '';
+//   //     script.async = true;
+//   //     script.onload = initMap;
+//   //     script.onerror = () => console.error('Failed to load Leaflet library');
+//   //     document.body.appendChild(script);
+//   //   };
+
+//   //   const initMap = () => {
+//   //     if (!window.L || mapRef.current || !mapContainerRef) return;
+
+//   //     try {
+//   //       // Initialize map centered on MP
+//   //       const map = window.L.map(mapContainerRef).setView([23.1815, 77.4104], 7);
+
+//   //       // Add tile layer
+//   //       window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+//   //         attribution: '© OpenStreetMap contributors',
+//   //         maxZoom: 19
+//   //       }).addTo(map);
+
+//   //       // Green marker icon
+//   //       const greenIcon = new window.L.Icon({
+//   //         iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+//   //         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+//   //         iconSize: [25, 41],
+//   //         iconAnchor: [12, 41],
+//   //         popupAnchor: [1, -34],
+//   //         shadowSize: [41, 41]
+//   //       });
+
+//   //       // Use mapDistricts if available, otherwise use districts as fallback
+//   //       const districtsToShow = mapDistricts.length > 0 ? mapDistricts : districts;
+
+//   //       // Add markers for each district - FIXED COORDINATE ACCESS
+//   //       districtsToShow.forEach(district => {
+//   //         // CORRECTLY access nested coordinates object
+//   //         if (!district.coordinates || !district.coordinates.lat || !district.coordinates.lng) {
+//   //           console.warn('District missing coordinates:', district.name);
+//   //           return;
+//   //         }
+
+//   //         // Create coords array from nested object
+//   //         const coords = [district.coordinates.lat, district.coordinates.lng];
+
+//   //         const marker = window.L.marker(coords, {
+//   //           icon: greenIcon
+//   //         }).addTo(map);
+
+//   //         // Add click event
+//   //         marker.on('click', () => {
+//   //           setSelectedDistrict(district);
+//   //           map.setView(coords, 9);
+//   //         });
+
+//   //         // Add popup
+//   //         marker.bindPopup(`
+//   //           <div style="text-align: center; padding: 8px;">
+//   //             <div style="font-weight: bold; color: ${colors.primary}; font-size: 16px; margin-bottom: 4px;">
+//   //               ${district.name || 'District'}
+//   //             </div>
+//   //             <div style="color: ${colors.primaryDark}; font-size: 12px;">
+//   //               ${district.nameHi || ''}
+//   //             </div>
+//   //             <div style="color: #666; font-size: 12px; margin-top: 4px;">
+//   //               ${district.region || 'Madhya Pradesh'} Region
+//   //             </div>
+//   //           </div>
+//   //         `);
+//   //       });
+
+//   //       mapRef.current = map;
+
+//   //       // Fix map sizing issues
+//   //       setTimeout(() => {
+//   //         map.invalidateSize();
+//   //       }, 100);
+
+//   //       console.log('Map initialized successfully with', districtsToShow.length, 'markers');
+
+//   //     } catch (error) {
+//   //       console.error('Error initializing map:', error);
+//   //     }
+//   //   };
+
+//   //   loadLeaflet();
+
+//   //   // Cleanup function
+//   //   return () => {
+//   //     if (mapRef.current) {
+//   //       mapRef.current.remove();
+//   //       mapRef.current = null;
+//   //     }
+//   //   };
+//   // }, [mapContainerRef, mapDistricts, districts, colors.primary, colors.primaryDark]);// Initialize Leaflet Map with FIXED coordinate handling
+// useEffect(() => {
+//   if (!mapContainerRef) return;
+
+//   const loadLeaflet = async () => {
+//     if (window.L) {
+//       initMap();
+//       return;
+//     }
+
+//     // Load Leaflet CSS
+//     const link = document.createElement('link');
+//     link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+//     link.rel = 'stylesheet';
+//     link.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
+//     link.crossOrigin = '';
+//     document.head.appendChild(link);
+
+//     // Load Leaflet JS
+//     const script = document.createElement('script');
+//     script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+//     script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
+//     script.crossOrigin = '';
+//     script.async = true;
+//     script.onload = initMap;
+//     script.onerror = () => console.error('Failed to load Leaflet library');
+//     document.body.appendChild(script);
+//   };
+
+//   const initMap = () => {
+//     if (!window.L || !mapContainerRef) return;
+
+//     // If map already exists, just update markers and return
+//     if (mapRef.current) {
+//       updateMapMarkers();
+//       return;
+//     }
+
+//     try {
+//       // Initialize map centered on MP
+//       const map = window.L.map(mapContainerRef).setView([23.1815, 77.4104], 7);
+
+//       // Add tile layer
+//       window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+//         attribution: '© OpenStreetMap contributors',
+//         maxZoom: 19
+//       }).addTo(map);
+
+//       mapRef.current = map;
+      
+//       // Initial markers setup
+//       updateMapMarkers();
+
+//       // Fix map sizing issues
+//       setTimeout(() => {
+//         map.invalidateSize();
+//       }, 100);
+
+//       console.log('Map initialized successfully');
+
+//     } catch (error) {
+//       console.error('Error initializing map:', error);
+//     }
+//   };
+
+//   const updateMapMarkers = () => {
+//     if (!mapRef.current || !window.L) return;
+
+//     // Clear existing markers
+//     mapRef.current.eachLayer((layer) => {
+//       if (layer instanceof window.L.Marker) {
+//         mapRef.current.removeLayer(layer);
+//       }
+//     });
+
+//     // Green marker icon
+//     const greenIcon = new window.L.Icon({
+//       iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+//       shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+//       iconSize: [25, 41],
+//       iconAnchor: [12, 41],
+//       popupAnchor: [1, -34],
+//       shadowSize: [41, 41]
+//     });
+
+//     // Use mapDistricts if available, otherwise use districts as fallback
+//     const districtsToShow = mapDistricts.length > 0 ? mapDistricts : districts;
+
+//     // Add markers for each district - FIXED COORDINATE ACCESS
+//     districtsToShow.forEach(district => {
+//       // CORRECTLY access nested coordinates object
+//       if (!district.coordinates || !district.coordinates.lat || !district.coordinates.lng) {
+//         console.warn('District missing coordinates:', district.name);
+//         return;
+//       }
+
+//       // Create coords array from nested object
+//       const coords = [district.coordinates.lat, district.coordinates.lng];
+
+//       const marker = window.L.marker(coords, {
+//         icon: greenIcon
+//       }).addTo(mapRef.current);
+
+//       // Add click event
+//       marker.on('click', () => {
+//         setSelectedDistrict(district);
+//         mapRef.current.setView(coords, 9);
+//       });
+
+//       // Add popup
+//       marker.bindPopup(`
+//         <div style="text-align: center; padding: 8px;">
+//           <div style="font-weight: bold; color: ${colors.primary}; font-size: 16px; margin-bottom: 4px;">
+//             ${district.name || 'District'}
+//           </div>
+//           <div style="color: ${colors.primaryDark}; font-size: 12px;">
+//             ${district.nameHi || ''}
+//           </div>
+//           <div style="color: #666; font-size: 12px; margin-top: 4px;">
+//             ${district.region || 'Madhya Pradesh'} Region
+//           </div>
+//         </div>
+//       `);
+//     });
+
+//     console.log('Map markers updated with', districtsToShow.length, 'markers');
+//   };
+
+//   loadLeaflet();
+
+//   // Cleanup function - ONLY run on component unmount
+//   return () => {
+//     if (mapRef.current) {
+//       mapRef.current.remove();
+//       mapRef.current = null;
+//     }
+//   };
+// }, [mapContainerRef]); // Remove mapDistricts and districts from dependencies
+
+// // Separate useEffect to update markers when data changes
+// useEffect(() => {
+//   if (mapRef.current && window.L) {
+//     // Use a small timeout to ensure the map is ready
+//     setTimeout(() => {
+//       const initMap = () => {
+//         if (!window.L || !mapRef.current) return;
+
+//         // Clear existing markers
+//         mapRef.current.eachLayer((layer) => {
+//           if (layer instanceof window.L.Marker) {
+//             mapRef.current.removeLayer(layer);
+//           }
+//         });
+
+//         // Green marker icon
+//         const greenIcon = new window.L.Icon({
+//           iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+//           shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+//           iconSize: [25, 41],
+//           iconAnchor: [12, 41],
+//           popupAnchor: [1, -34],
+//           shadowSize: [41, 41]
+//         });
+
+//         // Use mapDistricts if available, otherwise use districts as fallback
+//         const districtsToShow = mapDistricts.length > 0 ? mapDistricts : districts;
+
+//         // Add markers for each district
+//         districtsToShow.forEach(district => {
+//           if (!district.coordinates || !district.coordinates.lat || !district.coordinates.lng) {
+//             console.warn('District missing coordinates:', district.name);
+//             return;
+//           }
+
+//           const coords = [district.coordinates.lat, district.coordinates.lng];
+
+//           const marker = window.L.marker(coords, {
+//             icon: greenIcon
+//           }).addTo(mapRef.current);
+
+//           marker.on('click', () => {
+//             setSelectedDistrict(district);
+//             mapRef.current.setView(coords, 9);
+//           });
+
+//           marker.bindPopup(`
+//             <div style="text-align: center; padding: 8px;">
+//               <div style="font-weight: bold; color: ${colors.primary}; font-size: 16px; margin-bottom: 4px;">
+//                 ${district.name || 'District'}
+//               </div>
+//               <div style="color: ${colors.primaryDark}; font-size: 12px;">
+//                 ${district.nameHi || ''}
+//               </div>
+//               <div style="color: #666; font-size: 12px; margin-top: 4px;">
+//                 ${district.region || 'Madhya Pradesh'} Region
+//               </div>
+//             </div>
+//           `);
+//         });
+//       };
+
+//       initMap();
+//     }, 100);
+//   }
+// }, [mapDistricts, districts, colors.primary, colors.primaryDark]); // This effect handles marker updates
+
+//   const handleDistrictClick = (district) => {
+//     setSelectedDistrict(district);
+//     // Pan map to selected district
+//     if (mapRef.current && district.coordinates) {
+//       mapRef.current.setView([district.coordinates.lat, district.coordinates.lng], 9);
+//     }
+//   };
+
+//   const handleViewDetails = (slug) => {
+//     if (slug) {
+//       router.push(`/districts/${slug}`);
+//     }
+//   };
+
+//   const getDistrictEmoji = (district) => {
+//     const name = district.name || '';
+//     if (name.includes('Indore') || name.includes('Bhopal')) return '🏙️';
+//     if (name.includes('Khajuraho') || name.includes('Temple')) return '⛩️';
+//     if (name.includes('Kanha') || name.includes('Tiger')) return '🐯';
+//     if (name.includes('Pachmarhi') || name.includes('Hill')) return '⛰️';
+//     if (name.includes('Ujjain') || name.includes('Omkareshwar')) return '🕉️';
+//     return '🏛️';
+//   };
+
+//   const formatPopulation = (pop) => {
+//     if (!pop) return 'N/A';
+//     if (pop > 1000000) return `${(pop / 1000000).toFixed(1)}M`;
+//     if (pop > 1000) return `${(pop / 1000).toFixed(1)}K`;
+//     return pop.toString();
+//   };
+
+//   const formatArea = (area) => {
+//     if (!area) return 'N/A';
+//     return `${area.toLocaleString()} km²`;
+//   };
+
+//   return (
+//     <div className="w-full min-h-screen" style={{ backgroundColor: colors.bgColor }}>
+//       {/* Header */}
+//       {/* <div className="py-16 px-4 md:px-8" style={{ backgroundColor: colors.primary }}>
+//         <div className="max-w-7xl mx-auto relative">
+//           <div className="mb-4 text-6xl">🗺️</div>
+//           <h1 className="text-4xl md:text-5xl font-bold mb-4" style={{ color: colors.white }}>
+//             Mera Pradesh Mera Jila
+//           </h1>
+//           <p className="text-lg" style={{ color: colors.white, opacity: 0.95 }}>
+//             Explore all districts of Madhya Pradesh
+//           </p>
+//           <img 
+//             src="/images/tiger.png" 
+//             alt="tiger" 
+//             className='h-32 md:h-40 absolute right-0 top-0 transform rotate-[3deg] drop-shadow-[0_10px_30px_rgba(0,0,0,0.3)] hidden md:block' 
+//           />
+//         </div>
+//       </div> */}
+// <div className="py-16 px-4 md:px-8" style={{ backgroundColor: colors.primary }}>
+//            <div className="max-w-7xl px-35">
+//              <div className="mb-4 text-6xl">🗺️</div>
+//              <h1 className="text-4xl md:text-5xl font-bold mb-4" style={{ color: colors.white }}>
+//                Our State Our Districts
+//              </h1>
+//              <p className="text-lg" style={{ color: colors.white, opacity: 0.95 }}>
+//                Explore all districts of Madhya Pradesh
+//              </p>
+//              <img src="/images/tiger.png" alt="tiger" className='h-100 right-40 absolute top-13 transform rotate-[3deg] drop-shadow-[0_10px_30px_rgba(255,140,0,0.5)]' />
+//            </div>
+//          </div>
+//       {/* Main Content */}
+//       <div className="max-w-7xl mx-auto px-4 md:px-8 py-12">
+//         {/* Map Section */}
+//         <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-12 border-t-4 relative z-0" style={{ borderTopColor: colors.primary }}>
+//           <div ref={setMapContainerRef} className="w-full h-96 md:h-[500px]" />
+//         </div>
+
+//         {/* Search Section */}
+//         <div className="mb-12">
+//           <div className="relative">
+//             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2" size={24} style={{ color: colors.primary }} />
+//             <input
+//               type="text"
+//               placeholder="Search districts by name or region..."
+//               value={searchQuery}
+//               onChange={(e) => setSearchQuery(e.target.value)}
+//               className="w-full pl-12 pr-6 py-4 rounded-xl border-2 focus:outline-none focus:ring-2 focus:ring-opacity-50 text-lg"
+//               style={{
+//                 borderColor: colors.primary,
+//                 boxShadow: `0 0 0 0px ${colors.primary}33`,
+//                 backgroundColor: colors.white
+//               }}
+//             />
+//           </div>
+//           {searchQuery && (
+//             <p className="mt-2 text-sm" style={{ color: colors.primary }}>
+//               Found {filteredDistricts.length} district{filteredDistricts.length !== 1 ? 's' : ''}
+//             </p>
+//           )}
+//         </div>
+
+//         {/* Districts Grid */}
+//         <div>
+//           <h2 className="text-3xl font-bold mb-8" style={{ color: colors.primary }}>
+//             Click on any district to explore
+//           </h2>
+          
+//           {loading ? (
+//             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+//               {[...Array(8)].map((_, i) => (
+//                 <div key={i} className="bg-white rounded-xl shadow-lg animate-pulse overflow-hidden">
+//                   <div className="h-48 bg-gray-200"></div>
+//                   <div className="p-6">
+//                     <div className="h-6 bg-gray-200 rounded mb-2"></div>
+//                     <div className="h-4 bg-gray-200 rounded mb-4"></div>
+//                     <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+//                   </div>
+//                 </div>
+//               ))}
+//             </div>
+//           ) : filteredDistricts.length > 0 ? (
+//             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+//               {filteredDistricts.map((district) => (
+//                 <div
+//                   key={district._id}
+//                   onClick={() => handleDistrictClick(district)}
+//                   className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer border-l-4 transform hover:-translate-y-2 overflow-hidden group"
+//                   style={{ borderLeftColor: colors.primary }}
+//                 >
+//                   {/* District Image */}
+//                   <div className="h-48 overflow-hidden relative">
+//                     {district.headerImage ? (
+//                       <img 
+//                         src={district.headerImage} 
+//                         alt={district.name}
+//                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+//                         onError={(e) => {
+//                           e.target.onerror = null;
+//                           e.target.src = 'https://via.placeholder.com/400x300?text=' + encodeURIComponent(district.name);
+//                         }}
+//                       />
+//                     ) : (
+//                       <div 
+//                         className="w-full h-full flex items-center justify-center text-6xl"
+//                         style={{ backgroundColor: colors.bgColor }}
+//                       >
+//                         {getDistrictEmoji(district)}
+//                       </div>
+//                     )}
+//                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+//                       <div className="text-white">
+//                         <h3 className="text-2xl font-bold">{district.name}</h3>
+//                         <p className="text-sm opacity-90">{district.nameHi || ''}</p>
+//                       </div>
+//                     </div>
+//                   </div>
+
+//                   {/* Card Content */}
+//                   <div className="p-6">
+//                     <div className="flex items-center gap-2 text-sm mb-3" style={{ color: colors.primaryDark }}>
+//                       <Map size={16} />
+//                       {district.region || 'Madhya Pradesh'} Region
+//                     </div>
+//                     {district.population && (
+//                       <div className="flex items-center gap-2 text-sm mb-2" style={{ color: colors.black }}>
+//                         <Users size={14} />
+//                         Population: {formatPopulation(district.population)}
+//                       </div>
+//                     )}
+//                     {district.area && (
+//                       <div className="flex items-center gap-2 text-sm" style={{ color: colors.black }}>
+//                         <Mountain size={14} />
+//                         Area: {formatArea(district.area)}
+//                       </div>
+//                     )}
+//                   </div>
+//                 </div>
+//               ))}
+//             </div>
+//           ) : (
+//             <div className="text-center py-12">
+//               <div className="text-6xl mb-4">🔍</div>
+//               <p className="text-xl mb-2" style={{ color: colors.black }}>
+//                 {districts.length === 0 ? 'No districts found' : `No districts found matching "${searchQuery}"`}
+//               </p>
+//               <p className="text-gray-600">
+//                 {districts.length === 0 ? 'Please check your connection' : 'Try searching with different keywords'}
+//               </p>
+//             </div>
+//           )}
+//         </div>
+//       </div>
+
+//       {/* District Details Modal */}
+//       {selectedDistrict && (
+//         <div
+//           className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center p-4 z-50"
+//           onClick={() => setSelectedDistrict(null)}
+//         >
+//           <div 
+//             className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden transform transition-all duration-300 max-h-[90vh] overflow-y-auto"
+//             onClick={(e) => e.stopPropagation()}
+//           >
+//             {/* Modal Header with Image */}
+//             <div className="h-64 relative overflow-hidden">
+//               {selectedDistrict.headerImage ? (
+//                 <img 
+//                   src={selectedDistrict.headerImage} 
+//                   alt={selectedDistrict.name}
+//                   className="w-full h-full object-cover"
+//                   onError={(e) => {
+//                     e.target.onerror = null;
+//                     e.target.src = 'https://via.placeholder.com/800x400?text=' + encodeURIComponent(selectedDistrict.name);
+//                   }}
+//                 />
+//               ) : (
+//                 <div 
+//                   className="w-full h-full flex items-center justify-center text-8xl"
+//                   style={{ backgroundColor: colors.primary }}
+//                 >
+//                   {getDistrictEmoji(selectedDistrict)}
+//                 </div>
+//               )}
+//               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+//               <button
+//                 onClick={() => setSelectedDistrict(null)}
+//                 className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-lg hover:bg-gray-100 transition-colors z-10"
+//               >
+//                 <X size={24} style={{ color: colors.primary }} />
+//               </button>
+//               <div className="absolute bottom-6 left-6 right-6 text-white">
+//                 <h2 className="text-4xl font-bold mb-2">{selectedDistrict.name}</h2>
+//                 <p className="text-xl opacity-90">{selectedDistrict.nameHi || ''}</p>
+//               </div>
+//             </div>
+
+//             {/* Modal Content */}
+//             <div className="p-8">
+//               {/* Description */}
+//               <p className="text-gray-700 mb-8 leading-relaxed text-lg">
+//                 {selectedDistrict.historyAndCulture || selectedDistrict.description || `Explore the rich heritage and culture of ${selectedDistrict.name}.`}
+//               </p>
+
+//               {/* Info Grid */}
+//               <div className="grid grid-cols-2 gap-6 mb-8">
+//                 <div>
+//                   <p className="text-sm font-bold mb-2" style={{ color: colors.primary }}>
+//                     ESTABLISHED
+//                   </p>
+//                   <p className="text-lg font-semibold" style={{ color: colors.black }}>
+//                     {selectedDistrict.formationYear || 'N/A'}
+//                   </p>
+//                 </div>
+//                 <div>
+//                   <p className="text-sm font-bold mb-2" style={{ color: colors.primary }}>
+//                     POPULATION
+//                   </p>
+//                   <p className="text-lg font-semibold" style={{ color: colors.black }}>
+//                     {formatPopulation(selectedDistrict.population)}
+//                   </p>
+//                 </div>
+//                 <div>
+//                   <p className="text-sm font-bold mb-2" style={{ color: colors.primary }}>
+//                     AREA
+//                   </p>
+//                   <p className="text-lg font-semibold" style={{ color: colors.black }}>
+//                     {formatArea(selectedDistrict.area)}
+//                   </p>
+//                 </div>
+//                 <div>
+//                   <p className="text-sm font-bold mb-2" style={{ color: colors.primary }}>
+//                     REGION
+//                   </p>
+//                   <p className="text-lg font-semibold" style={{ color: colors.black }}>
+//                     {selectedDistrict.region || 'Madhya Pradesh'}
+//                   </p>
+//                 </div>
+//               </div>
+
+//               {/* Rivers */}
+//               {selectedDistrict.majorRivers && selectedDistrict.majorRivers.length > 0 && (
+//                 <div className="mb-8">
+//                   <p className="text-sm font-bold mb-3" style={{ color: colors.primary }}>
+//                     MAJOR RIVERS
+//                   </p>
+//                   <div className="flex flex-wrap gap-2">
+//                     {selectedDistrict.majorRivers.map((river, idx) => (
+//                       <span
+//                         key={idx}
+//                         className="px-4 py-2 rounded-full text-sm font-semibold text-white"
+//                         style={{ backgroundColor: colors.secondary }}
+//                       >
+//                         {river}
+//                       </span>
+//                     ))}
+//                   </div>
+//                 </div>
+//               )}
+
+//               {/* Tourist Places */}
+//               {selectedDistrict.touristPlaces && selectedDistrict.touristPlaces.length > 0 && (
+//                 <div className="mb-8">
+//                   <p className="text-sm font-bold mb-3" style={{ color: colors.primary }}>
+//                     MAJOR TOURIST PLACES
+//                   </p>
+//                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+//                     {selectedDistrict.touristPlaces.map((place, idx) => (
+//                       <div 
+//                         key={idx}
+//                         className="flex items-center gap-3 p-3 rounded-lg"
+//                         style={{ backgroundColor: colors.bgColor }}
+//                       >
+//                         <MapPin size={18} style={{ color: colors.primary }} />
+//                         <span style={{ color: colors.black }}>
+//                           {typeof place === 'string' ? place : place.name}
+//                         </span>
+//                       </div>
+//                     ))}
+//                   </div>
+//                 </div>
+//               )}
+
+//               {/* Action Buttons */}
+//               <div className="flex gap-3">
+//                 <button 
+//                   onClick={() => handleViewDetails(selectedDistrict.slug)}
+//                   className="flex-1 py-4 rounded-lg font-bold text-white transition-all duration-300 hover:shadow-lg text-lg"
+//                   style={{ backgroundColor: colors.primary }}
+//                 >
+//                   Explore District
+//                 </button>
+//                 <button 
+//                   onClick={() => setSelectedDistrict(null)}
+//                   className="flex-1 py-4 rounded-lg font-bold transition-all duration-300 hover:shadow-lg text-lg"
+//                   style={{ color: colors.primary, borderWidth: '2px', borderColor: colors.primary }}
+//                 >
+//                   Close
+//                 </button>
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
 
 
 

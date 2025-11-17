@@ -1,32 +1,22 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { Menu, X, Phone } from 'lucide-react';
 import LanguageSwitcher from './LanguageSwitcher';
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Color Scheme
-  const colors = {
-    saffron: '#F3902C',
-    green: '#138808',
-    skyBlue: '#33CCFF',
-    white: '#FFFFFF',
-    bgColor: '#FFF7EB',
-    darkGray: '#333333'
-  };
-
   const navLinks = [
-    { label: 'Home', href: '/', icon: null },
-    { label: 'Our Districts', href: '/districts', icon: null },
-    { label: 'Our Panchayats', href: '/panchayats', icon: null },
-    { label: 'State Heritage', href: '/heritage', icon: null },
-    { label: 'Gallery', href: '/gallery', icon: null },
-    { label: 'News', href: '/news', icon: null },
-    { label: 'About Us', href: '/about', icon: null },
+    { label: 'Home', href: '/' },
+    { label: 'Our Districts', href: '/districts' },
+    { label: 'Our Panchayats', href: '/panchayats' },
+    { label: 'Gallery', href: '/gallery' },
+    { label: 'News', href: '/news' },
+    { label: 'About Us', href: '/about' },
   ];
 
   const handleNavigation = (href) => {
@@ -34,49 +24,83 @@ export default function Navbar() {
     setIsMenuOpen(false);
   };
 
+  const isActiveLink = (href) => {
+    if (href === '/') {
+      return pathname === '/';
+    }
+    return pathname.startsWith(href);
+  };
+
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMenuOpen]);
+
   return (
-    <nav 
-      className="w-full shadow-lg sticky top-0 z-50"
-      style={{ backgroundColor: colors.saffron }}
-    >
-      <div className="mx-auto px-4 md:px-8 lg:px-16">
+    <nav className="w-full sticky top-0 z-50 bg-[#f5fbf2] shadow-[0_4px_10px_-2px_rgba(19,136,8,0.56)]">
+      <div className="mx-auto px-4 max-w-7xl">
         {/* Desktop Navbar */}
         <div className="hidden lg:flex items-center justify-between h-20">
           {/* Logo */}
           <div 
-            className="flex items-center gap-3 text-2xl font-bold cursor-pointer hover:opacity-80 transition-opacity"
-            style={{ color: colors.white }}
+            className="flex items-center gap-3 cursor-pointer"
             onClick={() => handleNavigation('/')}
           >
-            <div 
-              className="w-11 h-11 rounded-lg flex items-center justify-center font-bold text-white text-sm"
-              style={{ backgroundColor: colors.green }}
-            >
+            <div className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-white bg-[#117307]">
               MP
             </div>
-            <span>Tourify</span>
+            <div className="flex flex-col">
+              <span className="text-2xl font-bold text-[#117307]">
+                Tourify
+              </span>
+              <span className="text-xs font-medium text-gray-600">
+                Madhya Pradesh
+              </span>
+            </div>
           </div>
 
           {/* Desktop Menu */}
-          <div className="flex items-center gap-5">
-            {navLinks.map((link, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleNavigation(link.href)}
-                className="font-bold transition-all duration-300 py-2 px-1 hover:opacity-80"
-                style={{ color: colors.white }}
-              >
-                {link.label}
-              </button>
-            ))}
+          <div className="flex items-center gap-8">
+            {navLinks.map((link, idx) => {
+              const isActive = isActiveLink(link.href);
+              return (
+                <button
+                  key={idx}
+                  onClick={() => handleNavigation(link.href)}
+                  className="font-semibold py-2 relative group transition-all duration-300"
+                  style={{ 
+                    color: isActive ? '#0F7206' : '#1A1A1A',
+                    fontWeight: isActive ? '600' : '500'
+                  }}
+                >
+                  {link.label}
+                  
+                  {/* Active Underline */}
+                  {isActive && (
+                    <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#0F7206]" />
+                  )}
+                  
+                  {/* Hover Underline Effect */}
+                  {!isActive && (
+                    <div className="absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full bg-[#117307]" />
+                  )}
+                </button>
+              );
+            })}
           </div>
 
           {/* Desktop Right Icons */}
           <div className="flex items-center gap-4">
             <LanguageSwitcher />
             <button 
-              className="px-6 py-2.5 rounded-lg font-bold text-white transition-all duration-300 hover:shadow-lg flex items-center gap-2"
-              style={{ backgroundColor: colors.green }}
+              className="px-6 py-2.5 rounded-lg font-bold text-white transition-all duration-300 hover:bg-[#0d5c06] flex items-center gap-2 bg-[#117307]"
               onClick={() => handleNavigation('/contact')}
             >
               <Phone size={18} />
@@ -89,58 +113,93 @@ export default function Navbar() {
         <div className="lg:hidden flex items-center justify-between h-16">
           {/* Mobile Logo */}
           <div 
-            className="flex items-center gap-2 text-xl font-bold cursor-pointer"
-            style={{ color: colors.white }}
+            className="flex items-center gap-2 cursor-pointer"
             onClick={() => handleNavigation('/')}
           >
-            <div 
-              className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-white text-sm"
-              style={{ backgroundColor: colors.green }}
-            >
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-white bg-[#117307]">
               MP
             </div>
-            <span>Tourify</span>
+            <div className="flex flex-col">
+              <span className="text-lg font-bold text-[#117307]">
+                Tourify
+              </span>
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
             <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="p-1.5 rounded-lg transition-all duration-300"
-              style={{ color: colors.white }}
+              onClick={() => setIsMenuOpen(true)}
+              className="p-2 rounded-lg transition-colors duration-300 hover:bg-[#E8F5E6] text-[#117307]"
             >
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              <Menu size={22} />
             </button>
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Simple Centered Mobile Menu */}
         {isMenuOpen && (
-          <div 
-            className="lg:hidden pb-4 animate-in slide-in-from-top-2 duration-300"
-            style={{ backgroundColor: colors.white }}
-          >
-            {navLinks.map((link, idx) => (
+          <div className="lg:hidden fixed inset-0 z-50 bg-[#f5fbf2]">
+            {/* Single Close Button - Top Right */}
+            <div className="absolute top-6 right-6">
               <button
-                key={idx}
-                onClick={() => handleNavigation(link.href)}
-                className="w-full text-left px-4 py-3 font-semibold transition-all duration-300"
-                style={{ color: colors.green }}
+                onClick={() => setIsMenuOpen(false)}
+                className="p-2 rounded-full transition-colors duration-300 hover:bg-[#E8F5E6] text-[#117307]"
               >
-                {link.label}
+                <X size={24} />
               </button>
-            ))}
+            </div>
 
-            {/* Mobile Bottom Contact Button */}
-            <div className="border-t mt-2 pt-2 px-4">
-              <button 
-                className="w-full px-4 py-3 rounded-lg font-bold text-white transition-all duration-300 flex items-center justify-center gap-2"
-                style={{ backgroundColor: colors.green }}
-                onClick={() => handleNavigation('/contact')}
+            {/* Centered Content */}
+            <div className="h-full flex flex-col items-center justify-center">
+              {/* Logo */}
+              <div 
+                className="text-center mb-12 cursor-pointer"
+                onClick={() => handleNavigation('/')}
               >
-                <Phone size={18} />
-                Contact
-              </button>
+                <div className="flex items-center justify-center gap-3 mb-3">
+                  <div className="w-16 h-16 rounded-xl flex items-center justify-center font-bold text-white text-xl bg-[#117307]">
+                    MP
+                  </div>
+                </div>
+                <h1 className="text-3xl font-bold mb-1 text-[#117307]">
+                  Tourify
+                </h1>
+                <p className="text-base font-medium text-[#0A5A04]">
+                  Madhya Pradesh
+                </p>
+              </div>
+
+              {/* Simple Menu Items */}
+              <div className="space-y-6 text-center">
+                {navLinks.map((link, idx) => {
+                  const isActive = isActiveLink(link.href);
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => handleNavigation(link.href)}
+                      className="block text-lg font-medium transition-all duration-300 hover:scale-105"
+                      style={{ 
+                        color: isActive ? '#117307' : '#1A1A1A',
+                        fontWeight: isActive ? '600' : '500'
+                      }}
+                    >
+                      {link.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Simple Contact Button */}
+              <div className="mt-12">
+                <button 
+                  onClick={() => handleNavigation('/contact')}
+                  className="px-8 py-3 rounded-lg font-semibold text-white transition-all duration-300 hover:bg-[#0d5c06] flex items-center gap-2 bg-[#117307]"
+                >
+                  <Phone size={18} />
+                  Contact Us
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -148,6 +207,425 @@ export default function Navbar() {
     </nav>
   );
 }// 'use client';
+
+// import { useState, useEffect } from 'react';
+// import { useRouter, usePathname } from 'next/navigation';
+// import { Menu, X, Phone } from 'lucide-react';
+// import LanguageSwitcher from './LanguageSwitcher';
+
+// export default function Navbar() {
+//   const router = useRouter();
+//   const pathname = usePathname();
+//   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+//   // Color Scheme
+//   const colors = {
+//     primary: '#138808',
+//     background: '#f5fbf2',
+//     white: '#FFFFFF',
+//     darkGreen: '#0A5A04',
+//     lightGreen: '#E8F5E6',
+//     textDark: '#1A1A1A',
+//     activeGreen: '#0F7206'
+//   };
+
+//   const navLinks = [
+//     { label: 'Home', href: '/' },
+//     { label: 'Our Districts', href: '/districts' },
+//     { label: 'Our Panchayats', href: '/panchayats' },
+//     // { label: 'State Heritage', href: '/heritage' },
+//     { label: 'Gallery', href: '/gallery' },
+//     { label: 'News', href: '/news' },
+//     { label: 'About Us', href: '/about' },
+//   ];
+
+//   const handleNavigation = (href) => {
+//     router.push(href);
+//     setIsMenuOpen(false);
+//   };
+
+//   const isActiveLink = (href) => {
+//     if (href === '/') {
+//       return pathname === '/';
+//     }
+//     return pathname.startsWith(href);
+//   };
+
+//   useEffect(() => {
+//     if (isMenuOpen) {
+//       document.body.style.overflow = 'hidden';
+//     } else {
+//       document.body.style.overflow = 'unset';
+//     }
+
+//     return () => {
+//       document.body.style.overflow = 'unset';
+//     };
+//   }, [isMenuOpen]);
+
+//   return (
+//    <nav 
+//   className="w-full sticky top-0 z-50"
+//   style={{ 
+//     backgroundColor: colors.background,
+//     boxShadow: `0 4px 10px -2px ${colors.primary}90` // soft glow
+//   }}
+// >
+
+//       <div className="mx-auto px-4 max-w-7xl">
+//         {/* Desktop Navbar */}
+//         <div className="hidden lg:flex items-center justify-between h-20">
+//           {/* Logo */}
+//           <div 
+//             className="flex items-center gap-3 cursor-pointer"
+//             onClick={() => handleNavigation('/')}
+//           >
+//             <div 
+//               className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-white"
+//               style={{ 
+//                 backgroundColor: colors.primary
+//               }}
+//             >
+//               MP
+//             </div>
+//             <div className="flex flex-col">
+//               <span 
+//                 className="text-2xl font-bold"
+//                 style={{ color: colors.primary }}
+//               >
+//                 Tourify
+//               </span>
+//               <span 
+//                 className="text-xs font-medium text-gray-600"
+//               >
+//                 Madhya Pradesh
+//               </span>
+//             </div>
+//           </div>
+
+//           {/* Desktop Menu */}
+//           <div className="flex items-center gap-8">
+//             {navLinks.map((link, idx) => {
+//               const isActive = isActiveLink(link.href);
+//               return (
+//                 <button
+//                   key={idx}
+//                   onClick={() => handleNavigation(link.href)}
+//                   className="font-semibold py-2 relative group transition-all duration-300"
+//                   style={{ 
+//                     color: isActive ? colors.activeGreen : colors.textDark,
+//                     fontWeight: isActive ? '600' : '500'
+//                   }}
+//                 >
+//                   {link.label}
+                  
+//                   {/* Active Underline */}
+//                   {isActive && (
+//                     <div 
+//                       className="absolute bottom-0 left-0 w-full h-0.5"
+//                       style={{ backgroundColor: colors.activeGreen }}
+//                     />
+//                   )}
+                  
+//                   {/* Hover Underline Effect */}
+//                   {!isActive && (
+//                     <div 
+//                       className="absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full"
+//                       style={{ backgroundColor: colors.primary }}
+//                     />
+//                   )}
+//                 </button>
+//               );
+//             })}
+//           </div>
+
+//           {/* Desktop Right Icons */}
+//           <div className="flex items-center gap-4">
+//             <LanguageSwitcher />
+//             <button 
+//               className="px-6 py-2.5 rounded-lg font-bold text-white transition-all duration-300 hover:bg-green-700 flex items-center gap-2"
+//               style={{ backgroundColor: colors.primary }}
+//               onClick={() => handleNavigation('/contact')}
+//             >
+//               <Phone size={18} />
+//               Contact
+//             </button>
+//           </div>
+//         </div>
+
+//         {/* Mobile Navbar */}
+//         <div className="lg:hidden flex items-center justify-between h-16">
+//           {/* Mobile Logo */}
+//           <div 
+//             className="flex items-center gap-2 cursor-pointer"
+//             onClick={() => handleNavigation('/')}
+//           >
+//             <div 
+//               className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-white"
+//               style={{ backgroundColor: colors.primary }}
+//             >
+//               MP
+//             </div>
+//             <div className="flex flex-col">
+//               <span 
+//                 className="text-lg font-bold"
+//                 style={{ color: colors.primary }}
+//               >
+//                 Tourify
+//               </span>
+//             </div>
+//           </div>
+
+//           <div className="flex items-center gap-3">
+//             <LanguageSwitcher />
+//             <button
+//               onClick={() => setIsMenuOpen(true)}
+//               className="p-2 rounded-lg transition-colors duration-300 hover:bg-green-50"
+//               style={{ color: colors.primary }}
+//             >
+//               <Menu size={22} />
+//             </button>
+//           </div>
+//         </div>
+
+//         {/* Simple Centered Mobile Menu */}
+//         {isMenuOpen && (
+//           <div 
+//             className="lg:hidden fixed inset-0 z-50 bg-white"
+//             style={{ backgroundColor: colors.background }}
+//           >
+//             {/* Single Close Button - Top Right */}
+//             <div className="absolute top-6 right-6">
+//               <button
+//                 onClick={() => setIsMenuOpen(false)}
+//                 className="p-2 rounded-full transition-colors duration-300 hover:bg-green-50"
+//                 style={{ color: colors.primary }}
+//               >
+//                 <X size={24} />
+//               </button>
+//             </div>
+
+//             {/* Centered Content */}
+//             <div className="h-full flex flex-col items-center justify-center">
+//               {/* Logo */}
+//               <div 
+//                 className="text-center mb-12 cursor-pointer"
+//                 onClick={() => handleNavigation('/')}
+//               >
+//                 <div className="flex items-center justify-center gap-3 mb-3">
+//                   <div 
+//                     className="w-16 h-16 rounded-xl flex items-center justify-center font-bold text-white text-xl"
+//                     style={{ backgroundColor: colors.primary }}
+//                   >
+//                     MP
+//                   </div>
+//                 </div>
+//                 <h1 
+//                   className="text-3xl font-bold mb-1"
+//                   style={{ color: colors.primary }}
+//                 >
+//                   Tourify
+//                 </h1>
+//                 <p 
+//                   className="text-base font-medium"
+//                   style={{ color: colors.darkGreen }}
+//                 >
+//                   Madhya Pradesh
+//                 </p>
+//               </div>
+
+//               {/* Simple Menu Items */}
+//               <div className="space-y-6 text-center">
+//                 {navLinks.map((link, idx) => {
+//                   const isActive = isActiveLink(link.href);
+//                   return (
+//                     <button
+//                       key={idx}
+//                       onClick={() => handleNavigation(link.href)}
+//                       className="block text-lg font-medium transition-all duration-300 hover:scale-105"
+//                       style={{ 
+//                         color: isActive ? colors.primary : colors.textDark,
+//                         fontWeight: isActive ? '600' : '500'
+//                       }}
+//                     >
+//                       {link.label}
+//                     </button>
+//                   );
+//                 })}
+//               </div>
+
+//               {/* Simple Contact Button */}
+//               <div className="mt-12">
+//                 <button 
+//                   onClick={() => handleNavigation('/contact')}
+//                   className="px-8 py-3 rounded-lg font-semibold text-white transition-all duration-300 hover:bg-green-700 flex items-center gap-2"
+//                   style={{ backgroundColor: colors.primary }}
+//                 >
+//                   <Phone size={18} />
+//                   Contact Us
+//                 </button>
+//               </div>
+//             </div>
+//           </div>
+//         )}
+//       </div>
+//     </nav>
+//   );
+// }
+
+// 'use client';
+
+// import { useState } from 'react';
+// import { useRouter } from 'next/navigation';
+// import { Menu, X, Phone } from 'lucide-react';
+// import LanguageSwitcher from './LanguageSwitcher';
+
+// export default function Navbar() {
+//   const router = useRouter();
+//   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+//   // Color Scheme
+//   const colors = {
+//     saffron: '#F3902C',
+//     green: '#138808',
+//     skyBlue: '#33CCFF',
+//     white: '#FFFFFF',
+//     bgColor: '#FFF7EB',
+//     darkGray: '#333333'
+//   };
+
+//   const navLinks = [
+//     { label: 'Home', href: '/', icon: null },
+//     { label: 'Our Districts', href: '/districts', icon: null },
+//     { label: 'Our Panchayats', href: '/panchayats', icon: null },
+//     { label: 'State Heritage', href: '/heritage', icon: null },
+//     { label: 'Gallery', href: '/gallery', icon: null },
+//     { label: 'News', href: '/news', icon: null },
+//     { label: 'About Us', href: '/about', icon: null },
+//   ];
+
+//   const handleNavigation = (href) => {
+//     router.push(href);
+//     setIsMenuOpen(false);
+//   };
+
+//   return (
+//     <nav 
+//       className="w-full shadow-lg sticky top-0 z-50"
+//       style={{ backgroundColor: colors.saffron }}
+//     >
+//       <div className="mx-auto px-4 md:px-8 lg:px-16">
+//         {/* Desktop Navbar */}
+//         <div className="hidden lg:flex items-center justify-between h-20">
+//           {/* Logo */}
+//           <div 
+//             className="flex items-center gap-3 text-2xl font-bold cursor-pointer hover:opacity-80 transition-opacity"
+//             style={{ color: colors.white }}
+//             onClick={() => handleNavigation('/')}
+//           >
+//             <div 
+//               className="w-11 h-11 rounded-lg flex items-center justify-center font-bold text-white text-sm"
+//               style={{ backgroundColor: colors.green }}
+//             >
+//               MP
+//             </div>
+//             <span>Tourify</span>
+//           </div>
+
+//           {/* Desktop Menu */}
+//           <div className="flex items-center gap-5">
+//             {navLinks.map((link, idx) => (
+//               <button
+//                 key={idx}
+//                 onClick={() => handleNavigation(link.href)}
+//                 className="font-bold transition-all duration-300 py-2 px-1 hover:opacity-80"
+//                 style={{ color: colors.white }}
+//               >
+//                 {link.label}
+//               </button>
+//             ))}
+//           </div>
+
+//           {/* Desktop Right Icons */}
+//           <div className="flex items-center gap-4">
+//             <LanguageSwitcher />
+//             <button 
+//               className="px-6 py-2.5 rounded-lg font-bold text-white transition-all duration-300 hover:shadow-lg flex items-center gap-2"
+//               style={{ backgroundColor: colors.green }}
+//               onClick={() => handleNavigation('/contact')}
+//             >
+//               <Phone size={18} />
+//               Contact
+//             </button>
+//           </div>
+//         </div>
+
+//         {/* Mobile Navbar */}
+//         <div className="lg:hidden flex items-center justify-between h-16">
+//           {/* Mobile Logo */}
+//           <div 
+//             className="flex items-center gap-2 text-xl font-bold cursor-pointer"
+//             style={{ color: colors.white }}
+//             onClick={() => handleNavigation('/')}
+//           >
+//             <div 
+//               className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-white text-sm"
+//               style={{ backgroundColor: colors.green }}
+//             >
+//               MP
+//             </div>
+//             <span>Tourify</span>
+//           </div>
+
+//           <div className="flex items-center gap-3">
+//             <LanguageSwitcher />
+//             <button
+//               onClick={() => setIsMenuOpen(!isMenuOpen)}
+//               className="p-1.5 rounded-lg transition-all duration-300"
+//               style={{ color: colors.white }}
+//             >
+//               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+//             </button>
+//           </div>
+//         </div>
+
+//         {/* Mobile Menu */}
+//         {isMenuOpen && (
+//           <div 
+//             className="lg:hidden pb-4 animate-in slide-in-from-top-2 duration-300"
+//             style={{ backgroundColor: colors.white }}
+//           >
+//             {navLinks.map((link, idx) => (
+//               <button
+//                 key={idx}
+//                 onClick={() => handleNavigation(link.href)}
+//                 className="w-full text-left px-4 py-3 font-semibold transition-all duration-300"
+//                 style={{ color: colors.green }}
+//               >
+//                 {link.label}
+//               </button>
+//             ))}
+
+//             {/* Mobile Bottom Contact Button */}
+//             <div className="border-t mt-2 pt-2 px-4">
+//               <button 
+//                 className="w-full px-4 py-3 rounded-lg font-bold text-white transition-all duration-300 flex items-center justify-center gap-2"
+//                 style={{ backgroundColor: colors.green }}
+//                 onClick={() => handleNavigation('/contact')}
+//               >
+//                 <Phone size={18} />
+//                 Contact
+//               </button>
+//             </div>
+//           </div>
+//         )}
+//       </div>
+//     </nav>
+//   );
+// }
+
+
+// 'use client';
 
 // import { useState } from 'react';
 // import { useTranslations } from 'next-intl';

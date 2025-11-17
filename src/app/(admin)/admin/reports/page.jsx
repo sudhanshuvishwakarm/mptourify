@@ -136,7 +136,9 @@ export default function RTCListPage() {
   );
 
   if (loading && !rtcList.length) {
-    return <Loader />;
+    return <div className="fixed inset-0 z-[9999]">
+          <Loader message={"Loading..."} />
+        </div>;
   }
 
   return (

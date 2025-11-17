@@ -11,7 +11,7 @@ export default function HomeNavigationTiles() {
     green: '#339966',
     skyBlue: '#33CCFF',
     white: '#FFFFFF',
-    bgColor: '#FFF7EB',
+    bgColor: '#f5fbf2',
     darkGray: '#333333',
     lightGray: '#F5F5F5'
   };
@@ -48,7 +48,7 @@ export default function HomeNavigationTiles() {
   ];
 
   return (
-    <section className="w-full py-16 md:py-24 px-4 md:px-8" style={{ backgroundColor: colors.white }}>
+    <section className="w-full py-16 md:py-24 px-4 md:px-8" style={{ backgroundColor: colors.bgColor }}>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-16">
