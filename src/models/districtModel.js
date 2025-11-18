@@ -63,6 +63,10 @@ const districtSchema = new mongoose.Schema({
 }, {
     timestamps: true
 });
+
+const District = mongoose.models.districts || mongoose.model("districts", districtSchema);
+export default District;
+
 // Administrative Info
 // administrativeDivisions: [{
 //     type: String
@@ -71,10 +75,6 @@ const districtSchema = new mongoose.Schema({
 //     lokSabha: [String],
 //     vidhanSabha: [String]
 // },
-
-const District = mongoose.models.districts || mongoose.model("districts", districtSchema);
-export default District;
-
 // Tourist Places & Heritage Sites
 // touristPlaces: [{
 //     name: String,

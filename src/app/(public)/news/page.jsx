@@ -108,7 +108,11 @@ export default function NewsPage() {
     <div className="min-h-screen bg-[#f5fbf2]">
       {/* Green Header with White Text */}
       
-      <div className="bg-[#117307]">
+      <div className="bg-[#117307] relative ">
+        <div className="absolute inset-0 opacity-10 pointer-events-none">
+    <div className="absolute top-0 left-0 w-64 h-64 bg-white rounded-full -translate-x-1/2 -translate-y-1/2" />
+    <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full translate-x-1/3 translate-y-1/3" />
+  </div>
         <div className="max-w-7xl mx-auto px-4 py-8 lg:py-10">
           {/* Mobile & Tablet: Stack layout */}
           <div className="lg:hidden space-y-8">

@@ -5,33 +5,36 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { fetchMedia } from '@/redux/slices/mediaSlice';
 import { fetchDistricts } from '@/redux/slices/districtSlice';
-import { Image as ImageIcon, Video, Search, MapPin, Calendar, Camera, ChevronDown, Filter, ArrowRight } from 'lucide-react';
+import { fetchPanchayats } from '@/redux/slices/panchayatSlice';
+import { Image as ImageIcon, Video, Search, MapPin, Calendar, Camera, ChevronDown, Filter, ArrowRight, Loader2, Play } from 'lucide-react';
 import TextField from '@/components/ui/TextField';
-import Loader from '@/components/ui/Loader';
 
 export default function GalleryPage() {
   const dispatch = useDispatch();
   const router = useRouter();
   const { media, loading, error, lastFetched } = useSelector((state) => state.media);
   const { districts } = useSelector((state) => state.district);
+  const { panchayats } = useSelector((state) => state.panchayat);
   
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedType, setSelectedType] = useState('all');
   const [selectedDistrict, setSelectedDistrict] = useState('all');
+  const [selectedPanchayat, setSelectedPanchayat] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [imageErrors, setImageErrors] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
-  const [isTypeOpen, setIsTypeOpen] = useState(false);
   const [isDistrictOpen, setIsDistrictOpen] = useState(false);
+  const [isPanchayatOpen, setIsPanchayatOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Refs for dropdowns
+  const itemsPerPage = 12;
+
+  // Refs
   const categoryRef = useRef(null);
-  const typeRef = useRef(null);
   const districtRef = useRef(null);
+  const panchayatRef = useRef(null);
   const filtersRef = useRef(null);
 
-  // Memoized category options
   const categoryOptions = useMemo(() => [
     { value: 'all', label: 'All Categories' },
     { value: 'heritage', label: 'Heritage' },
@@ -41,24 +44,17 @@ export default function GalleryPage() {
     { value: 'festival', label: 'Festivals' }
   ], []);
 
-  // Memoized type options
-  const typeOptions = useMemo(() => [
-    { value: 'all', label: 'All Media' },
-    { value: 'image', label: 'Photos' },
-    { value: 'video', label: 'Videos' }
-  ], []);
-
   // Click outside handler
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (categoryRef.current && !categoryRef.current.contains(event.target)) {
         setIsCategoryOpen(false);
       }
-      if (typeRef.current && !typeRef.current.contains(event.target)) {
-        setIsTypeOpen(false);
-      }
       if (districtRef.current && !districtRef.current.contains(event.target)) {
         setIsDistrictOpen(false);
+      }
+      if (panchayatRef.current && !panchayatRef.current.contains(event.target)) {
+        setIsPanchayatOpen(false);
       }
       if (filtersRef.current && !filtersRef.current.contains(event.target) && window.innerWidth < 1024) {
         setShowFilters(false);
@@ -66,72 +62,46 @@ export default function GalleryPage() {
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // OPTIMIZED: Smart useEffect with better cache control
+  // Fetch data
   useEffect(() => {
-    const oneHourAgo = Date.now() - (60 * 60 * 1000); // 1 hour cache
+    const oneHourAgo = Date.now() - (60 * 60 * 1000);
     
-    // Only fetch media if it's empty or data is older than 1 hour
-    const shouldFetchMedia = media.length === 0 || !lastFetched || lastFetched < oneHourAgo;
-    const shouldFetchDistricts = districts.length === 0;
-
-    if (shouldFetchMedia) {
-      dispatch(fetchMedia({ limit: 50, status: 'approved' }));
+    if (media.length === 0 || !lastFetched || lastFetched < oneHourAgo) {
+      dispatch(fetchMedia({ limit: 100, status: 'approved' }));
     }
     
-    if (shouldFetchDistricts) {
+    if (districts.length === 0) {
       dispatch(fetchDistricts());
     }
-  }, [dispatch, media.length, districts.length, lastFetched]);
+    
+    if (panchayats.length === 0) {
+      dispatch(fetchPanchayats());
+    }
+  }, [dispatch, media.length, districts.length, panchayats.length, lastFetched]);
 
-  // Memoized district options
   const districtOptions = useMemo(() => [
     { value: 'all', label: 'All Districts' },
     ...(districts?.map(d => ({ value: d._id, label: d.name })) || [])
   ], [districts]);
 
-  // Memoized category color mapping
-  const getCategoryColor = useCallback((category) => {
-    const colors = {
-      heritage: 'bg-amber-500',
-      natural: 'bg-emerald-500',
-      cultural: 'bg-purple-500',
-      event: 'bg-blue-500',
-      festival: 'bg-pink-500'
-    };
-    return colors[category] || 'bg-gray-500';
-  }, []);
+  const panchayatOptions = useMemo(() => {
+    const filtered = selectedDistrict === 'all' 
+      ? panchayats 
+      : panchayats.filter(p => p.district?._id === selectedDistrict || p.district === selectedDistrict);
+    
+    return [
+      { value: 'all', label: 'All Panchayats' },
+      ...(filtered?.map(p => ({ value: p._id, label: p.name })) || [])
+    ];
+  }, [panchayats, selectedDistrict]);
 
-  // Memoized category label mapping
-  const getCategoryLabel = useCallback((category) => {
-    const labels = {
-      heritage: 'Heritage',
-      natural: 'Natural',
-      cultural: 'Cultural',
-      event: 'Event',
-      festival: 'Festival'
-    };
-    return labels[category] || category;
-  }, []);
-
-  // Memoized image error handler
-  const handleImageError = useCallback((itemId) => {
-    setImageErrors(prev => ({
-      ...prev,
-      [itemId]: true
-    }));
-  }, []);
-
-  // OPTIMIZED: Memoized filtered media with early returns
   const filteredMedia = useMemo(() => {
     return media.filter(item => {
       if (item.status !== 'approved' && item.status !== undefined) return false;
       
-      // Early return if search term doesn't match
       if (searchTerm && 
           !item.title?.toLowerCase().includes(searchTerm.toLowerCase()) &&
           !item.description?.toLowerCase().includes(searchTerm.toLowerCase()) &&
@@ -140,202 +110,137 @@ export default function GalleryPage() {
       }
       
       const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
-      const matchesType = selectedType === 'all' || item.fileType === selectedType;
       const matchesDistrict = selectedDistrict === 'all' || item.district?._id === selectedDistrict;
+      const matchesPanchayat = selectedPanchayat === 'all' || item.gramPanchayat?._id === selectedPanchayat;
       
-      return matchesCategory && matchesType && matchesDistrict;
+      return matchesCategory && matchesDistrict && matchesPanchayat;
     });
-  }, [media, selectedCategory, selectedType, selectedDistrict, searchTerm]);
+  }, [media, selectedCategory, selectedDistrict, selectedPanchayat, searchTerm]);
 
-  // Memoized card click handler
+  // Pagination
+  const totalPages = Math.ceil(filteredMedia.length / itemsPerPage);
+  const paginatedMedia = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredMedia.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredMedia, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategory, selectedDistrict, selectedPanchayat, searchTerm]);
+
+  const handleImageError = useCallback((itemId) => {
+    setImageErrors(prev => ({ ...prev, [itemId]: true }));
+  }, []);
+
   const handleCardClick = useCallback((id) => {
     router.push(`/gallery/${id}`);
   }, [router]);
 
-  // Memoized clear filters handler
   const handleClearFilters = useCallback(() => {
     setSearchTerm('');
     setSelectedCategory('all');
-    setSelectedType('all');
     setSelectedDistrict('all');
+    setSelectedPanchayat('all');
   }, []);
 
-  // Memoized navigation handlers
-  const handlePhotosNavigation = useCallback(() => {
-    router.push('/gallery/photos');
-  }, [router]);
+  const handlePhotosNavigation = useCallback(() => router.push('/gallery/photos'), [router]);
+  const handleVideosNavigation = useCallback(() => router.push('/gallery/videos'), [router]);
 
-  const handleVideosNavigation = useCallback(() => {
-    router.push('/gallery/videos');
-  }, [router]);
+  const currentCategoryLabel = useMemo(() => 
+    categoryOptions.find(opt => opt.value === selectedCategory)?.label || 'All Categories',
+    [selectedCategory, categoryOptions]
+  );
 
-  // Memoized search handler
-  const handleSearchChange = useCallback((e) => {
-    setSearchTerm(e.target.value);
-  }, []);
+  const currentDistrictLabel = useMemo(() =>
+    districtOptions.find(opt => opt.value === selectedDistrict)?.label || 'All Districts',
+    [selectedDistrict, districtOptions]
+  );
 
-  // Memoized category change handler
-  const handleCategoryChange = useCallback((category) => {
-    setSelectedCategory(category);
-    setIsCategoryOpen(false);
-  }, []);
-
-  // Memoized type change handler
-  const handleTypeChange = useCallback((type) => {
-    setSelectedType(type);
-    setIsTypeOpen(false);
-  }, []);
-
-  // Memoized district change handler
-  const handleDistrictChange = useCallback((district) => {
-    setSelectedDistrict(district);
-    setIsDistrictOpen(false);
-  }, []);
-
-  // Toggle dropdown handlers with proper functionality
-  const toggleCategoryDropdown = useCallback(() => {
-    setIsCategoryOpen(prev => !prev);
-  }, []);
-
-  const toggleTypeDropdown = useCallback(() => {
-    setIsTypeOpen(prev => !prev);
-  }, []);
-
-  const toggleDistrictDropdown = useCallback(() => {
-    setIsDistrictOpen(prev => !prev);
-  }, []);
-
-  // Toggle mobile filters
-  const toggleMobileFilters = useCallback(() => {
-    setShowFilters(prev => !prev);
-  }, []);
-
-  // Get current labels
-  const currentCategoryLabel = useMemo(() => {
-    return categoryOptions.find(option => option.value === selectedCategory)?.label || 'All Categories';
-  }, [selectedCategory, categoryOptions]);
-
-  const currentTypeLabel = useMemo(() => {
-    return typeOptions.find(option => option.value === selectedType)?.label || 'All Media';
-  }, [selectedType, typeOptions]);
-
-  const currentDistrictLabel = useMemo(() => {
-    return districtOptions.find(option => option.value === selectedDistrict)?.label || 'All Districts';
-  }, [selectedDistrict, districtOptions]);
-
-  // OPTIMIZED: Only show loader on initial load when there's no data
-  const showLoader = loading && media.length === 0;
-
-  if (showLoader) {
-    return <Loader />;
-  }
+  const currentPanchayatLabel = useMemo(() =>
+    panchayatOptions.find(opt => opt.value === selectedPanchayat)?.label || 'All Panchayats',
+    [selectedPanchayat, panchayatOptions]
+  );
 
   return (
     <div className="min-h-screen bg-[#f5fbf2]">
-      {/* Header Section */}
-      
-      <div className="bg-[#117307]">
-        <div className="max-w-7xl mx-auto px-4 py-8 lg:py-10">
-          {/* Mobile & Tablet: Stack layout */}
+      {/* Header */}
+      <div className="bg-[#117307] relative  " >
+        {/* Bubble Background */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none">
+          <div className="absolute top-0 left-0 w-64 h-64 bg-white rounded-full -translate-x-1/2 -translate-y-1/2" />
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full translate-x-1/3 translate-y-1/3" />
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 py-8 lg:py-10 relative z-10">
+          {/* Mobile & Tablet */}
           <div className="lg:hidden space-y-6">
-            {/* Header Content */}
             <div className="text-center">
               <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
                 Explore Madhya Pradesh
               </h1>
-              <p className="text-base md:text-lg text-white/90 max-w-2xl mx-auto">
+              <p className="text-base md:text-lg text-white/90">
                 Visual stories from every corner of our state
               </p>
 
-              {/* Quick Navigation Buttons - Mobile */}
               <div className="flex gap-3 justify-center mt-6">
-                <button
-                  onClick={handlePhotosNavigation}
-                  className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-2 rounded-xl font-semibold transition-all cursor-pointer"
-                >
+                <button onClick={handlePhotosNavigation} className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-2 rounded-xl font-semibold transition-all">
                   <ImageIcon size={16} />
                   <span>Photos</span>
                 </button>
-                <button
-                  onClick={handleVideosNavigation}
-                  className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-2 rounded-xl font-semibold transition-all cursor-pointer"
-                >
+                <button onClick={handleVideosNavigation} className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-2 rounded-xl font-semibold transition-all">
                   <Video size={16} />
                   <span>Videos</span>
                 </button>
               </div>
             </div>
 
-            {/* Search & Filter for Mobile */}
-            <div className="bg-white max-w-3xl mx-auto rounded-2xl shadow-lg p-4 md:p-6" ref={filtersRef}>
+            <div className="bg-white max-w-3xl mx-auto rounded-2xl shadow-lg p-4 md:p-6 relative z-20" ref={filtersRef}>
               <div className="space-y-4">
-                {/* Search Bar */}
                 <TextField
                   placeholder="Search gallery..."
                   value={searchTerm}
-                  onChange={handleSearchChange}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   fullWidth
                   startIcon={<Search size={20} className="text-[#117307]" />}
                   sx={{
                     '& .MuiOutlinedInput-root': {
-                      '& fieldset': {
-                        borderColor: '#117307',
-                        borderWidth: '2px',
-                      },
-                      '&:hover fieldset': {
-                        borderColor: '#117307',
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#117307',
-                        borderWidth: '2px',
-                      }
+                      '& fieldset': { borderColor: '#117307', borderWidth: '2px' },
+                      '&:hover fieldset': { borderColor: '#117307' },
+                      '&.Mui-focused fieldset': { borderColor: '#117307', borderWidth: '2px' }
                     },
-                    '& .MuiInputBase-input': {
-                      color: '#117307',
-                      fontWeight: 500
-                    }
+                    '& .MuiInputBase-input': { color: '#117307', fontWeight: 500 }
                   }}
                 />
 
-                {/* Filter Toggle Button for Mobile */}
                 <button
-                  onClick={toggleMobileFilters}
-                  className="w-full mt-2 flex items-center justify-center gap-2 px-4 py-3 border-2 border-[#117307] rounded-lg text-[#117307] font-semibold bg-white transition-colors cursor-pointer hover:bg-[#f5fbf2]"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="w-full mt-2 flex items-center justify-center gap-2 px-4 py-3 border-2 border-[#117307] rounded-lg text-[#117307] font-semibold bg-white hover:bg-[#f5fbf2]"
                 >
                   <Filter size={20} />
                   <span>Filters</span>
-                  <ChevronDown 
-                    size={20} 
-                    className={`transform transition-transform ${showFilters ? 'rotate-180' : ''}`}
-                  />
+                  <ChevronDown size={20} className={`transform transition-transform ${showFilters ? 'rotate-180' : ''}`} />
                 </button>
 
-                {/* Filters Dropdown - Only show when toggled */}
                 {showFilters && (
                   <div className="grid grid-cols-1 gap-3 pt-3 border-t border-[#117307]/20">
-                    {/* Category Dropdown */}
+                    {/* Category */}
                     <div className="relative" ref={categoryRef}>
                       <button
-                        onClick={toggleCategoryDropdown}
-                        className="w-full flex items-center justify-between px-4 py-3 border-2 border-[#117307] rounded-lg text-[#117307] font-semibold bg-white transition-colors cursor-pointer hover:bg-[#f5fbf2]"
+                        onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+                        className="w-full flex items-center justify-between px-4 py-3 border-2 border-[#117307] rounded-lg text-[#117307] font-semibold bg-white hover:bg-[#f5fbf2]"
                       >
                         <span>{currentCategoryLabel}</span>
-                        <ChevronDown 
-                          size={20} 
-                          className={`transform transition-transform ${isCategoryOpen ? 'rotate-180' : ''}`}
-                        />
+                        <ChevronDown size={20} className={`transform transition-transform ${isCategoryOpen ? 'rotate-180' : ''}`} />
                       </button>
                       
                       {isCategoryOpen && (
-                        <div className="absolute z-20 w-full mt-1 bg-white border-2 border-[#117307] rounded-lg shadow-lg overflow-hidden">
+                        <div className="absolute z-30 w-full mt-1 bg-white border-2 border-[#117307] rounded-lg shadow-lg overflow-hidden">
                           {categoryOptions.map((option) => (
                             <button
                               key={option.value}
-                              onClick={() => handleCategoryChange(option.value)}
-                              className={`w-full text-left px-4 py-3 hover:bg-[#f5fbf2] transition-colors cursor-pointer font-semibold ${
-                                selectedCategory === option.value 
-                                  ? 'bg-[#117307] text-white' 
-                                  : 'text-[#117307]'
+                              onClick={() => { setSelectedCategory(option.value); setIsCategoryOpen(false); }}
+                              className={`w-full text-left px-4 py-3 hover:bg-[#f5fbf2] font-semibold ${
+                                selectedCategory === option.value ? 'bg-[#117307] text-white' : 'text-[#117307]'
                               }`}
                             >
                               {option.label}
@@ -345,61 +250,51 @@ export default function GalleryPage() {
                       )}
                     </div>
 
-                    {/* Type Dropdown */}
-                    <div className="relative" ref={typeRef}>
-                      <button
-                        onClick={toggleTypeDropdown}
-                        className="w-full flex items-center justify-between px-4 py-3 border-2 border-[#117307] rounded-lg text-[#117307] font-semibold bg-white transition-colors cursor-pointer hover:bg-[#f5fbf2]"
-                      >
-                        <span>{currentTypeLabel}</span>
-                        <ChevronDown 
-                          size={20} 
-                          className={`transform transition-transform ${isTypeOpen ? 'rotate-180' : ''}`}
-                        />
-                      </button>
-                      
-                      {isTypeOpen && (
-                        <div className="absolute z-20 w-full mt-1 bg-white border-2 border-[#117307] rounded-lg shadow-lg overflow-hidden">
-                          {typeOptions.map((option) => (
-                            <button
-                              key={option.value}
-                              onClick={() => handleTypeChange(option.value)}
-                              className={`w-full text-left px-4 py-3 hover:bg-[#f5fbf2] transition-colors cursor-pointer font-semibold ${
-                                selectedType === option.value 
-                                  ? 'bg-[#117307] text-white' 
-                                  : 'text-[#117307]'
-                              }`}
-                            >
-                              {option.label}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* District Dropdown */}
+                    {/* District */}
                     <div className="relative" ref={districtRef}>
                       <button
-                        onClick={toggleDistrictDropdown}
-                        className="w-full flex items-center justify-between px-4 py-3 border-2 border-[#117307] rounded-lg text-[#117307] font-semibold bg-white transition-colors cursor-pointer hover:bg-[#f5fbf2]"
+                        onClick={() => setIsDistrictOpen(!isDistrictOpen)}
+                        className="w-full flex items-center justify-between px-4 py-3 border-2 border-[#117307] rounded-lg text-[#117307] font-semibold bg-white hover:bg-[#f5fbf2]"
                       >
                         <span>{currentDistrictLabel}</span>
-                        <ChevronDown 
-                          size={20} 
-                          className={`transform transition-transform ${isDistrictOpen ? 'rotate-180' : ''}`}
-                        />
+                        <ChevronDown size={20} className={`transform transition-transform ${isDistrictOpen ? 'rotate-180' : ''}`} />
                       </button>
                       
                       {isDistrictOpen && (
-                        <div className="absolute z-20 w-full mt-1 bg-white border-2 border-[#117307] rounded-lg shadow-lg overflow-hidden max-h-60 overflow-y-auto">
+                        <div className="absolute z-30 w-full mt-1 bg-white border-2 border-[#117307] rounded-lg shadow-lg overflow-hidden max-h-60 overflow-y-auto">
                           {districtOptions.map((option) => (
                             <button
                               key={option.value}
-                              onClick={() => handleDistrictChange(option.value)}
-                              className={`w-full text-left px-4 py-3 hover:bg-[#f5fbf2] transition-colors cursor-pointer font-semibold ${
-                                selectedDistrict === option.value 
-                                  ? 'bg-[#117307] text-white' 
-                                  : 'text-[#117307]'
+                              onClick={() => { setSelectedDistrict(option.value); setIsDistrictOpen(false); }}
+                              className={`w-full text-left px-4 py-3 hover:bg-[#f5fbf2] font-semibold ${
+                                selectedDistrict === option.value ? 'bg-[#117307] text-white' : 'text-[#117307]'
+                              }`}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Panchayat */}
+                    <div className="relative" ref={panchayatRef}>
+                      <button
+                        onClick={() => setIsPanchayatOpen(!isPanchayatOpen)}
+                        className="w-full flex items-center justify-between px-4 py-3 border-2 border-[#117307] rounded-lg text-[#117307] font-semibold bg-white hover:bg-[#f5fbf2]"
+                      >
+                        <span>{currentPanchayatLabel}</span>
+                        <ChevronDown size={20} className={`transform transition-transform ${isPanchayatOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      
+                      {isPanchayatOpen && (
+                        <div className="absolute z-30 w-full mt-1 bg-white border-2 border-[#117307] rounded-lg shadow-lg overflow-hidden max-h-60 overflow-y-auto">
+                          {panchayatOptions.map((option) => (
+                            <button
+                              key={option.value}
+                              onClick={() => { setSelectedPanchayat(option.value); setIsPanchayatOpen(false); }}
+                              className={`w-full text-left px-4 py-3 hover:bg-[#f5fbf2] font-semibold ${
+                                selectedPanchayat === option.value ? 'bg-[#117307] text-white' : 'text-[#117307]'
                               }`}
                             >
                               {option.label}
@@ -414,9 +309,8 @@ export default function GalleryPage() {
             </div>
           </div>
 
-          {/* Desktop: Side by side layout */}
+          {/* Desktop */}
           <div className="hidden lg:flex justify-between items-start gap-12">
-            {/* Header Content - Left Side */}
             <div className="flex-1 max-w-xl">
               <h1 className="text-4xl lg:text-5xl font-bold text-white mb-3">
                 Explore Madhya Pradesh
@@ -425,33 +319,25 @@ export default function GalleryPage() {
                 Visual stories from every corner of our state
               </p>
 
-              {/* Quick Navigation Buttons - Desktop */}
               <div className="flex gap-4">
-                <button
-                  onClick={handlePhotosNavigation}
-                  className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-6 py-3 rounded-xl font-semibold transition-all cursor-pointer"
-                >
+                <button onClick={handlePhotosNavigation} className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-6 py-3 rounded-xl font-semibold transition-all">
                   <ImageIcon size={20} />
                   <span>Browse Photos</span>
                 </button>
-                <button
-                  onClick={handleVideosNavigation}
-                  className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-6 py-3 rounded-xl font-semibold transition-all cursor-pointer"
-                >
+                <button onClick={handleVideosNavigation} className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-6 py-3 rounded-xl font-semibold transition-all">
                   <Video size={20} />
                   <span>Browse Videos</span>
                 </button>
               </div>
             </div>
 
-            {/* Search & Filter - Right Side */}
             <div className="flex-1 max-w-2xl">
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <div className="space-y-4">
                   <TextField
                     placeholder="Search gallery..."
                     value={searchTerm}
-                    onChange={handleSearchChange}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                     fullWidth
                     startIcon={<Search size={20} className="text-[#117307]" />}
                     sx={{
@@ -464,30 +350,25 @@ export default function GalleryPage() {
                     }}
                   />
 
-                  <div className="grid grid-cols-3 mt-3 gap-3">
-                    {/* Category Dropdown */}
+                  <div className="grid grid-cols-3 gap-3 mt-2">
+                    {/* Category, District, Panchayat - same structure as mobile */}
                     <div className="relative" ref={categoryRef}>
                       <button
-                        onClick={toggleCategoryDropdown}
-                        className="w-full flex items-center justify-between px-3 py-3 border-2 border-[#117307] rounded-md text-[#117307] font-semibold bg-white transition-colors cursor-pointer hover:bg-[#f5fbf2] text-sm"
+                        onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+                        className="w-full flex items-center justify-between px-3 py-3 border-2 border-[#117307] rounded-md text-[#117307] font-semibold bg-white hover:bg-[#f5fbf2] text-sm"
                       >
                         <span className="truncate">{currentCategoryLabel}</span>
-                        <ChevronDown 
-                          size={16} 
-                          className={`flex-shrink-0 transform transition-transform ${isCategoryOpen ? 'rotate-180' : ''}`}
-                        />
+                        <ChevronDown size={16} className={`flex-shrink-0 transform transition-transform ${isCategoryOpen ? 'rotate-180' : ''}`} />
                       </button>
                       
                       {isCategoryOpen && (
-                        <div className="absolute z-10 w-full mt-1 bg-white border-2 border-[#117307] rounded-lg shadow-lg overflow-hidden">
+                        <div className="absolute z-20 w-full mt-1 bg-white border-2 border-[#117307] rounded-lg shadow-lg overflow-hidden">
                           {categoryOptions.map((option) => (
                             <button
                               key={option.value}
-                              onClick={() => handleCategoryChange(option.value)}
-                              className={`w-full font-semibold text-left px-3 py-2 hover:bg-[#f5fbf2] transition-colors cursor-pointer text-sm ${
-                                selectedCategory === option.value 
-                                  ? 'bg-[#117307] text-white' 
-                                  : 'text-[#117307]'
+                              onClick={() => { setSelectedCategory(option.value); setIsCategoryOpen(false); }}
+                              className={`w-full text-left px-3 py-2 hover:bg-[#f5fbf2] font-semibold text-sm ${
+                                selectedCategory === option.value ? 'bg-[#117307] text-white' : 'text-[#117307]'
                               }`}
                             >
                               {option.label}
@@ -497,61 +378,49 @@ export default function GalleryPage() {
                       )}
                     </div>
 
-                    {/* Type Dropdown */}
-                    <div className="relative" ref={typeRef}>
-                      <button
-                        onClick={toggleTypeDropdown}
-                        className="w-full flex items-center justify-between px-3 py-3 border-2 border-[#117307] rounded-md text-[#117307] font-semibold bg-white transition-colors cursor-pointer hover:bg-[#f5fbf2] text-sm"
-                      >
-                        <span className="truncate">{currentTypeLabel}</span>
-                        <ChevronDown 
-                          size={16} 
-                          className={`flex-shrink-0 transform transition-transform ${isTypeOpen ? 'rotate-180' : ''}`}
-                        />
-                      </button>
-                      
-                      {isTypeOpen && (
-                        <div className="absolute z-10 w-full mt-1 bg-white border-2 border-[#117307] rounded-lg shadow-lg overflow-hidden">
-                          {typeOptions.map((option) => (
-                            <button
-                              key={option.value}
-                              onClick={() => handleTypeChange(option.value)}
-                              className={`w-full font-semibold text-left px-3 py-2 hover:bg-[#f5fbf2] transition-colors cursor-pointer text-sm ${
-                                selectedType === option.value 
-                                  ? 'bg-[#117307] text-white' 
-                                  : 'text-[#117307]'
-                              }`}
-                            >
-                              {option.label}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* District Dropdown */}
                     <div className="relative" ref={districtRef}>
                       <button
-                        onClick={toggleDistrictDropdown}
-                        className="w-full flex items-center justify-between px-3 py-3 border-2 border-[#117307] rounded-md text-[#117307] font-semibold bg-white transition-colors cursor-pointer hover:bg-[#f5fbf2] text-sm"
+                        onClick={() => setIsDistrictOpen(!isDistrictOpen)}
+                        className="w-full flex items-center justify-between px-3 py-3 border-2 border-[#117307] rounded-md text-[#117307] font-semibold bg-white hover:bg-[#f5fbf2] text-sm"
                       >
                         <span className="truncate">{currentDistrictLabel}</span>
-                        <ChevronDown 
-                          size={16} 
-                          className={`flex-shrink-0 transform transition-transform ${isDistrictOpen ? 'rotate-180' : ''}`}
-                        />
+                        <ChevronDown size={16} className={`flex-shrink-0 transform transition-transform ${isDistrictOpen ? 'rotate-180' : ''}`} />
                       </button>
                       
                       {isDistrictOpen && (
-                        <div className="absolute z-10 w-full mt-1 bg-white border-2 border-[#117307] rounded-lg shadow-lg overflow-hidden max-h-60 overflow-y-auto">
+                        <div className="absolute z-20 w-full mt-1 bg-white border-2 border-[#117307] rounded-lg shadow-lg overflow-hidden max-h-60 overflow-y-auto">
                           {districtOptions.map((option) => (
                             <button
                               key={option.value}
-                              onClick={() => handleDistrictChange(option.value)}
-                              className={`w-full font-semibold text-left px-3 py-2 hover:bg-[#f5fbf2] transition-colors cursor-pointer text-sm ${
-                                selectedDistrict === option.value 
-                                  ? 'bg-[#117307] text-white' 
-                                  : 'text-[#117307]'
+                              onClick={() => { setSelectedDistrict(option.value); setIsDistrictOpen(false); }}
+                              className={`w-full text-left px-3 py-2 hover:bg-[#f5fbf2] font-semibold text-sm ${
+                                selectedDistrict === option.value ? 'bg-[#117307] text-white' : 'text-[#117307]'
+                              }`}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="relative" ref={panchayatRef}>
+                      <button
+                        onClick={() => setIsPanchayatOpen(!isPanchayatOpen)}
+                        className="w-full flex items-center justify-between px-3 py-3 border-2 border-[#117307] rounded-md text-[#117307] font-semibold bg-white hover:bg-[#f5fbf2] text-sm"
+                      >
+                        <span className="truncate">{currentPanchayatLabel}</span>
+                        <ChevronDown size={16} className={`flex-shrink-0 transform transition-transform ${isPanchayatOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      
+                      {isPanchayatOpen && (
+                        <div className="absolute z-20 w-full mt-1 bg-white border-2 border-[#117307] rounded-lg shadow-lg overflow-hidden max-h-60 overflow-y-auto">
+                          {panchayatOptions.map((option) => (
+                            <button
+                              key={option.value}
+                              onClick={() => { setSelectedPanchayat(option.value); setIsPanchayatOpen(false); }}
+                              className={`w-full text-left px-3 py-2 hover:bg-[#f5fbf2] font-semibold text-sm ${
+                                selectedPanchayat === option.value ? 'bg-[#117307] text-white' : 'text-[#117307]'
                               }`}
                             >
                               {option.label}
@@ -570,7 +439,12 @@ export default function GalleryPage() {
 
       {/* Gallery Content */}
       <div className="max-w-7xl mx-auto px-4 py-12">
-        {error ? (
+        {loading && media.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 size={48} className="text-[#117307] animate-spin mb-4" />
+            <p className="text-[#117307] text-lg font-medium">Loading gallery...</p>
+          </div>
+        ) : error ? (
           <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
             <Camera size={48} className="mx-auto text-red-500 mb-4" />
             <p className="text-[#117307] text-lg font-medium">Failed to load gallery</p>
@@ -579,119 +453,836 @@ export default function GalleryPage() {
           <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
             <Camera size={48} className="mx-auto text-[#117307] opacity-20 mb-4" />
             <p className="text-[#117307] text-lg font-medium mb-2">No media found</p>
-            <button
-              onClick={handleClearFilters}
-              className="text-[#117307] underline font-medium cursor-pointer"
-            >
+            <button onClick={handleClearFilters} className="text-[#117307] underline font-medium">
               Clear all filters
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredMedia.map((item) => (
-              <div
-                key={item._id}
-                onClick={() => handleCardClick(item._id)}
-                className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl cursor-pointer transition-all duration-300 group border-2 border-transparent hover:border-[#117307]"
-              >
-                {/* Image/Video Container */}
-                <div className="h-52 bg-[#f5fbf2] relative overflow-hidden">
-                  {item.fileType === 'video' ? (
-                    // Video thumbnail with play icon overlay
-                    <div className="relative w-full h-full">
-                      {item.thumbnailUrl && !imageErrors[item._id] ? (
-                        <>
-                          <img
-                            src={item.thumbnailUrl}
-                            alt={item.title}
-                            className="w-full h-full object-cover transition-transform duration-500"
-                            onError={() => handleImageError(item._id)}
-                            loading="lazy"
-                          />
-                          <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                            <div className="bg-white/20 backdrop-blur-sm rounded-full p-4">
-                              <Video size={32} className="text-white" />
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#117307]/20 to-[#117307]/40 flex items-center justify-center">
-                          <div className="bg-white/20 backdrop-blur-sm rounded-full p-4">
-                            <Video size={48} className="text-white" />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ) : imageErrors[item._id] ? (
-                    // Fallback when image fails to load
-                    <div className="absolute inset-0 flex items-center justify-center bg-[#117307]/5">
-                      <ImageIcon size={64} className="text-[#117307] opacity-20" />
-                    </div>
-                  ) : (
-                    // Image display
-                    <img
-                      src={item.fileUrl}
-                      alt={item.title}
-                      className="w-full h-full object-cover transition-transform duration-500"
-                      onError={() => handleImageError(item._id)}
-                      loading="lazy"
-                    />
-                  )}
-                </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {paginatedMedia.map((item) => (
+                <div
+                  key={item._id}
+                  onClick={() => handleCardClick(item._id)}
+                  className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl cursor-pointer transition-all duration-300 group border-2 border-transparent hover:border-[#117307]"
+                >
+                  <div className="h-52 bg-[#f5fbf2] relative overflow-hidden">
+                    {item.fileType === 'video' ? (
+                      <div className="relative w-full h-full">
+                        {item.thumbnailUrl && !imageErrors[item._id] ? (
+                          <>
+                            <img
+                              src={item.thumbnailUrl}
+                              alt={item.title}
+                              className="w-full h-full object-cover transition-transform duration-500"
+                              onError={() => handleImageError(item._id)}
+                              loading="lazy"
+                            />
+                           <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+  <div className="rounded-full p-3 border-2 border-white transition-transform group-hover:scale-110">
+    <Play size={26} className="text-white" />
+  </div>
+</div>
 
-                <div className="p-6">
-                  {/* Date */}
-                  <div className="flex items-center gap-2 text-[#4d674f] font-medium text-sm mb-3">
-                    <Calendar size={14} className="text-[#1a5e10]" />
-                    <span>
-                      {item.captureDate 
-                        ? new Date(item.captureDate).toLocaleDateString('en-US', { 
-                            month: 'long',
-                            day: 'numeric',
-                            year: 'numeric'
-                          })
-                        : 'Date not available'
-                      }
-                    </span>
+                          </>
+                        ) : (
+                         <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+  <div className="rounded-full p-3 border-2 border-white transition-transform group-hover:scale-110">
+    <Play size={26} className="text-white" />
+  </div>
+</div>
+
+                        )}
+                      </div>
+                    ) : imageErrors[item._id] ? (
+                      <div className="absolute inset-0 flex items-center justify-center bg-[#117307]/5">
+                        <ImageIcon size={64} className="text-[#117307] opacity-20" />
+                      </div>
+                    ) : (
+                      <img
+                        src={item.fileUrl}
+                        alt={item.title}
+                        className="w-full h-full object-cover transition-transform duration-500"
+                        onError={() => handleImageError(item._id)}
+                        loading="lazy"
+                      />
+                    )}
                   </div>
 
-                  {/* Title */}
-                  <h3 className="text-xl font-bold text-[#0d4d03] mb-3 
-                                 line-clamp-2 leading-tight 
-                                 group-hover:text-[#0a3a02] transition-colors">
-                    {item.title}
-                  </h3>
-
-                  {/* Description */}
-                  <p className="text-[#1a5e10] font-medium text-sm leading-relaxed mb-4 line-clamp-3">
-                    {item.description}
-                  </p>
-
-                  {/* Footer */}
-                  <div className="flex justify-between items-center pt-4 border-t border-[#117307]/15">
-                    {/* Location */}
-                    <div className="flex items-center gap-1.5 text-[#1a5e10] font-semibold text-sm">
-                      <MapPin size={14} />
-                      <span className="line-clamp-1">
-                        {item.district?.name || 'Unknown District'}
+                  <div className="p-6">
+                    <div className="flex items-center gap-2 text-[#4d674f] font-medium text-sm mb-3">
+                      <Calendar size={14} className="text-[#1a5e10]" />
+                      <span>
+                        {item.captureDate 
+                          ? new Date(item.captureDate).toLocaleDateString('en-US', { 
+                              month: 'long', day: 'numeric', year: 'numeric'
+                            })
+                          : 'Date not available'
+                        }
                       </span>
                     </div>
 
-                    {/* Read More */}
-                    <div className="flex items-center gap-1.5 text-[#0d4d03] font-bold text-sm">
-                      View Details
-                      <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                    <h3 className="text-xl font-bold text-[#0d4d03] mb-3 line-clamp-2 leading-tight group-hover:text-[#0a3a02] transition-colors">
+                      {item.title}
+                    </h3>
+
+                    <p className="text-[#1a5e10] font-medium text-sm leading-relaxed mb-4 line-clamp-3">
+                      {item.description}
+                    </p>
+
+                    <div className="flex justify-between items-center pt-4 border-t border-[#117307]/15">
+                      <div className="flex items-center gap-1.5 text-[#1a5e10] font-semibold text-sm">
+                        <MapPin size={14} />
+                        <span className="line-clamp-1">
+                          {item.district?.name || 'Unknown District'}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 text-[#0d4d03] font-bold text-sm">
+                        View Details
+                        <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                      </div>
                     </div>
                   </div>
                 </div>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-12">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 rounded-lg border-2 border-[#117307] text-[#117307] font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#117307] hover:text-white transition-all"
+                >
+                  Previous
+                </button>
+                
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-4 py-2 rounded-lg border-2 border-[#117307] font-semibold transition-all ${
+                      currentPage === page 
+                        ? 'bg-[#117307] text-white' 
+                        : 'text-[#117307] hover:bg-[#117307] hover:text-white'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 rounded-lg border-2 border-[#117307] text-[#117307] font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#117307] hover:text-white transition-all"
+                >
+                  Next
+                </button>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
     </div>
   );
 }
+
+// 'use client';
+
+// import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+// import { useDispatch, useSelector } from 'react-redux';
+// import { useRouter } from 'next/navigation';
+// import { fetchMedia } from '@/redux/slices/mediaSlice';
+// import { fetchDistricts } from '@/redux/slices/districtSlice';
+// import { Image as ImageIcon, Video, Search, MapPin, Calendar, Camera, ChevronDown, Filter, ArrowRight } from 'lucide-react';
+// import TextField from '@/components/ui/TextField';
+// import Loader from '@/components/ui/Loader';
+
+// export default function GalleryPage() {
+//   const dispatch = useDispatch();
+//   const router = useRouter();
+//   const { media, loading, error, lastFetched } = useSelector((state) => state.media);
+//   const { districts } = useSelector((state) => state.district);
+  
+//   const [selectedCategory, setSelectedCategory] = useState('all');
+//   const [selectedType, setSelectedType] = useState('all');
+//   const [selectedDistrict, setSelectedDistrict] = useState('all');
+//   const [searchTerm, setSearchTerm] = useState('');
+//   const [imageErrors, setImageErrors] = useState({});
+//   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+//   const [isTypeOpen, setIsTypeOpen] = useState(false);
+//   const [isDistrictOpen, setIsDistrictOpen] = useState(false);
+//   const [showFilters, setShowFilters] = useState(false);
+
+//   // Refs for dropdowns
+//   const categoryRef = useRef(null);
+//   const typeRef = useRef(null);
+//   const districtRef = useRef(null);
+//   const filtersRef = useRef(null);
+
+//   // Memoized category options
+//   const categoryOptions = useMemo(() => [
+//     { value: 'all', label: 'All Categories' },
+//     { value: 'heritage', label: 'Heritage' },
+//     { value: 'natural', label: 'Natural' },
+//     { value: 'cultural', label: 'Cultural' },
+//     { value: 'event', label: 'Events' },
+//     { value: 'festival', label: 'Festivals' }
+//   ], []);
+
+//   // Memoized type options
+//   const typeOptions = useMemo(() => [
+//     { value: 'all', label: 'All Media' },
+//     { value: 'image', label: 'Photos' },
+//     { value: 'video', label: 'Videos' }
+//   ], []);
+
+//   // Click outside handler
+//   useEffect(() => {
+//     const handleClickOutside = (event) => {
+//       if (categoryRef.current && !categoryRef.current.contains(event.target)) {
+//         setIsCategoryOpen(false);
+//       }
+//       if (typeRef.current && !typeRef.current.contains(event.target)) {
+//         setIsTypeOpen(false);
+//       }
+//       if (districtRef.current && !districtRef.current.contains(event.target)) {
+//         setIsDistrictOpen(false);
+//       }
+//       if (filtersRef.current && !filtersRef.current.contains(event.target) && window.innerWidth < 1024) {
+//         setShowFilters(false);
+//       }
+//     };
+
+//     document.addEventListener('mousedown', handleClickOutside);
+//     return () => {
+//       document.removeEventListener('mousedown', handleClickOutside);
+//     };
+//   }, []);
+
+//   // OPTIMIZED: Smart useEffect with better cache control
+//   useEffect(() => {
+//     const oneHourAgo = Date.now() - (60 * 60 * 1000); // 1 hour cache
+    
+//     // Only fetch media if it's empty or data is older than 1 hour
+//     const shouldFetchMedia = media.length === 0 || !lastFetched || lastFetched < oneHourAgo;
+//     const shouldFetchDistricts = districts.length === 0;
+
+//     if (shouldFetchMedia) {
+//       dispatch(fetchMedia({ limit: 50, status: 'approved' }));
+//     }
+    
+//     if (shouldFetchDistricts) {
+//       dispatch(fetchDistricts());
+//     }
+//   }, [dispatch, media.length, districts.length, lastFetched]);
+
+//   // Memoized district options
+//   const districtOptions = useMemo(() => [
+//     { value: 'all', label: 'All Districts' },
+//     ...(districts?.map(d => ({ value: d._id, label: d.name })) || [])
+//   ], [districts]);
+
+//   // Memoized category color mapping
+//   const getCategoryColor = useCallback((category) => {
+//     const colors = {
+//       heritage: 'bg-amber-500',
+//       natural: 'bg-emerald-500',
+//       cultural: 'bg-purple-500',
+//       event: 'bg-blue-500',
+//       festival: 'bg-pink-500'
+//     };
+//     return colors[category] || 'bg-gray-500';
+//   }, []);
+
+//   // Memoized category label mapping
+//   const getCategoryLabel = useCallback((category) => {
+//     const labels = {
+//       heritage: 'Heritage',
+//       natural: 'Natural',
+//       cultural: 'Cultural',
+//       event: 'Event',
+//       festival: 'Festival'
+//     };
+//     return labels[category] || category;
+//   }, []);
+
+//   // Memoized image error handler
+//   const handleImageError = useCallback((itemId) => {
+//     setImageErrors(prev => ({
+//       ...prev,
+//       [itemId]: true
+//     }));
+//   }, []);
+
+//   // OPTIMIZED: Memoized filtered media with early returns
+//   const filteredMedia = useMemo(() => {
+//     return media.filter(item => {
+//       if (item.status !== 'approved' && item.status !== undefined) return false;
+      
+//       // Early return if search term doesn't match
+//       if (searchTerm && 
+//           !item.title?.toLowerCase().includes(searchTerm.toLowerCase()) &&
+//           !item.description?.toLowerCase().includes(searchTerm.toLowerCase()) &&
+//           !item.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))) {
+//         return false;
+//       }
+      
+//       const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+//       const matchesType = selectedType === 'all' || item.fileType === selectedType;
+//       const matchesDistrict = selectedDistrict === 'all' || item.district?._id === selectedDistrict;
+      
+//       return matchesCategory && matchesType && matchesDistrict;
+//     });
+//   }, [media, selectedCategory, selectedType, selectedDistrict, searchTerm]);
+
+//   // Memoized card click handler
+//   const handleCardClick = useCallback((id) => {
+//     router.push(`/gallery/${id}`);
+//   }, [router]);
+
+//   // Memoized clear filters handler
+//   const handleClearFilters = useCallback(() => {
+//     setSearchTerm('');
+//     setSelectedCategory('all');
+//     setSelectedType('all');
+//     setSelectedDistrict('all');
+//   }, []);
+
+//   // Memoized navigation handlers
+//   const handlePhotosNavigation = useCallback(() => {
+//     router.push('/gallery/photos');
+//   }, [router]);
+
+//   const handleVideosNavigation = useCallback(() => {
+//     router.push('/gallery/videos');
+//   }, [router]);
+
+//   // Memoized search handler
+//   const handleSearchChange = useCallback((e) => {
+//     setSearchTerm(e.target.value);
+//   }, []);
+
+//   // Memoized category change handler
+//   const handleCategoryChange = useCallback((category) => {
+//     setSelectedCategory(category);
+//     setIsCategoryOpen(false);
+//   }, []);
+
+//   // Memoized type change handler
+//   const handleTypeChange = useCallback((type) => {
+//     setSelectedType(type);
+//     setIsTypeOpen(false);
+//   }, []);
+
+//   // Memoized district change handler
+//   const handleDistrictChange = useCallback((district) => {
+//     setSelectedDistrict(district);
+//     setIsDistrictOpen(false);
+//   }, []);
+
+//   // Toggle dropdown handlers with proper functionality
+//   const toggleCategoryDropdown = useCallback(() => {
+//     setIsCategoryOpen(prev => !prev);
+//   }, []);
+
+//   const toggleTypeDropdown = useCallback(() => {
+//     setIsTypeOpen(prev => !prev);
+//   }, []);
+
+//   const toggleDistrictDropdown = useCallback(() => {
+//     setIsDistrictOpen(prev => !prev);
+//   }, []);
+
+//   // Toggle mobile filters
+//   const toggleMobileFilters = useCallback(() => {
+//     setShowFilters(prev => !prev);
+//   }, []);
+
+//   // Get current labels
+//   const currentCategoryLabel = useMemo(() => {
+//     return categoryOptions.find(option => option.value === selectedCategory)?.label || 'All Categories';
+//   }, [selectedCategory, categoryOptions]);
+
+//   const currentTypeLabel = useMemo(() => {
+//     return typeOptions.find(option => option.value === selectedType)?.label || 'All Media';
+//   }, [selectedType, typeOptions]);
+
+//   const currentDistrictLabel = useMemo(() => {
+//     return districtOptions.find(option => option.value === selectedDistrict)?.label || 'All Districts';
+//   }, [selectedDistrict, districtOptions]);
+
+//   // OPTIMIZED: Only show loader on initial load when there's no data
+//   const showLoader = loading && media.length === 0;
+
+//   if (showLoader) {
+//     return <Loader />;
+//   }
+
+//   return (
+//     <div className="min-h-screen bg-[#f5fbf2]">
+//       {/* Header Section */}
+      
+//       <div className="bg-[#117307]">
+//         <div className="max-w-7xl mx-auto px-4 py-8 lg:py-10">
+//           {/* Mobile & Tablet: Stack layout */}
+//           <div className="lg:hidden space-y-6">
+//             {/* Header Content */}
+//             <div className="text-center">
+//               <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
+//                 Explore Madhya Pradesh
+//               </h1>
+//               <p className="text-base md:text-lg text-white/90 max-w-2xl mx-auto">
+//                 Visual stories from every corner of our state
+//               </p>
+
+//               {/* Quick Navigation Buttons - Mobile */}
+//               <div className="flex gap-3 justify-center mt-6">
+//                 <button
+//                   onClick={handlePhotosNavigation}
+//                   className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-2 rounded-xl font-semibold transition-all cursor-pointer"
+//                 >
+//                   <ImageIcon size={16} />
+//                   <span>Photos</span>
+//                 </button>
+//                 <button
+//                   onClick={handleVideosNavigation}
+//                   className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-2 rounded-xl font-semibold transition-all cursor-pointer"
+//                 >
+//                   <Video size={16} />
+//                   <span>Videos</span>
+//                 </button>
+//               </div>
+//             </div>
+
+//             {/* Search & Filter for Mobile */}
+//             <div className="bg-white max-w-3xl mx-auto rounded-2xl shadow-lg p-4 md:p-6" ref={filtersRef}>
+//               <div className="space-y-4">
+//                 {/* Search Bar */}
+//                 <TextField
+//                   placeholder="Search gallery..."
+//                   value={searchTerm}
+//                   onChange={handleSearchChange}
+//                   fullWidth
+//                   startIcon={<Search size={20} className="text-[#117307]" />}
+//                   sx={{
+//                     '& .MuiOutlinedInput-root': {
+//                       '& fieldset': {
+//                         borderColor: '#117307',
+//                         borderWidth: '2px',
+//                       },
+//                       '&:hover fieldset': {
+//                         borderColor: '#117307',
+//                       },
+//                       '&.Mui-focused fieldset': {
+//                         borderColor: '#117307',
+//                         borderWidth: '2px',
+//                       }
+//                     },
+//                     '& .MuiInputBase-input': {
+//                       color: '#117307',
+//                       fontWeight: 500
+//                     }
+//                   }}
+//                 />
+
+//                 {/* Filter Toggle Button for Mobile */}
+//                 <button
+//                   onClick={toggleMobileFilters}
+//                   className="w-full mt-2 flex items-center justify-center gap-2 px-4 py-3 border-2 border-[#117307] rounded-lg text-[#117307] font-semibold bg-white transition-colors cursor-pointer hover:bg-[#f5fbf2]"
+//                 >
+//                   <Filter size={20} />
+//                   <span>Filters</span>
+//                   <ChevronDown 
+//                     size={20} 
+//                     className={`transform transition-transform ${showFilters ? 'rotate-180' : ''}`}
+//                   />
+//                 </button>
+
+//                 {/* Filters Dropdown - Only show when toggled */}
+//                 {showFilters && (
+//                   <div className="grid grid-cols-1 gap-3 pt-3 border-t border-[#117307]/20">
+//                     {/* Category Dropdown */}
+//                     <div className="relative" ref={categoryRef}>
+//                       <button
+//                         onClick={toggleCategoryDropdown}
+//                         className="w-full flex items-center justify-between px-4 py-3 border-2 border-[#117307] rounded-lg text-[#117307] font-semibold bg-white transition-colors cursor-pointer hover:bg-[#f5fbf2]"
+//                       >
+//                         <span>{currentCategoryLabel}</span>
+//                         <ChevronDown 
+//                           size={20} 
+//                           className={`transform transition-transform ${isCategoryOpen ? 'rotate-180' : ''}`}
+//                         />
+//                       </button>
+                      
+//                       {isCategoryOpen && (
+//                         <div className="absolute z-20 w-full mt-1 bg-white border-2 border-[#117307] rounded-lg shadow-lg overflow-hidden">
+//                           {categoryOptions.map((option) => (
+//                             <button
+//                               key={option.value}
+//                               onClick={() => handleCategoryChange(option.value)}
+//                               className={`w-full text-left px-4 py-3 hover:bg-[#f5fbf2] transition-colors cursor-pointer font-semibold ${
+//                                 selectedCategory === option.value 
+//                                   ? 'bg-[#117307] text-white' 
+//                                   : 'text-[#117307]'
+//                               }`}
+//                             >
+//                               {option.label}
+//                             </button>
+//                           ))}
+//                         </div>
+//                       )}
+//                     </div>
+
+//                     {/* Type Dropdown */}
+//                     <div className="relative" ref={typeRef}>
+//                       <button
+//                         onClick={toggleTypeDropdown}
+//                         className="w-full flex items-center justify-between px-4 py-3 border-2 border-[#117307] rounded-lg text-[#117307] font-semibold bg-white transition-colors cursor-pointer hover:bg-[#f5fbf2]"
+//                       >
+//                         <span>{currentTypeLabel}</span>
+//                         <ChevronDown 
+//                           size={20} 
+//                           className={`transform transition-transform ${isTypeOpen ? 'rotate-180' : ''}`}
+//                         />
+//                       </button>
+                      
+//                       {isTypeOpen && (
+//                         <div className="absolute z-20 w-full mt-1 bg-white border-2 border-[#117307] rounded-lg shadow-lg overflow-hidden">
+//                           {typeOptions.map((option) => (
+//                             <button
+//                               key={option.value}
+//                               onClick={() => handleTypeChange(option.value)}
+//                               className={`w-full text-left px-4 py-3 hover:bg-[#f5fbf2] transition-colors cursor-pointer font-semibold ${
+//                                 selectedType === option.value 
+//                                   ? 'bg-[#117307] text-white' 
+//                                   : 'text-[#117307]'
+//                               }`}
+//                             >
+//                               {option.label}
+//                             </button>
+//                           ))}
+//                         </div>
+//                       )}
+//                     </div>
+
+//                     {/* District Dropdown */}
+//                     <div className="relative" ref={districtRef}>
+//                       <button
+//                         onClick={toggleDistrictDropdown}
+//                         className="w-full flex items-center justify-between px-4 py-3 border-2 border-[#117307] rounded-lg text-[#117307] font-semibold bg-white transition-colors cursor-pointer hover:bg-[#f5fbf2]"
+//                       >
+//                         <span>{currentDistrictLabel}</span>
+//                         <ChevronDown 
+//                           size={20} 
+//                           className={`transform transition-transform ${isDistrictOpen ? 'rotate-180' : ''}`}
+//                         />
+//                       </button>
+                      
+//                       {isDistrictOpen && (
+//                         <div className="absolute z-20 w-full mt-1 bg-white border-2 border-[#117307] rounded-lg shadow-lg overflow-hidden max-h-60 overflow-y-auto">
+//                           {districtOptions.map((option) => (
+//                             <button
+//                               key={option.value}
+//                               onClick={() => handleDistrictChange(option.value)}
+//                               className={`w-full text-left px-4 py-3 hover:bg-[#f5fbf2] transition-colors cursor-pointer font-semibold ${
+//                                 selectedDistrict === option.value 
+//                                   ? 'bg-[#117307] text-white' 
+//                                   : 'text-[#117307]'
+//                               }`}
+//                             >
+//                               {option.label}
+//                             </button>
+//                           ))}
+//                         </div>
+//                       )}
+//                     </div>
+//                   </div>
+//                 )}
+//               </div>
+//             </div>
+//           </div>
+
+//           {/* Desktop: Side by side layout */}
+//           <div className="hidden lg:flex justify-between items-start gap-12">
+//             {/* Header Content - Left Side */}
+//             <div className="flex-1 max-w-xl">
+//               <h1 className="text-4xl lg:text-5xl font-bold text-white mb-3">
+//                 Explore Madhya Pradesh
+//               </h1>
+//               <p className="text-lg text-white/90 mb-6">
+//                 Visual stories from every corner of our state
+//               </p>
+
+//               {/* Quick Navigation Buttons - Desktop */}
+//               <div className="flex gap-4">
+//                 <button
+//                   onClick={handlePhotosNavigation}
+//                   className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-6 py-3 rounded-xl font-semibold transition-all cursor-pointer"
+//                 >
+//                   <ImageIcon size={20} />
+//                   <span>Browse Photos</span>
+//                 </button>
+//                 <button
+//                   onClick={handleVideosNavigation}
+//                   className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-6 py-3 rounded-xl font-semibold transition-all cursor-pointer"
+//                 >
+//                   <Video size={20} />
+//                   <span>Browse Videos</span>
+//                 </button>
+//               </div>
+//             </div>
+
+//             {/* Search & Filter - Right Side */}
+//             <div className="flex-1 max-w-2xl">
+//               <div className="bg-white rounded-2xl shadow-lg p-6">
+//                 <div className="space-y-4">
+//                   <TextField
+//                     placeholder="Search gallery..."
+//                     value={searchTerm}
+//                     onChange={handleSearchChange}
+//                     fullWidth
+//                     startIcon={<Search size={20} className="text-[#117307]" />}
+//                     sx={{
+//                       '& .MuiOutlinedInput-root': {
+//                         '& fieldset': { borderColor: '#117307', borderWidth: '2px' },
+//                         '&:hover fieldset': { borderColor: '#117307' },
+//                         '&.Mui-focused fieldset': { borderColor: '#117307', borderWidth: '2px' }
+//                       },
+//                       '& .MuiInputBase-input': { color: '#117307', fontWeight: 500 }
+//                     }}
+//                   />
+
+//                   <div className="grid grid-cols-3 mt-3 gap-3">
+//                     {/* Category Dropdown */}
+//                     <div className="relative" ref={categoryRef}>
+//                       <button
+//                         onClick={toggleCategoryDropdown}
+//                         className="w-full flex items-center justify-between px-3 py-3 border-2 border-[#117307] rounded-md text-[#117307] font-semibold bg-white transition-colors cursor-pointer hover:bg-[#f5fbf2] text-sm"
+//                       >
+//                         <span className="truncate">{currentCategoryLabel}</span>
+//                         <ChevronDown 
+//                           size={16} 
+//                           className={`flex-shrink-0 transform transition-transform ${isCategoryOpen ? 'rotate-180' : ''}`}
+//                         />
+//                       </button>
+                      
+//                       {isCategoryOpen && (
+//                         <div className="absolute z-10 w-full mt-1 bg-white border-2 border-[#117307] rounded-lg shadow-lg overflow-hidden">
+//                           {categoryOptions.map((option) => (
+//                             <button
+//                               key={option.value}
+//                               onClick={() => handleCategoryChange(option.value)}
+//                               className={`w-full font-semibold text-left px-3 py-2 hover:bg-[#f5fbf2] transition-colors cursor-pointer text-sm ${
+//                                 selectedCategory === option.value 
+//                                   ? 'bg-[#117307] text-white' 
+//                                   : 'text-[#117307]'
+//                               }`}
+//                             >
+//                               {option.label}
+//                             </button>
+//                           ))}
+//                         </div>
+//                       )}
+//                     </div>
+
+//                     {/* Type Dropdown */}
+//                     <div className="relative" ref={typeRef}>
+//                       <button
+//                         onClick={toggleTypeDropdown}
+//                         className="w-full flex items-center justify-between px-3 py-3 border-2 border-[#117307] rounded-md text-[#117307] font-semibold bg-white transition-colors cursor-pointer hover:bg-[#f5fbf2] text-sm"
+//                       >
+//                         <span className="truncate">{currentTypeLabel}</span>
+//                         <ChevronDown 
+//                           size={16} 
+//                           className={`flex-shrink-0 transform transition-transform ${isTypeOpen ? 'rotate-180' : ''}`}
+//                         />
+//                       </button>
+                      
+//                       {isTypeOpen && (
+//                         <div className="absolute z-10 w-full mt-1 bg-white border-2 border-[#117307] rounded-lg shadow-lg overflow-hidden">
+//                           {typeOptions.map((option) => (
+//                             <button
+//                               key={option.value}
+//                               onClick={() => handleTypeChange(option.value)}
+//                               className={`w-full font-semibold text-left px-3 py-2 hover:bg-[#f5fbf2] transition-colors cursor-pointer text-sm ${
+//                                 selectedType === option.value 
+//                                   ? 'bg-[#117307] text-white' 
+//                                   : 'text-[#117307]'
+//                               }`}
+//                             >
+//                               {option.label}
+//                             </button>
+//                           ))}
+//                         </div>
+//                       )}
+//                     </div>
+
+//                     {/* District Dropdown */}
+//                     <div className="relative" ref={districtRef}>
+//                       <button
+//                         onClick={toggleDistrictDropdown}
+//                         className="w-full flex items-center justify-between px-3 py-3 border-2 border-[#117307] rounded-md text-[#117307] font-semibold bg-white transition-colors cursor-pointer hover:bg-[#f5fbf2] text-sm"
+//                       >
+//                         <span className="truncate">{currentDistrictLabel}</span>
+//                         <ChevronDown 
+//                           size={16} 
+//                           className={`flex-shrink-0 transform transition-transform ${isDistrictOpen ? 'rotate-180' : ''}`}
+//                         />
+//                       </button>
+                      
+//                       {isDistrictOpen && (
+//                         <div className="absolute z-10 w-full mt-1 bg-white border-2 border-[#117307] rounded-lg shadow-lg overflow-hidden max-h-60 overflow-y-auto">
+//                           {districtOptions.map((option) => (
+//                             <button
+//                               key={option.value}
+//                               onClick={() => handleDistrictChange(option.value)}
+//                               className={`w-full font-semibold text-left px-3 py-2 hover:bg-[#f5fbf2] transition-colors cursor-pointer text-sm ${
+//                                 selectedDistrict === option.value 
+//                                   ? 'bg-[#117307] text-white' 
+//                                   : 'text-[#117307]'
+//                               }`}
+//                             >
+//                               {option.label}
+//                             </button>
+//                           ))}
+//                         </div>
+//                       )}
+//                     </div>
+//                   </div>
+//                 </div>
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+
+//       {/* Gallery Content */}
+//       <div className="max-w-7xl mx-auto px-4 py-12">
+//         {error ? (
+//           <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
+//             <Camera size={48} className="mx-auto text-red-500 mb-4" />
+//             <p className="text-[#117307] text-lg font-medium">Failed to load gallery</p>
+//           </div>
+//         ) : filteredMedia.length === 0 ? (
+//           <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
+//             <Camera size={48} className="mx-auto text-[#117307] opacity-20 mb-4" />
+//             <p className="text-[#117307] text-lg font-medium mb-2">No media found</p>
+//             <button
+//               onClick={handleClearFilters}
+//               className="text-[#117307] underline font-medium cursor-pointer"
+//             >
+//               Clear all filters
+//             </button>
+//           </div>
+//         ) : (
+//           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+//             {filteredMedia.map((item) => (
+//               <div
+//                 key={item._id}
+//                 onClick={() => handleCardClick(item._id)}
+//                 className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl cursor-pointer transition-all duration-300 group border-2 border-transparent hover:border-[#117307]"
+//               >
+//                 {/* Image/Video Container */}
+//                 <div className="h-52 bg-[#f5fbf2] relative overflow-hidden">
+//                   {item.fileType === 'video' ? (
+//                     // Video thumbnail with play icon overlay
+//                     <div className="relative w-full h-full">
+//                       {item.thumbnailUrl && !imageErrors[item._id] ? (
+//                         <>
+//                           <img
+//                             src={item.thumbnailUrl}
+//                             alt={item.title}
+//                             className="w-full h-full object-cover transition-transform duration-500"
+//                             onError={() => handleImageError(item._id)}
+//                             loading="lazy"
+//                           />
+//                           <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+//                             <div className="bg-white/20 backdrop-blur-sm rounded-full p-4">
+//                               <Video size={32} className="text-white" />
+//                             </div>
+//                           </div>
+//                         </>
+//                       ) : (
+//                         <div className="absolute inset-0 bg-gradient-to-br from-[#117307]/20 to-[#117307]/40 flex items-center justify-center">
+//                           <div className="bg-white/20 backdrop-blur-sm rounded-full p-4">
+//                             <Video size={48} className="text-white" />
+//                           </div>
+//                         </div>
+//                       )}
+//                     </div>
+//                   ) : imageErrors[item._id] ? (
+//                     // Fallback when image fails to load
+//                     <div className="absolute inset-0 flex items-center justify-center bg-[#117307]/5">
+//                       <ImageIcon size={64} className="text-[#117307] opacity-20" />
+//                     </div>
+//                   ) : (
+//                     // Image display
+//                     <img
+//                       src={item.fileUrl}
+//                       alt={item.title}
+//                       className="w-full h-full object-cover transition-transform duration-500"
+//                       onError={() => handleImageError(item._id)}
+//                       loading="lazy"
+//                     />
+//                   )}
+//                 </div>
+
+//                 <div className="p-6">
+//                   {/* Date */}
+//                   <div className="flex items-center gap-2 text-[#4d674f] font-medium text-sm mb-3">
+//                     <Calendar size={14} className="text-[#1a5e10]" />
+//                     <span>
+//                       {item.captureDate 
+//                         ? new Date(item.captureDate).toLocaleDateString('en-US', { 
+//                             month: 'long',
+//                             day: 'numeric',
+//                             year: 'numeric'
+//                           })
+//                         : 'Date not available'
+//                       }
+//                     </span>
+//                   </div>
+
+//                   {/* Title */}
+//                   <h3 className="text-xl font-bold text-[#0d4d03] mb-3 
+//                                  line-clamp-2 leading-tight 
+//                                  group-hover:text-[#0a3a02] transition-colors">
+//                     {item.title}
+//                   </h3>
+
+//                   {/* Description */}
+//                   <p className="text-[#1a5e10] font-medium text-sm leading-relaxed mb-4 line-clamp-3">
+//                     {item.description}
+//                   </p>
+
+//                   {/* Footer */}
+//                   <div className="flex justify-between items-center pt-4 border-t border-[#117307]/15">
+//                     {/* Location */}
+//                     <div className="flex items-center gap-1.5 text-[#1a5e10] font-semibold text-sm">
+//                       <MapPin size={14} />
+//                       <span className="line-clamp-1">
+//                         {item.district?.name || 'Unknown District'}
+//                       </span>
+//                     </div>
+
+//                     {/* Read More */}
+//                     <div className="flex items-center gap-1.5 text-[#0d4d03] font-bold text-sm">
+//                       View Details
+//                       <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+//                     </div>
+//                   </div>
+//                 </div>
+//               </div>
+//             ))}
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// }
 
 // 'use client';
 

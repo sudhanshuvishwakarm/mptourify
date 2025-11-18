@@ -103,6 +103,8 @@ export const addRTCReport = createAsyncThunk(
     }
 );
 
+
+
 // UPDATE PANCHAYAT
 export const updatePanchayat = createAsyncThunk(
     'panchayat/updatePanchayat',
@@ -136,6 +138,21 @@ export const deletePanchayat = createAsyncThunk(
         try {
             const res = await axios.delete(`/api/panchayat/${id}`);
             return { ...res.data, deletedId: id };
+        } catch (error) {
+            return rejectWithValue(error.response?.data || error.message);
+        }
+    }
+);
+
+
+// FETCH MEDIA BY PANCHAYAT
+export const fetchMediaByPanchayat = createAsyncThunk(
+    'media/fetchMediaByPanchayat',
+    async ({ panchayatId, params = {} }, { rejectWithValue }) => {
+        try {
+            const queryString = new URLSearchParams(params).toString();
+            const res = await axios.get(`/api/media/panchayat/${panchayatId}?${queryString}`);
+            return res.data;
         } catch (error) {
             return rejectWithValue(error.response?.data || error.message);
         }
@@ -268,6 +285,19 @@ const panchayatSlice = createSlice({
             .addCase(fetchPanchayatById.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
+            })
+
+            //  FETCH MEDIA BY PANCHAYAT
+            .addCase(fetchMediaByPanchayat.pending, (state) => {
+                state.loading = true;
+            })
+            .addCase(fetchMediaByPanchayat.fulfilled, (state, action) => {
+                state.loading = false;
+                state.media = action.payload.media || [];
+            })
+            .addCase(fetchMediaByPanchayat.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload?.message || 'Failed to fetch panchayat media';
             })
 
 
