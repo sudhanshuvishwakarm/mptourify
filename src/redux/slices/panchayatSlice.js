@@ -90,6 +90,18 @@ export const fetchPanchayatById = createAsyncThunk(
         }
     }
 );
+// ADD RTC REPORT
+export const addRTCReport = createAsyncThunk(
+    'panchayat/addRTCReport',
+    async ({ id, reportData }, { rejectWithValue }) => {
+        try {
+            const res = await axios.put(`/api/panchayat/${id}/rtc-report`, reportData);
+            return { ...res.data, id };
+        } catch (error) {
+            return rejectWithValue(error.response?.data || error.message);
+        }
+    }
+);
 
 // UPDATE PANCHAYAT
 export const updatePanchayat = createAsyncThunk(
@@ -115,6 +127,7 @@ export const updatePanchayat = createAsyncThunk(
         }
     }
 );
+
 
 // DELETE PANCHAYAT
 export const deletePanchayat = createAsyncThunk(
@@ -253,6 +266,28 @@ const panchayatSlice = createSlice({
                 }
             })
             .addCase(fetchPanchayatById.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+
+
+            //  ADD RTC REPORT
+            .addCase(addRTCReport.pending, (state) => {
+                state.loading = true;
+            })
+            .addCase(addRTCReport.fulfilled, (state, action) => {
+                state.loading = false;
+                state.success = true;
+                
+                // Update cache if available
+                if (action.payload.panchayat && action.payload.id) {
+                    state.panchayatCache[action.payload.id] = {
+                        data: action.payload.panchayat,
+                        lastFetched: Date.now()
+                    };
+                }
+            })
+            .addCase(addRTCReport.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
             })
