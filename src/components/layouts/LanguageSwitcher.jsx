@@ -38,7 +38,7 @@ export default function LanguageSwitcher() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={isTranslating}
-        className="flex items-center gap-2 px-2 py-2 rounded-lg font-bold text-white transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed bg-[#138808] hover:bg-green-700"
+        className="flex items-center gap-2 px-2 py-2 rounded-lg font-bold text-white transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed bg-[#127407] hover:bg-green-900"
       >
         <span className="text-lg">{currentLanguageObj?.flag}</span>
         <span className="text-sm">

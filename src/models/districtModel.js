@@ -20,14 +20,6 @@ const districtSchema = new mongoose.Schema({
     formationYear: {
         type: Number
     },
-    // Administrative Info
-    // administrativeDivisions: [{
-    //     type: String
-    // }],
-    // politicalConstituencies: {
-    //     lokSabha: [String],
-    //     vidhanSabha: [String]
-    // },
     area: {
         type: Number // in sq km
     },
@@ -58,23 +50,6 @@ const districtSchema = new mongoose.Schema({
     historyAndCulture: {
         type: String
     },
-    // Tourist Places & Heritage Sites
-    // touristPlaces: [{
-    //     name: String,
-    //     description: String,
-    //     images: [String],
-    //     category: {
-    //         type: String,
-    //         enum: ['monument', 'natural', 'religious', 'cultural']
-    //     }
-    // }],
-    // Famous Personalities
-    // famousPersonalities: [{
-    //     name: String,
-    //     field: String,
-    //     description: String,
-    //     image: String
-    // }],
     status: {
         type: String,
         enum: ['active', 'draft'],
@@ -88,6 +63,32 @@ const districtSchema = new mongoose.Schema({
 }, {
     timestamps: true
 });
+// Administrative Info
+// administrativeDivisions: [{
+//     type: String
+// }],
+// politicalConstituencies: {
+//     lokSabha: [String],
+//     vidhanSabha: [String]
+// },
 
 const District = mongoose.models.districts || mongoose.model("districts", districtSchema);
 export default District;
+
+// Tourist Places & Heritage Sites
+// touristPlaces: [{
+//     name: String,
+//     description: String,
+//     images: [String],
+//     category: {
+//         type: String,
+//         enum: ['monument', 'natural', 'religious', 'cultural']
+//     }
+// }],
+// Famous Personalities
+// famousPersonalities: [{
+//     name: String,
+//     field: String,
+//     description: String,
+//     image: String
+// }],
