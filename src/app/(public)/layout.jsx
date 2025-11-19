@@ -1,4 +1,5 @@
 import HomeHero from "@/components/home/HomeHero";
+import ClientAosWrapper from "@/components/layouts/ClientAosWrapper";
 import Footer from "@/components/layouts/Footer";
 import Navbar from "@/components/layouts/Navbar";
 export const metadata = {
@@ -8,11 +9,11 @@ export const metadata = {
 
 export default async function RootLayout({ children }) {
   return (
-      <>
+      <ClientAosWrapper>
         <Navbar />
         {/* <HomeHero/> */}
             {children}
         <Footer />
-      </>
+      </ClientAosWrapper>
   );
 }

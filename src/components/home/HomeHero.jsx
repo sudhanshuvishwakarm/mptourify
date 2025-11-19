@@ -71,7 +71,7 @@ export default function HomeHero() {
         <div className="max-w-6xl mx-auto text-center w-full">
           
           {/* Top Badge */}
-         <div className="mb-6 inline-flex items-center gap-2 px-6 py-3 rounded-full border-2 backdrop-blur-md" style={{ 
+         <div data-aos="fade-up" data-aos-delay="200" className="mb-6 inline-flex items-center gap-2 px-6 py-3 rounded-full border-2 backdrop-blur-md" style={{ 
   borderColor: colors.white,
   backgroundColor: `${colors.green}20`
 }}>
@@ -82,7 +82,7 @@ export default function HomeHero() {
 </div>
 
           {/* Main Title with Multi-colored Text */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black mb-4 leading-tight drop-shadow-2xl flex items-center justify-center">
+          <h1 data-aos="fade-up" data-aos-delay="300" className="text-4xl sm:text-5xl md:text-6xl font-black mb-4 leading-tight drop-shadow-2xl flex items-center justify-center">
             <span style={{ color: colors.saffron,  }}>MP</span>
             <span style={{ color: colors.white }}> T</span>
             
@@ -123,17 +123,17 @@ export default function HomeHero() {
           </h1>
 
           {/* Subtitle */}
-          <p className="text-xl md:text-2xl mb-6 leading-relaxed max-w-4xl mx-auto font-semibold drop-shadow-2xl" style={{ color: colors.lightGreen }}>
+          <p data-aos="fade-up" data-aos-delay="400" className="text-xl md:text-2xl mb-6 leading-relaxed max-w-4xl mx-auto font-semibold drop-shadow-2xl" style={{ color: colors.lightGreen }}>
             Discover Every <span className="font-bold" style={{ color: colors.saffron }}>Gram</span> of Madhya Pradesh
           </p>
 
           {/* Description */}
-          <p className="text-base md:text-lg mb-8 max-w-3xl mx-auto leading-relaxed font-medium drop-shadow-2xl" style={{ color: colors.lightGreen }}>
+          <p data-aos="fade-up" data-aos-delay="500" className="text-base md:text-lg mb-8 max-w-3xl mx-auto leading-relaxed font-medium drop-shadow-2xl" style={{ color: colors.lightGreen }}>
             Experience the digital transformation of Madhya Pradesh tourism. Explore every district, village, and heritage site through an immersive journey.
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+          <div data-aos="fade-up" data-aos-delay="600" className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
              <button
               onClick={handleExplore}
               className="px-8 py-4 rounded-xl font-bold text-white transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 flex items-center justify-center gap-2 text-lg border-2 border-white backdrop-blur-md"

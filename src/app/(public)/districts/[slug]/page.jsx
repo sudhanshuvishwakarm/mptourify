@@ -6,10 +6,10 @@ import { useSelector, useDispatch } from 'react-redux';
 import { 
   MapPin, Calendar, Users, Mountain, Droplet, 
   Camera, Newspaper, Building2, ArrowLeft, Share2,
-  Landmark, Trees, BookOpen
+  Landmark, Trees, BookOpen, Loader2, Video, Image as ImageIcon
 } from 'lucide-react';
 import { fetchDistrictBySlug } from '@/redux/slices/districtSlice';
-import Loader from '@/components/ui/Loader';
+import { fetchMedia } from '@/redux/slices/mediaSlice';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 
@@ -18,34 +18,41 @@ export default function DistrictDetailPage() {
   const params = useParams();
   const dispatch = useDispatch();
   
-  const { selectedDistrict, loading, districtCache, error } = useSelector(state => state.district);
+  const { selectedDistrict, districtCache, error: reduxError } = useSelector(state => state.district);
+  const { media } = useSelector(state => state.media);
   
   const [activeTab, setActiveTab] = useState('history-culture');
   const [isLoading, setIsLoading] = useState(true);
   const [currentDistrict, setCurrentDistrict] = useState(null);
+  const [districtMedia, setDistrictMedia] = useState([]);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const slug = params?.slug;
     if (!slug) {
       setIsLoading(false);
+      setError("No district slug provided");
       return;
     }
 
     const loadDistrict = async () => {
       try {
         setIsLoading(true);
+        setError(null);
         
         const cached = districtCache[slug];
         const isCacheValid = cached && (Date.now() - cached.lastFetched) < 300000;
         
         if (isCacheValid) {
           setCurrentDistrict(cached.data);
+          loadMediaForDistrict(cached.data._id);
           setIsLoading(false);
           return;
         }
 
         if (selectedDistrict && selectedDistrict.slug === slug) {
           setCurrentDistrict(selectedDistrict);
+          loadMediaForDistrict(selectedDistrict._id);
           setIsLoading(false);
           return;
         }
@@ -54,53 +61,59 @@ export default function DistrictDetailPage() {
         
         if (result.district) {
           setCurrentDistrict(result.district);
+          loadMediaForDistrict(result.district._id);
         } else {
-          console.error('No district data in response');
+          setError("District not found");
         }
       } catch (err) {
         console.error('Error loading district:', err);
+        setError(err?.message || "Failed to load district");
       } finally {
         setIsLoading(false);
+      }
+    };
+
+    const loadMediaForDistrict = async (districtId) => {
+      try {
+        const mediaResult = await dispatch(fetchMedia({ 
+          district: districtId,
+          status: 'approved',
+          limit: 50
+        })).unwrap();
+        setDistrictMedia(mediaResult.media || []);
+      } catch (err) {
+        console.error('Error loading media:', err);
       }
     };
 
     loadDistrict();
   }, [params?.slug, dispatch, districtCache, selectedDistrict]);
 
-  // Show loader during initial load
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f5fbf2]">
-        <Loader />
+        <div className="flex flex-col items-center">
+          <Loader2 size={48} className="text-[#117307] animate-spin mb-4" />
+          <p className="text-[#117307] text-lg font-medium">Loading district...</p>
+        </div>
       </div>
     );
   }
 
-  // Show error state if no district found
   if (!isLoading && !currentDistrict) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f5fbf2]">
         <Card sx={{ maxWidth: 500, textAlign: 'center', p: 4 }}>
           <div className="text-6xl mb-4">🏛️</div>
-          <h2 className="text-2xl font-bold mb-4 text-[#0d4d03]">
-            District Not Found
-          </h2>
+          <h2 className="text-2xl font-bold mb-4 text-[#0d4d03]">District Not Found</h2>
           <p className="text-[#1a5e10] mb-6">
-            {error || "The district you're looking for doesn't exist or has been removed."}
+            {error || reduxError || "The district you're looking for doesn't exist."}
           </p>
           <div className="flex gap-3 justify-center">
-            <Button
-              variant="outlined"
-              onClick={() => router.push('/districts')}
-              sx={{ borderColor: '#117307', color: '#117307' }}
-            >
+            <Button variant="outlined" onClick={() => router.push('/districts')} sx={{ borderColor: '#117307', color: '#117307' }}>
               Back to Districts
             </Button>
-            <Button
-              variant="contained"
-              onClick={() => window.location.reload()}
-              sx={{ backgroundColor: '#117307' }}
-            >
+            <Button variant="contained" onClick={() => window.location.reload()} sx={{ backgroundColor: '#117307' }}>
               Try Again
             </Button>
           </div>
@@ -116,28 +129,36 @@ export default function DistrictDetailPage() {
     return num.toLocaleString();
   };
 
-  // Navigation tabs
   const tabs = [
     { id: 'history-culture', label: 'History & Culture', icon: BookOpen },
     { id: 'basic-info', label: 'Basic Info', icon: Building2 },
+    { id: 'media', label: 'Media Gallery', icon: Camera },
   ];
 
   return (
     <div className="min-h-screen bg-[#f5fbf2]">
-      {/* Header with Back Button and Share Button */}
-      <div className="bg-[#117307] py-6">
-        <div className="max-w-6xl mx-auto px-4">
+      <div className="bg-[#117307] py-6 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10 pointer-events-none">
+          <div className="absolute top-0 left-0 w-64 h-64 bg-white rounded-full -translate-x-1/2 -translate-y-1/2" />
+        </div>
+        
+        <div className="max-w-6xl mx-auto px-4 relative z-10">
           <div className="flex justify-between items-center">
-            <button
-              onClick={() => router.push('/districts')}
-              className="inline-flex items-center gap-2 text-white hover:text-white/80 transition-colors font-medium text-lg"
-            >
+            <button onClick={() => router.push('/districts')} className="inline-flex items-center gap-2 text-white hover:text-white/80 transition-colors font-medium text-lg">
               <ArrowLeft size={22} />
               Back to Districts
             </button>
 
             <button
-              onClick={() => {/* Add share functionality */}}
+              onClick={() => {
+                if (navigator.share) {
+                  navigator.share({
+                    title: currentDistrict.name,
+                    text: `Explore ${currentDistrict.name} - Madhya Pradesh`,
+                    url: window.location.href
+                  });
+                }
+              }}
               className="inline-flex items-center gap-2 text-white hover:text-white/80 transition-colors font-medium text-lg"
             >
               <Share2 size={22} />
@@ -147,14 +168,11 @@ export default function DistrictDetailPage() {
         </div>
       </div>
 
-      {/* Hero Section */}
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Left: Main Content - 80% width */}
-          <div className="lg:w-4/5">
-            {/* District Image - Full width */}
+          <div className="lg:w-3/4">
             <div className="bg-white rounded-lg overflow-hidden shadow-lg mb-8">
-              <div className="relative  bg-[#f5fbf2]">
+              <div className="relative h-96 bg-[#f5fbf2]">
                 {currentDistrict.headerImage ? (
                   <img
                     src={currentDistrict.headerImage}
@@ -167,42 +185,31 @@ export default function DistrictDetailPage() {
                   />
                 ) : null}
 
-                {/* Fallback background */}
-                <div
-                  className={`absolute inset-0 items-center justify-center ${
-                    currentDistrict.headerImage ? 'hidden' : 'flex'
-                  }`}
-                  style={{ backgroundColor: '#117307' }}
-                >
-                  <div className="text-9xl text-white">🏛️</div>
+                <div className={`absolute inset-0 items-center justify-center bg-[#117307] ${currentDistrict.headerImage ? 'hidden' : 'flex'}`}>
+                  <Landmark size={96} className="text-white opacity-50" />
                 </div>
               </div>
-
-              {/* Title and Meta Info */}
-              {/* <div className="p-6">
-                <h1 className="text-3xl lg:text-4xl font-bold text-[#0d4d03] mb-2">
-                  {currentDistrict.name}
-                </h1>
-                <p className="text-xl text-[#1a5e10] mb-4">
-                  {currentDistrict.nameHi || ''}
-                </p>
-                
-                <div className="flex flex-wrap gap-4 text-[#4d674f]">
-                  {currentDistrict.formationYear && (
-                    <div className="flex items-center gap-2">
-                      <Calendar size={18} className="text-[#1a5e10]" />
-                      <span>Est. {currentDistrict.formationYear}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <MapPin size={18} className="text-[#1a5e10]" />
-                    <span>{currentDistrict.region || 'Madhya Pradesh'} Region</span>
-                  </div>
-                </div>
-              </div> */}
             </div>
 
-            {/* Navigation Tabs */}
+            <div className="mb-8">
+              <h1 className="text-3xl lg:text-4xl font-bold text-[#0d4d03] mb-3">
+                {currentDistrict.name}
+              </h1>
+              
+              <div className="flex flex-wrap gap-4 text-[#4d674f]">
+                {currentDistrict.formationYear && (
+                  <div className="flex items-center gap-2">
+                    <Calendar size={18} className="text-[#1a5e10]" />
+                    <span className="font-medium">Est. {currentDistrict.formationYear}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <MapPin size={18} className="text-[#1a5e10]" />
+                  <span className="font-medium">Madhya Pradesh</span>
+                </div>
+              </div>
+            </div>
+
             <div className="mb-6">
               <div className="flex flex-wrap gap-2 border-b-2 border-[#f5fbf2]">
                 {tabs.map(tab => (
@@ -223,9 +230,7 @@ export default function DistrictDetailPage() {
               </div>
             </div>
 
-            {/* Tab Content */}
             <div>
-              {/* History & Culture Tab */}
               {activeTab === 'history-culture' && (
                 <Card>
                   <h2 className="text-2xl font-bold text-[#0d4d03] mb-4 flex items-center gap-2">
@@ -241,14 +246,11 @@ export default function DistrictDetailPage() {
                 </Card>
               )}
 
-              {/* Basic Info Tab */}
               {activeTab === 'basic-info' && (
                 <div className="space-y-6">
-                  {/* Key Statistics */}
                   <Card>
                     <h2 className="text-2xl font-bold text-[#0d4d03] mb-6">Key Statistics</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {/* Population */}
                       <div className="text-center p-4 rounded-xl bg-[#f5fbf2]">
                         <div className="flex justify-center mb-2">
                           <Users size={24} className="text-[#117307]" />
@@ -259,7 +261,6 @@ export default function DistrictDetailPage() {
                         </p>
                       </div>
 
-                      {/* Area */}
                       <div className="text-center p-4 rounded-xl bg-[#f5fbf2]">
                         <div className="flex justify-center mb-2">
                           <Mountain size={24} className="text-[#117307]" />
@@ -270,7 +271,6 @@ export default function DistrictDetailPage() {
                         </p>
                       </div>
 
-                      {/* Establishment */}
                       <div className="text-center p-4 rounded-xl bg-[#f5fbf2]">
                         <div className="flex justify-center mb-2">
                           <Building2 size={24} className="text-[#117307]" />
@@ -283,7 +283,6 @@ export default function DistrictDetailPage() {
                     </div>
                   </Card>
 
-                  {/* Major Rivers */}
                   {currentDistrict.majorRivers && currentDistrict.majorRivers.length > 0 && (
                     <Card>
                       <div className="flex items-center gap-3 mb-4">
@@ -295,10 +294,7 @@ export default function DistrictDetailPage() {
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {currentDistrict.majorRivers.map((river, idx) => (
-                          <span
-                            key={idx}
-                            className="bg-[#117307]/10 text-[#117307] px-3 py-1 rounded-full text-sm font-medium"
-                          >
+                          <span key={idx} className="bg-[#117307]/10 text-[#117307] px-3 py-1 rounded-full text-sm font-medium">
                             {river}
                           </span>
                         ))}
@@ -306,7 +302,6 @@ export default function DistrictDetailPage() {
                     </Card>
                   )}
 
-                  {/* Natural Attractions */}
                   {((currentDistrict.hills && currentDistrict.hills.length > 0) || 
                     (currentDistrict.naturalSpots && currentDistrict.naturalSpots.length > 0)) && (
                     <Card>
@@ -318,7 +313,6 @@ export default function DistrictDetailPage() {
                         </span>
                       </div>
                       
-                      {/* Hills Category */}
                       {currentDistrict.hills && currentDistrict.hills.length > 0 && (
                         <div className="mb-4">
                           <h4 className="text-lg font-semibold text-[#0d4d03] mb-2 flex items-center gap-2">
@@ -336,7 +330,6 @@ export default function DistrictDetailPage() {
                         </div>
                       )}
 
-                      {/* Natural Spots Category */}
                       {currentDistrict.naturalSpots && currentDistrict.naturalSpots.length > 0 && (
                         <div>
                           <h4 className="text-lg font-semibold text-[#0d4d03] mb-2 flex items-center gap-2">
@@ -357,25 +350,88 @@ export default function DistrictDetailPage() {
                   )}
                 </div>
               )}
+
+              {activeTab === 'media' && (
+                <Card>
+                  <h2 className="text-2xl font-bold text-[#0d4d03] mb-6 flex items-center gap-2">
+                    <Camera size={24} className="text-[#117307]" />
+                    Media Gallery
+                    {districtMedia.length > 0 && (
+                      <span className="text-base font-bold text-[#117307] ml-auto">
+                        {districtMedia.length} {districtMedia.length === 1 ? 'item' : 'items'}
+                      </span>
+                    )}
+                  </h2>
+                  
+                  {districtMedia.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {districtMedia.map((mediaItem) => (
+                        <div
+                          key={mediaItem._id}
+                          className="relative group rounded-lg overflow-hidden cursor-pointer"
+                          onClick={() => router.push(`/gallery/${mediaItem._id}`)}
+                        >
+                          <div className="aspect-video bg-[#f5fbf2]">
+                            {mediaItem.fileType === 'video' ? (
+                              mediaItem.thumbnailUrl ? (
+                                <>
+                                  <img
+                                    src={mediaItem.thumbnailUrl}
+                                    alt={mediaItem.title}
+                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                  />
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
+                                      <Video size={32} className="text-white" />
+                                    </div>
+                                  </div>
+                                </>
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#117307]/20 to-[#117307]/40">
+                                  <Video size={48} className="text-[#117307]" />
+                                </div>
+                              )
+                            ) : (
+                              <img
+                                src={mediaItem.fileUrl}
+                                alt={mediaItem.title}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                              />
+                            )}
+                          </div>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute bottom-0 left-0 right-0 p-4">
+                              <p className="text-white font-semibold line-clamp-2">{mediaItem.title}</p>
+                            </div>
+                          </div>
+                          {mediaItem.fileType === 'video' && (
+                            <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-full">
+                              <Video size={16} className="text-white" />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <ImageIcon size={48} className="mx-auto text-[#117307] opacity-20 mb-4" />
+                      <p className="text-[#1a5e10]">No media available yet</p>
+                    </div>
+                  )}
+                </Card>
+              )}
             </div>
           </div>
 
-          {/* Right: Sidebar - 20% width */}
-          <div className="lg:w-1/5">
-            <div className="space-y-4">
-              {/* Action Buttons */}
-              <div className="space-y-3 flex flex-col gap-4">
+          <div className="lg:w-1/4">
+            <div className="space-y-4 sticky top-4">
+              <div className="space-y-3">
                 <Button
                   variant="contained"
                   fullWidth
                   startIcon={<Building2 size={18} />}
                   onClick={() => router.push(`/panchayats?district=${currentDistrict._id}`)}
-                  sx={{ 
-                    py: 2,
-                    backgroundColor: '#117307',
-                    fontSize: '0.875rem',
-                    '&:hover': { backgroundColor: '#0d5c06' }
-                  }}
+                  sx={{ py: 2, backgroundColor: '#117307', fontSize: '0.875rem', '&:hover': { backgroundColor: '#0d5c06' } }}
                 >
                   View Panchayats
                 </Button>
@@ -384,13 +440,8 @@ export default function DistrictDetailPage() {
                   variant="contained"
                   fullWidth
                   startIcon={<Camera size={18} />}
-                  onClick={() => router.push(`/gallery`)}
-                  sx={{ 
-                    py: 2,
-                    backgroundColor: '#117307',
-                    fontSize: '0.875rem',
-                    '&:hover': { backgroundColor: '#0d5c06' }
-                  }}
+                  onClick={() => router.push(`/gallery?district=${currentDistrict._id}`)}
+                  sx={{ py: 2, backgroundColor: '#117307', fontSize: '0.875rem', '&:hover': { backgroundColor: '#0d5c06' } }}
                 >
                   Visit Gallery
                 </Button>
@@ -400,18 +451,12 @@ export default function DistrictDetailPage() {
                   fullWidth
                   startIcon={<Newspaper size={18} />}
                   onClick={() => router.push(`/news?district=${currentDistrict._id}`)}
-                  sx={{ 
-                    py: 2,
-                    backgroundColor: '#117307',
-                    fontSize: '0.875rem',
-                    '&:hover': { backgroundColor: '#0d5c06' }
-                  }}
+                  sx={{ py: 2, backgroundColor: '#117307', fontSize: '0.875rem', '&:hover': { backgroundColor: '#0d5c06' } }}
                 >
                   Latest News
                 </Button>
               </div>
 
-              {/* Newsletter */}
               <div className="bg-gradient-to-br from-[#117307] to-[#0d5c06] rounded-xl shadow-lg p-4 text-white">
                 <h3 className="font-bold mb-2 text-sm">Stay Updated</h3>
                 <p className="text-white/90 text-xs mb-3">
@@ -427,7 +472,436 @@ export default function DistrictDetailPage() {
       </div>
     </div>
   );
-}
+}// 'use client';
+
+// import { useState, useEffect } from 'react';
+// import { useRouter, useParams } from 'next/navigation';
+// import { useSelector, useDispatch } from 'react-redux';
+// import { 
+//   MapPin, Calendar, Users, Mountain, Droplet, 
+//   Camera, Newspaper, Building2, ArrowLeft, Share2,
+//   Landmark, Trees, BookOpen
+// } from 'lucide-react';
+// import { fetchDistrictBySlug } from '@/redux/slices/districtSlice';
+// import Loader from '@/components/ui/Loader';
+// import Card from '@/components/ui/Card';
+// import Button from '@/components/ui/Button';
+
+// export default function DistrictDetailPage() {
+//   const router = useRouter();
+//   const params = useParams();
+//   const dispatch = useDispatch();
+  
+//   const { selectedDistrict, loading, districtCache, error } = useSelector(state => state.district);
+  
+//   const [activeTab, setActiveTab] = useState('history-culture');
+//   const [isLoading, setIsLoading] = useState(true);
+//   const [currentDistrict, setCurrentDistrict] = useState(null);
+
+//   useEffect(() => {
+//     const slug = params?.slug;
+//     if (!slug) {
+//       setIsLoading(false);
+//       return;
+//     }
+
+//     const loadDistrict = async () => {
+//       try {
+//         setIsLoading(true);
+        
+//         const cached = districtCache[slug];
+//         const isCacheValid = cached && (Date.now() - cached.lastFetched) < 300000;
+        
+//         if (isCacheValid) {
+//           setCurrentDistrict(cached.data);
+//           setIsLoading(false);
+//           return;
+//         }
+
+//         if (selectedDistrict && selectedDistrict.slug === slug) {
+//           setCurrentDistrict(selectedDistrict);
+//           setIsLoading(false);
+//           return;
+//         }
+
+//         const result = await dispatch(fetchDistrictBySlug(slug)).unwrap();
+        
+//         if (result.district) {
+//           setCurrentDistrict(result.district);
+//         } else {
+//           console.error('No district data in response');
+//         }
+//       } catch (err) {
+//         console.error('Error loading district:', err);
+//       } finally {
+//         setIsLoading(false);
+//       }
+//     };
+
+//     loadDistrict();
+//   }, [params?.slug, dispatch, districtCache, selectedDistrict]);
+
+//   // Show loader during initial load
+//   if (isLoading) {
+//     return (
+//       <div className="min-h-screen flex items-center justify-center bg-[#f5fbf2]">
+//         <Loader />
+//       </div>
+//     );
+//   }
+
+//   // Show error state if no district found
+//   if (!isLoading && !currentDistrict) {
+//     return (
+//       <div className="min-h-screen flex items-center justify-center bg-[#f5fbf2]">
+//         <Card sx={{ maxWidth: 500, textAlign: 'center', p: 4 }}>
+//           <div className="text-6xl mb-4">🏛️</div>
+//           <h2 className="text-2xl font-bold mb-4 text-[#0d4d03]">
+//             District Not Found
+//           </h2>
+//           <p className="text-[#1a5e10] mb-6">
+//             {error || "The district you're looking for doesn't exist or has been removed."}
+//           </p>
+//           <div className="flex gap-3 justify-center">
+//             <Button
+//               variant="outlined"
+//               onClick={() => router.push('/districts')}
+//               sx={{ borderColor: '#117307', color: '#117307' }}
+//             >
+//               Back to Districts
+//             </Button>
+//             <Button
+//               variant="contained"
+//               onClick={() => window.location.reload()}
+//               sx={{ backgroundColor: '#117307' }}
+//             >
+//               Try Again
+//             </Button>
+//           </div>
+//         </Card>
+//       </div>
+//     );
+//   }
+
+//   const formatNumber = (num) => {
+//     if (!num) return 'N/A';
+//     if (num > 1000000) return `${(num / 1000000).toFixed(1)}M`;
+//     if (num > 1000) return `${(num / 1000).toFixed(1)}K`;
+//     return num.toLocaleString();
+//   };
+
+//   // Navigation tabs
+//   const tabs = [
+//     { id: 'history-culture', label: 'History & Culture', icon: BookOpen },
+//     { id: 'basic-info', label: 'Basic Info', icon: Building2 },
+//   ];
+
+//   return (
+//     <div className="min-h-screen bg-[#f5fbf2]">
+//       {/* Header with Back Button and Share Button */}
+//       <div className="bg-[#117307] py-6">
+//         <div className="max-w-6xl mx-auto px-4">
+//           <div className="flex justify-between items-center">
+//             <button
+//               onClick={() => router.push('/districts')}
+//               className="inline-flex items-center gap-2 text-white hover:text-white/80 transition-colors font-medium text-lg"
+//             >
+//               <ArrowLeft size={22} />
+//               Back to Districts
+//             </button>
+
+//             <button
+//               onClick={() => {/* Add share functionality */}}
+//               className="inline-flex items-center gap-2 text-white hover:text-white/80 transition-colors font-medium text-lg"
+//             >
+//               <Share2 size={22} />
+//               Share
+//             </button>
+//           </div>
+//         </div>
+//       </div>
+
+//       {/* Hero Section */}
+//       <div className="max-w-6xl mx-auto px-4 py-8">
+//         <div className="flex flex-col lg:flex-row gap-8">
+//           {/* Left: Main Content - 80% width */}
+//           <div className="lg:w-4/5">
+//             {/* District Image - Full width */}
+//             <div className="bg-white rounded-lg overflow-hidden shadow-lg mb-8">
+//               <div className="relative  bg-[#f5fbf2]">
+//                 {currentDistrict.headerImage ? (
+//                   <img
+//                     src={currentDistrict.headerImage}
+//                     alt={currentDistrict.name}
+//                     className="w-full h-full object-cover"
+//                     onError={(e) => {
+//                       e.target.style.display = 'none';
+//                       e.target.nextSibling.style.display = 'flex';
+//                     }}
+//                   />
+//                 ) : null}
+
+//                 {/* Fallback background */}
+//                 <div
+//                   className={`absolute inset-0 items-center justify-center ${
+//                     currentDistrict.headerImage ? 'hidden' : 'flex'
+//                   }`}
+//                   style={{ backgroundColor: '#117307' }}
+//                 >
+//                   <div className="text-9xl text-white">🏛️</div>
+//                 </div>
+//               </div>
+
+//               {/* Title and Meta Info */}
+//               {/* <div className="p-6">
+//                 <h1 className="text-3xl lg:text-4xl font-bold text-[#0d4d03] mb-2">
+//                   {currentDistrict.name}
+//                 </h1>
+//                 <p className="text-xl text-[#1a5e10] mb-4">
+//                   {currentDistrict.nameHi || ''}
+//                 </p>
+                
+//                 <div className="flex flex-wrap gap-4 text-[#4d674f]">
+//                   {currentDistrict.formationYear && (
+//                     <div className="flex items-center gap-2">
+//                       <Calendar size={18} className="text-[#1a5e10]" />
+//                       <span>Est. {currentDistrict.formationYear}</span>
+//                     </div>
+//                   )}
+//                   <div className="flex items-center gap-2">
+//                     <MapPin size={18} className="text-[#1a5e10]" />
+//                     <span>{currentDistrict.region || 'Madhya Pradesh'} Region</span>
+//                   </div>
+//                 </div>
+//               </div> */}
+//             </div>
+
+//             {/* Navigation Tabs */}
+//             <div className="mb-6">
+//               <div className="flex flex-wrap gap-2 border-b-2 border-[#f5fbf2]">
+//                 {tabs.map(tab => (
+//                   <button
+//                     key={tab.id}
+//                     onClick={() => setActiveTab(tab.id)}
+//                     className="flex items-center gap-2 px-6 py-3 font-semibold transition-all"
+//                     style={{
+//                       color: activeTab === tab.id ? '#117307' : '#1a5e10',
+//                       borderBottom: activeTab === tab.id ? '3px solid #117307' : 'none',
+//                       marginBottom: '-2px'
+//                     }}
+//                   >
+//                     <tab.icon size={20} />
+//                     {tab.label}
+//                   </button>
+//                 ))}
+//               </div>
+//             </div>
+
+//             {/* Tab Content */}
+//             <div>
+//               {/* History & Culture Tab */}
+//               {activeTab === 'history-culture' && (
+//                 <Card>
+//                   <h2 className="text-2xl font-bold text-[#0d4d03] mb-4 flex items-center gap-2">
+//                     <BookOpen size={24} className="text-[#117307]" />
+//                     History & Cultural Heritage
+//                   </h2>
+//                   <div className="prose prose-lg max-w-none">
+//                     <p className="text-[#1a5e10] leading-relaxed whitespace-pre-line">
+//                       {currentDistrict.historyAndCulture || 
+//                         `${currentDistrict.name} has a rich historical and cultural heritage that dates back centuries. The district has witnessed various dynasties and rulers, each contributing to its diverse cultural tapestry.`}
+//                     </p>
+//                   </div>
+//                 </Card>
+//               )}
+
+//               {/* Basic Info Tab */}
+//               {activeTab === 'basic-info' && (
+//                 <div className="space-y-6">
+//                   {/* Key Statistics */}
+//                   <Card>
+//                     <h2 className="text-2xl font-bold text-[#0d4d03] mb-6">Key Statistics</h2>
+//                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+//                       {/* Population */}
+//                       <div className="text-center p-4 rounded-xl bg-[#f5fbf2]">
+//                         <div className="flex justify-center mb-2">
+//                           <Users size={24} className="text-[#117307]" />
+//                         </div>
+//                         <h3 className="text-base font-semibold text-[#4d674f] mb-1">Population</h3>
+//                         <p className="text-2xl font-bold text-[#0d4d03]">
+//                           {formatNumber(currentDistrict.population)}
+//                         </p>
+//                       </div>
+
+//                       {/* Area */}
+//                       <div className="text-center p-4 rounded-xl bg-[#f5fbf2]">
+//                         <div className="flex justify-center mb-2">
+//                           <Mountain size={24} className="text-[#117307]" />
+//                         </div>
+//                         <h3 className="text-base font-semibold text-[#4d674f] mb-1">Area</h3>
+//                         <p className="text-2xl font-bold text-[#0d4d03]">
+//                           {currentDistrict.area ? `${currentDistrict.area.toLocaleString()} km²` : 'N/A'}
+//                         </p>
+//                       </div>
+
+//                       {/* Establishment */}
+//                       <div className="text-center p-4 rounded-xl bg-[#f5fbf2]">
+//                         <div className="flex justify-center mb-2">
+//                           <Building2 size={24} className="text-[#117307]" />
+//                         </div>
+//                         <h3 className="text-base font-semibold text-[#4d674f] mb-1">Establishment</h3>
+//                         <p className="text-2xl font-bold text-[#0d4d03]">
+//                           {currentDistrict.formationYear || 'N/A'}
+//                         </p>
+//                       </div>
+//                     </div>
+//                   </Card>
+
+//                   {/* Major Rivers */}
+//                   {currentDistrict.majorRivers && currentDistrict.majorRivers.length > 0 && (
+//                     <Card>
+//                       <div className="flex items-center gap-3 mb-4">
+//                         <Droplet size={24} className="text-[#117307]" />
+//                         <h3 className="text-xl font-bold text-[#0d4d03]">Major Rivers</h3>
+//                         <span className="text-base font-bold text-[#117307] ml-auto">
+//                           {currentDistrict.majorRivers.length}
+//                         </span>
+//                       </div>
+//                       <div className="flex flex-wrap gap-2">
+//                         {currentDistrict.majorRivers.map((river, idx) => (
+//                           <span
+//                             key={idx}
+//                             className="bg-[#117307]/10 text-[#117307] px-3 py-1 rounded-full text-sm font-medium"
+//                           >
+//                             {river}
+//                           </span>
+//                         ))}
+//                       </div>
+//                     </Card>
+//                   )}
+
+//                   {/* Natural Attractions */}
+//                   {((currentDistrict.hills && currentDistrict.hills.length > 0) || 
+//                     (currentDistrict.naturalSpots && currentDistrict.naturalSpots.length > 0)) && (
+//                     <Card>
+//                       <div className="flex items-center gap-3 mb-4">
+//                         <Trees size={24} className="text-[#117307]" />
+//                         <h3 className="text-xl font-bold text-[#0d4d03]">Natural Attractions</h3>
+//                         <span className="text-base font-bold text-[#117307] ml-auto">
+//                           {(currentDistrict.hills?.length || 0) + (currentDistrict.naturalSpots?.length || 0)}
+//                         </span>
+//                       </div>
+                      
+//                       {/* Hills Category */}
+//                       {currentDistrict.hills && currentDistrict.hills.length > 0 && (
+//                         <div className="mb-4">
+//                           <h4 className="text-lg font-semibold text-[#0d4d03] mb-2 flex items-center gap-2">
+//                             <Mountain size={18} className="text-[#117307]" />
+//                             Hills & Mountains
+//                           </h4>
+//                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+//                             {currentDistrict.hills.map((hill, idx) => (
+//                               <div key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-[#f5fbf2]">
+//                                 <Mountain size={16} className="text-[#117307]" />
+//                                 <span className="text-[#0d4d03] font-medium text-sm">{hill}</span>
+//                               </div>
+//                             ))}
+//                           </div>
+//                         </div>
+//                       )}
+
+//                       {/* Natural Spots Category */}
+//                       {currentDistrict.naturalSpots && currentDistrict.naturalSpots.length > 0 && (
+//                         <div>
+//                           <h4 className="text-lg font-semibold text-[#0d4d03] mb-2 flex items-center gap-2">
+//                             <Trees size={18} className="text-[#117307]" />
+//                             Natural Spots
+//                           </h4>
+//                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+//                             {currentDistrict.naturalSpots.map((spot, idx) => (
+//                               <div key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-[#f5fbf2]">
+//                                 <Trees size={16} className="text-[#117307]" />
+//                                 <span className="text-[#0d4d03] font-medium text-sm">{spot}</span>
+//                               </div>
+//                             ))}
+//                           </div>
+//                         </div>
+//                       )}
+//                     </Card>
+//                   )}
+//                 </div>
+//               )}
+//             </div>
+//           </div>
+
+//           {/* Right: Sidebar - 20% width */}
+//           <div className="lg:w-1/5">
+//             <div className="space-y-4">
+//               {/* Action Buttons */}
+//               <div className="space-y-3 flex flex-col gap-4">
+//                 <Button
+//                   variant="contained"
+//                   fullWidth
+//                   startIcon={<Building2 size={18} />}
+//                   onClick={() => router.push(`/panchayats?district=${currentDistrict._id}`)}
+//                   sx={{ 
+//                     py: 2,
+//                     backgroundColor: '#117307',
+//                     fontSize: '0.875rem',
+//                     '&:hover': { backgroundColor: '#0d5c06' }
+//                   }}
+//                 >
+//                   View Panchayats
+//                 </Button>
+
+//                 <Button
+//                   variant="contained"
+//                   fullWidth
+//                   startIcon={<Camera size={18} />}
+//                   onClick={() => router.push(`/gallery`)}
+//                   sx={{ 
+//                     py: 2,
+//                     backgroundColor: '#117307',
+//                     fontSize: '0.875rem',
+//                     '&:hover': { backgroundColor: '#0d5c06' }
+//                   }}
+//                 >
+//                   Visit Gallery
+//                 </Button>
+
+//                 <Button
+//                   variant="contained"
+//                   fullWidth
+//                   startIcon={<Newspaper size={18} />}
+//                   onClick={() => router.push(`/news?district=${currentDistrict._id}`)}
+//                   sx={{ 
+//                     py: 2,
+//                     backgroundColor: '#117307',
+//                     fontSize: '0.875rem',
+//                     '&:hover': { backgroundColor: '#0d5c06' }
+//                   }}
+//                 >
+//                   Latest News
+//                 </Button>
+//               </div>
+
+//               {/* Newsletter */}
+//               <div className="bg-gradient-to-br from-[#117307] to-[#0d5c06] rounded-xl shadow-lg p-4 text-white">
+//                 <h3 className="font-bold mb-2 text-sm">Stay Updated</h3>
+//                 <p className="text-white/90 text-xs mb-3">
+//                   Get updates about {currentDistrict.name}
+//                 </p>
+//                 <button className="w-full bg-white text-[#117307] py-2 rounded-full font-semibold text-sm hover:bg-white/90 transition-colors">
+//                   Subscribe
+//                 </button>
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
 
 // 'use client';
 
