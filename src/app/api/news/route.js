@@ -45,8 +45,8 @@ export async function POST(request) {
 
             // Handle image upload
             if (uploadMethod === 'file' && file) {
-                // VALIDATE FILE SIZE (max 50MB)
-                const maxSize = 50 * 1024 * 1024;
+                // VALIDATE FILE SIZE (Max 95MB)
+                const maxSize = 95 * 1024 * 1024;
                 if (file.size > maxSize) {
                     return NextResponse.json(
                         { 

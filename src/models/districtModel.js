@@ -6,6 +6,7 @@ const districtSchema = new mongoose.Schema({
         required: true,
         unique: true,
         trim: true
+        
     },
     slug: {
         type: String,

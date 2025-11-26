@@ -395,7 +395,9 @@ export default function AllAdminsPage() {
       </div>
     </div>
   );
-}// 'use client'
+}
+
+// 'use client'
 // import { useEffect, useState } from 'react';
 // import { useDispatch, useSelector } from 'react-redux';
 // import { fetchAllAdmins, deleteAdmin, updateAdminStatus, clearError, clearSuccess, } from '@/redux/slices/adminSlice';

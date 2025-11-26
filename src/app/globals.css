@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+body,html {
+  top: 0px !important;
+  position: static !important;
+  overflow-x: hidden;
+}
+.hideExtra{
+  overflow-x: hidden;
+}
 /* Hide Google Translate elements */
 .goog-te-banner-frame.skiptranslate,
 .goog-te-balloon-frame,
@@ -9,11 +17,6 @@
   display: none !important;
 }
 
-body,html {
-  top: 0px !important;
-  position: static !important;
-  overflow-x: hidden;
-}
 
 .skiptranslate {
   display: none !important;

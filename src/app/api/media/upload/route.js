@@ -115,7 +115,7 @@ export async function POST(request) {
         let thumbnailUrl;
 
         if (uploadMethod === 'file') {
-            const maxSize = 50 * 1024 * 1024;
+            const maxSize = 95 * 1024 * 1024;
             if (file.size > maxSize) {
                 return NextResponse.json({ success: false, message: "File size exceeds 50MB limit" }, { status: 400 });
             }
@@ -210,7 +210,10 @@ export async function POST(request) {
             { status: 500 }
         );
     }
-}// // UPLOAD MEDIA (Photo/Video)
+}
+
+
+// // UPLOAD MEDIA (Photo/Video)
 // import { NextResponse } from "next/server";
 // import { connectDB } from "@/dbConfig/dbConnect.js";
 // import { checkRole } from "@/utils/getAdmin.js";
@@ -381,8 +384,8 @@ export async function POST(request) {
 //         let thumbnailUrl;
 
 //         if (uploadMethod === 'file') {
-//             // VALIDATE FILE SIZE (max 50MB)
-//             const maxSize = 50 * 1024 * 1024; // 50MB
+//             // VALIDATE FILE SIZE (Max 95MB)
+//             const maxSize = 95 * 1024 * 1024; // 50MB
 //             if (file.size > maxSize) {
 //                 return NextResponse.json(
 //                     { 
@@ -584,8 +587,8 @@ export async function POST(request) {
 //             );
 //         }
 
-//         // VALIDATE FILE SIZE (max 50MB)
-//         const maxSize = 50 * 1024 * 1024; // 50MB
+//         // VALIDATE FILE SIZE (Max 95MB)
+//         const maxSize = 95 * 1024 * 1024; // 50MB
 //         if (file.size > maxSize) {
 //             return NextResponse.json(
 //                 { 

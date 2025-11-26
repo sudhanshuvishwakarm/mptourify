@@ -115,7 +115,7 @@ export default function CreateNewsPage() {
       }
 
       // Validate file size (50MB)
-      const maxSize = 50 * 1024 * 1024;
+      const maxSize = 95 * 1024 * 1024;
       if (selectedFile.size > maxSize) {
         toast.error('File size exceeds 50MB limit');
         return;
@@ -407,7 +407,7 @@ export default function CreateNewsPage() {
                       Click to upload featured image
                     </div>
                     <div className="text-sm text-gray-600">
-                      Supports JPG, PNG, WebP (Max 50MB)
+                      Supports JPG, PNG, WebP (Max 95MB)
                     </div>
                   </div>
                 ) : (
@@ -809,7 +809,7 @@ export default function CreateNewsPage() {
 //       }
 
 //       // Validate file size (50MB)
-//       const maxSize = 50 * 1024 * 1024;
+//       const maxSize = 95 * 1024 * 1024;
 //       if (selectedFile.size > maxSize) {
 //         toast.error('File size exceeds 50MB limit');
 //         return;
@@ -1107,7 +1107,7 @@ export default function CreateNewsPage() {
 //                       Click to upload featured image
 //                     </Typography>
 //                     <Typography variant="body2" color="text.secondary">
-//                       Supports JPG, PNG, WebP (Max 50MB)
+//                       Supports JPG, PNG, WebP (Max 95MB)
 //                     </Typography>
 //                   </Box>
 //                 ) : (

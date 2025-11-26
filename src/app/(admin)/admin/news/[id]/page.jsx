@@ -147,7 +147,7 @@ export default function NewsDetailPage() {
         return
       }
 
-      const maxSize = 50 * 1024 * 1024
+      const maxSize = 95 * 1024 * 1024
       if (selectedFile.size > maxSize) {
         toast.error('File size exceeds 50MB limit')
         return
@@ -504,7 +504,7 @@ export default function NewsDetailPage() {
                           >
                             <CloudUpload size={36} className="text-[#1348e8] mx-auto mb-3" />
                             <div className="text-lg font-semibold text-gray-900 mb-2">Click to upload featured image</div>
-                            <div className="text-sm text-gray-600">Supports JPG, PNG, WebP (Max 50MB)</div>
+                            <div className="text-sm text-gray-600">Supports JPG, PNG, WebP (Max 95MB)</div>
                           </div>
                         ) : (
                           <div className="border border-[#1348e820] rounded-lg p-4 bg-white">
@@ -1075,7 +1075,7 @@ export default function NewsDetailPage() {
 //       }
 
 //       // Validate file size (50MB)
-//       const maxSize = 50 * 1024 * 1024
+//       const maxSize = 95 * 1024 * 1024
 //       if (selectedFile.size > maxSize) {
 //         toast.error('File size exceeds 50MB limit')
 //         return
@@ -1408,7 +1408,7 @@ export default function NewsDetailPage() {
 //                               Click to upload new image
 //                             </h4>
 //                             <p className="text-gray-500 text-sm">
-//                               Supports JPG, PNG, WebP (Max 50MB)
+//                               Supports JPG, PNG, WebP (Max 95MB)
 //                             </p>
 //                           </div>
 //                         </>
@@ -2020,7 +2020,7 @@ export default function NewsDetailPage() {
 //       }
 
 //       // Validate file size (50MB)
-//       const maxSize = 50 * 1024 * 1024
+//       const maxSize = 95 * 1024 * 1024
 //       if (selectedFile.size > maxSize) {
 //         toast.error('File size exceeds 50MB limit')
 //         return
@@ -2344,7 +2344,7 @@ export default function NewsDetailPage() {
 //                               Click to upload new image
 //                             </h4>
 //                             <p className="text-gray-500 text-sm">
-//                               Supports JPG, PNG, WebP (Max 50MB)
+//                               Supports JPG, PNG, WebP (Max 95MB)
 //                             </p>
 //                           </div>
 //                         </>
@@ -2960,7 +2960,7 @@ export default function NewsDetailPage() {
 //       }
 
 //       // Validate file size (50MB)
-//       const maxSize = 50 * 1024 * 1024
+//       const maxSize = 95 * 1024 * 1024
 //       if (selectedFile.size > maxSize) {
 //         toast.error('File size exceeds 50MB limit')
 //         return
@@ -3297,7 +3297,7 @@ export default function NewsDetailPage() {
 //                               Click to upload new image
 //                             </Typography>
 //                             <Typography variant="body2" color="text.secondary">
-//                               Supports JPG, PNG, WebP (Max 50MB)
+//                               Supports JPG, PNG, WebP (Max 95MB)
 //                             </Typography>
 //                           </Box>
 //                         </>

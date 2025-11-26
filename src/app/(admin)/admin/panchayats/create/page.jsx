@@ -1,3 +1,5 @@
+
+
 'use client'
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -8,7 +10,7 @@ import { toast } from 'react-toastify';
 import Link from 'next/link';
 import {
   ArrowLeft, Save, MapPin, Image as ImageIcon, CloudUpload,
-  Link as LinkIcon, X, Calendar, Users, Maximize
+  Link as LinkIcon, X, Calendar, Users, Maximize, Plus, Trash2
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
@@ -30,21 +32,32 @@ export default function CreatePanchayatPage() {
     district: '',
     block: '',
     coordinates: { lat: '', lng: '' },
-    establishmentYear: '',
-    historicalBackground: '',
-    population: '',
-    area: '',
-    localArt: '',
-    localCuisine: '',
-    traditions: '',
-    majorRivers: [],
-    status: 'pending'
+    basicInfo: {
+      establishmentYear: '',
+      population: '',
+      area: '',
+      majorRivers: [],
+      languagesSpoken: []
+    },
+    culturalInfo: {
+      historicalBackground: '',
+      traditions: '',
+      localCuisine: '',
+      localArt: ''
+    },
+    politicalOverview: [],
+    transportationServices: [],
+    hospitalityServices: [],
+    emergencyDirectory: [],
+    specialPersons: [],
+    status: 'Pending'
   });
 
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [errors, setErrors] = useState({});
   const [tempRiver, setTempRiver] = useState('');
+  const [tempLanguage, setTempLanguage] = useState('');
 
   useEffect(() => {
     dispatch(fetchDistricts({ limit: 100 }));
@@ -108,12 +121,161 @@ export default function CreatePanchayatPage() {
 
   const handleAddRiver = () => {
     if (!tempRiver.trim()) return;
-    setFormData(prev => ({ ...prev, majorRivers: [...prev.majorRivers, tempRiver.trim()] }));
+    setFormData(prev => ({
+      ...prev,
+      basicInfo: {
+        ...prev.basicInfo,
+        majorRivers: [...prev.basicInfo.majorRivers, tempRiver.trim()]
+      }
+    }));
     setTempRiver('');
   };
 
   const handleRemoveRiver = (index) => {
-    setFormData(prev => ({ ...prev, majorRivers: prev.majorRivers.filter((_, i) => i !== index) }));
+    setFormData(prev => ({
+      ...prev,
+      basicInfo: {
+        ...prev.basicInfo,
+        majorRivers: prev.basicInfo.majorRivers.filter((_, i) => i !== index)
+      }
+    }));
+  };
+
+  const handleAddLanguage = () => {
+    if (!tempLanguage.trim()) return;
+    setFormData(prev => ({
+      ...prev,
+      basicInfo: {
+        ...prev.basicInfo,
+        languagesSpoken: [...prev.basicInfo.languagesSpoken, tempLanguage.trim()]
+      }
+    }));
+    setTempLanguage('');
+  };
+
+  const handleRemoveLanguage = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      basicInfo: {
+        ...prev.basicInfo,
+        languagesSpoken: prev.basicInfo.languagesSpoken.filter((_, i) => i !== index)
+      }
+    }));
+  };
+
+  const handleAddPoliticalOverview = () => {
+    setFormData(prev => ({
+      ...prev,
+      politicalOverview: [...prev.politicalOverview, { heading: '', description: '' }]
+    }));
+  };
+
+  const handleRemovePoliticalOverview = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      politicalOverview: prev.politicalOverview.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handlePoliticalOverviewChange = (index, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      politicalOverview: prev.politicalOverview.map((item, i) => 
+        i === index ? { ...item, [field]: value } : item
+      )
+    }));
+  };
+
+  const handleAddTransportation = () => {
+    setFormData(prev => ({
+      ...prev,
+      transportationServices: [...prev.transportationServices, { name: '', type: '', location: '' }]
+    }));
+  };
+
+  const handleRemoveTransportation = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      transportationServices: prev.transportationServices.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleTransportationChange = (index, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      transportationServices: prev.transportationServices.map((item, i) => 
+        i === index ? { ...item, [field]: value } : item
+      )
+    }));
+  };
+
+  const handleAddHospitality = () => {
+    setFormData(prev => ({
+      ...prev,
+      hospitalityServices: [...prev.hospitalityServices, { name: '', type: '', location: '', contact: { phone: '' } }]
+    }));
+  };
+
+  const handleRemoveHospitality = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      hospitalityServices: prev.hospitalityServices.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleHospitalityChange = (index, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      hospitalityServices: prev.hospitalityServices.map((item, i) => 
+        i === index ? (field === 'phone' ? { ...item, contact: { phone: value } } : { ...item, [field]: value }) : item
+      )
+    }));
+  };
+
+  const handleAddEmergency = () => {
+    setFormData(prev => ({
+      ...prev,
+      emergencyDirectory: [...prev.emergencyDirectory, { service: '', contactNumber: '' }]
+    }));
+  };
+
+  const handleRemoveEmergency = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      emergencyDirectory: prev.emergencyDirectory.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleEmergencyChange = (index, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      emergencyDirectory: prev.emergencyDirectory.map((item, i) => 
+        i === index ? { ...item, [field]: value } : item
+      )
+    }));
+  };
+
+  const handleAddSpecialPerson = () => {
+    setFormData(prev => ({
+      ...prev,
+      specialPersons: [...prev.specialPersons, { name: '', achievement: '', description: '' }]
+    }));
+  };
+
+  const handleRemoveSpecialPerson = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      specialPersons: prev.specialPersons.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleSpecialPersonChange = (index, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      specialPersons: prev.specialPersons.map((item, i) => 
+        i === index ? { ...item, [field]: value } : item
+      )
+    }));
   };
 
   const validateForm = () => {
@@ -143,6 +305,8 @@ export default function CreatePanchayatPage() {
       return;
     }
 
+    console.log('Form Data before submission:', formData);
+
     if (uploadMethod === 'file' && file) {
       const submitData = new FormData();
       
@@ -155,17 +319,63 @@ export default function CreatePanchayatPage() {
       submitData.append('coordinates[lat]', formData.coordinates.lat);
       submitData.append('coordinates[lng]', formData.coordinates.lng);
       submitData.append('status', formData.status);
-      submitData.append('establishmentYear', formData.establishmentYear);
-      submitData.append('historicalBackground', formData.historicalBackground);
-      submitData.append('population', formData.population);
-      submitData.append('area', formData.area);
-      submitData.append('localArt', formData.localArt);
-      submitData.append('localCuisine', formData.localCuisine);
-      submitData.append('traditions', formData.traditions);
-      submitData.append('majorRivers', formData.majorRivers.join(','));
+      
+      // Basic Info
+      if (formData.basicInfo.establishmentYear) {
+        submitData.append('basicInfo[establishmentYear]', formData.basicInfo.establishmentYear);
+      }
+      if (formData.basicInfo.population) {
+        submitData.append('basicInfo[population]', formData.basicInfo.population);
+      }
+      if (formData.basicInfo.area) {
+        submitData.append('basicInfo[area]', formData.basicInfo.area);
+      }
+      if (formData.basicInfo.majorRivers.length > 0) {
+        submitData.append('basicInfo[majorRivers]', formData.basicInfo.majorRivers.join(','));
+      }
+      if (formData.basicInfo.languagesSpoken.length > 0) {
+        submitData.append('basicInfo[languagesSpoken]', formData.basicInfo.languagesSpoken.join(','));
+      }
+
+      // Cultural Info
+      if (formData.culturalInfo.historicalBackground) {
+        submitData.append('culturalInfo[historicalBackground]', formData.culturalInfo.historicalBackground);
+      }
+      if (formData.culturalInfo.traditions) {
+        submitData.append('culturalInfo[traditions]', formData.culturalInfo.traditions);
+      }
+      if (formData.culturalInfo.localCuisine) {
+        submitData.append('culturalInfo[localCuisine]', formData.culturalInfo.localCuisine);
+      }
+      if (formData.culturalInfo.localArt) {
+        submitData.append('culturalInfo[localArt]', formData.culturalInfo.localArt);
+      }
+
+      // Arrays as JSON strings
+      if (formData.politicalOverview.length > 0) {
+        submitData.append('politicalOverview', JSON.stringify(formData.politicalOverview));
+      }
+      if (formData.transportationServices.length > 0) {
+        submitData.append('transportationServices', JSON.stringify(formData.transportationServices));
+      }
+      if (formData.hospitalityServices.length > 0) {
+        submitData.append('hospitalityServices', JSON.stringify(formData.hospitalityServices));
+      }
+      if (formData.emergencyDirectory.length > 0) {
+        submitData.append('emergencyDirectory', JSON.stringify(formData.emergencyDirectory));
+      }
+      if (formData.specialPersons.length > 0) {
+        submitData.append('specialPersons', JSON.stringify(formData.specialPersons));
+      }
+
+      console.log('FormData entries:');
+      for (let pair of submitData.entries()) {
+        console.log(pair[0] + ': ' + pair[1]);
+      }
 
       dispatch(createPanchayat(submitData));
     } else {
+      console.log('Submitting JSON data:', formData);
       dispatch(createPanchayat(formData));
     }
   };
@@ -179,27 +389,32 @@ export default function CreatePanchayatPage() {
   ];
 
   const statusOptions = [
-    { value: 'draft', label: 'Draft' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'verified', label: 'Verified' }
+    { value: 'Draft', label: 'Draft' },
+    { value: 'Pending', label: 'Pending' },
+    { value: 'Verified', label: 'Verified' }
+  ];
+
+  const politicalHeadingOptions = [
+    { value: '', label: 'Select Heading' },
+    { value: 'Current Leadership', label: 'Current Leadership' },
+    { value: 'Political History', label: 'Political History' },
+    { value: 'Governing Structure', label: 'Governing Structure' },
+    { value: 'Major Achievements', label: 'Major Achievements' },
+    { value: 'Recent Developments', label: 'Recent Developments' },
+    { value: 'Election History', label: 'Election History' },
+    { value: 'Administrative Setup', label: 'Administrative Setup' },
+    { value: 'Future Plans', label: 'Future Plans' },
+    { value: 'Public Participation', label: 'Public Participation' },
+    { value: 'Key Challenges', label: 'Key Challenges' }
   ];
 
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto">
-      {
-        loading && <div className="fixed inset-0 z-[9999]">
-          <Loader message={"Creating..."} />
-        </div>
-      }
+      {loading && <div className="fixed inset-0 z-[9999]"><Loader message={"Creating..."} /></div>}
+      
       <div className="flex items-center gap-4 mb-6">
         <Link href="/admin/panchayats" className="no-underline">
-          <Button 
-            variant="outlined" 
-            sx={{ 
-              minWidth: 'auto', p: 1.5, borderColor: '#144ae9', color: '#144ae9',
-              '&:hover': { borderColor: '#0d3ec7', backgroundColor: '#144ae910' }
-            }}
-          >
+          <Button variant="outlined" sx={{ minWidth: 'auto', p: 1.5, borderColor: '#144ae9', color: '#144ae9', '&:hover': { borderColor: '#0d3ec7', backgroundColor: '#144ae910' } }}>
             <ArrowLeft size={20} />
           </Button>
         </Link>
@@ -216,64 +431,26 @@ export default function CreatePanchayatPage() {
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Basic Information</h2>
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <TextField
-                  label="Panchayat Name *"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  error={!!errors.name}
-                  helperText={errors.name}
-                  fullWidth
-                />
-                <TextField
-                  label="Slug *"
-                  value={formData.slug}
-                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                  error={!!errors.slug}
-                  helperText={errors.slug}
-                  InputProps={{ readOnly: true }}
-                  fullWidth
-                  sx={{ '& .MuiInputBase-input': { backgroundColor: '#144ae905' } }}
-                />
+                <TextField label="Panchayat Name *" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} error={!!errors.name} helperText={errors.name} fullWidth />
+                <TextField label="Slug *" value={formData.slug} onChange={(e) => setFormData({ ...formData, slug: e.target.value })} error={!!errors.slug} helperText={errors.slug} InputProps={{ readOnly: true }} fullWidth sx={{ '& .MuiInputBase-input': { backgroundColor: '#144ae905' } }} />
               </div>
 
               {/* HEADER IMAGE */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Header Image *</h3>
-                
                 <div className="flex border-b border-gray-200 mb-4">
-                  <button
-                    type="button"
-                    onClick={() => { setUploadMethod('file'); setFile(null); setPreview(null); setFormData(prev => ({ ...prev, headerImage: '' })); }}
-                    className={`flex items-center gap-2 px-4 py-2 border-b-2 font-medium text-sm ${
-                      uploadMethod === 'file' 
-                        ? 'border-blue-600 text-blue-600' 
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
-                    }`}
-                  >
-                    <CloudUpload size={18} />
-                    Upload File
+                  <button type="button" onClick={() => { setUploadMethod('file'); setFile(null); setPreview(null); setFormData(prev => ({ ...prev, headerImage: '' })); }} className={`flex items-center gap-2 px-4 py-2 border-b-2 font-medium text-sm ${uploadMethod === 'file' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+                    <CloudUpload size={18} />Upload File
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => { setUploadMethod('url'); setFile(null); setPreview(null); setFormData(prev => ({ ...prev, headerImage: '' })); }}
-                    className={`flex items-center gap-2 px-4 py-2 border-b-2 font-medium text-sm ${
-                      uploadMethod === 'url' 
-                        ? 'border-blue-600 text-blue-600' 
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
-                    }`}
-                  >
-                    <LinkIcon size={18} />
-                    Paste URL
+                  <button type="button" onClick={() => { setUploadMethod('url'); setFile(null); setPreview(null); setFormData(prev => ({ ...prev, headerImage: '' })); }} className={`flex items-center gap-2 px-4 py-2 border-b-2 font-medium text-sm ${uploadMethod === 'url' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+                    <LinkIcon size={18} />Paste URL
                   </button>
                 </div>
 
                 {uploadMethod === 'file' ? (
                   <>
                     {!file ? (
-                      <div
-                        className="border-2 border-dashed border-blue-600 rounded-lg p-6 text-center cursor-pointer bg-blue-50 hover:bg-blue-100 transition-colors"
-                        onClick={() => document.getElementById('file-upload').click()}
-                      >
+                      <div className="border-2 border-dashed border-blue-600 rounded-lg p-6 text-center cursor-pointer bg-blue-50 hover:bg-blue-100 transition-colors" onClick={() => document.getElementById('file-upload').click()}>
                         <CloudUpload size={36} className="text-blue-600 mx-auto mb-3" />
                         <div className="text-lg font-semibold text-gray-900 mb-2">Click to upload header image</div>
                         <div className="text-sm text-gray-600">Supports JPG, PNG, WebP (Max 50MB)</div>
@@ -288,9 +465,7 @@ export default function CreatePanchayatPage() {
                               <div className="text-sm text-gray-600">{(file.size / (1024 * 1024)).toFixed(2)} MB</div>
                             </div>
                           </div>
-                          <Button type="button" onClick={removeFile} className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                            Remove
-                          </Button>
+                          <Button sx={{backgroundColor:'#144ae9'}} type="button" onClick={removeFile}>Remove</Button>
                         </div>
                         <img src={preview} alt="Preview" className="max-h-48 w-full object-contain rounded-lg" />
                       </div>
@@ -298,16 +473,7 @@ export default function CreatePanchayatPage() {
                     <input id="file-upload" type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
                   </>
                 ) : (
-                  <TextField
-                    label="Header Image URL *"
-                    value={formData.headerImage}
-                    onChange={(e) => handleUrlChange(e.target.value)}
-                    error={!!errors.headerImage}
-                    helperText={errors.headerImage || "Paste direct URL to header image"}
-                    placeholder="https://example.com/panchayat-header.jpg"
-                    startIcon={<LinkIcon size={20} className="text-blue-600" />}
-                    fullWidth
-                  />
+                  <TextField label="Header Image URL *" value={formData.headerImage} onChange={(e) => handleUrlChange(e.target.value)} error={!!errors.headerImage} helperText={errors.headerImage || "Paste direct URL to header image"} placeholder="https://example.com/panchayat-header.jpg" startIcon={<LinkIcon size={20} className="text-blue-600" />} fullWidth />
                 )}
 
                 {preview && (uploadMethod === 'url' && formData.headerImage) && (
@@ -316,48 +482,17 @@ export default function CreatePanchayatPage() {
                     <img src={preview} alt="URL Preview" className="max-h-32 w-full object-contain rounded" onError={(e) => { e.target.style.display = 'none'; }} />
                   </div>
                 )}
-
                 {errors.headerImage && <div className="text-red-600 text-sm mt-2">{errors.headerImage}</div>}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <SelectField
-                  label="District *"
-                  value={formData.district}
-                  onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                  options={districtOptions}
-                  error={!!errors.district}
-                  helperText={errors.district}
-                  fullWidth
-                />
-                <TextField
-                  label="Block *"
-                  value={formData.block}
-                  onChange={(e) => setFormData({ ...formData, block: e.target.value })}
-                  error={!!errors.block}
-                  helperText={errors.block}
-                  placeholder="e.g., Indore Block"
-                  fullWidth
-                />
+                <SelectField label="District *" value={formData.district} onChange={(e) => setFormData({ ...formData, district: e.target.value })} options={districtOptions} error={!!errors.district} helperText={errors.district} fullWidth />
+                <TextField label="Block *" value={formData.block} onChange={(e) => setFormData({ ...formData, block: e.target.value })} error={!!errors.block} helperText={errors.block} placeholder="e.g., Indore Block" fullWidth />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <TextField
-                  label="Establishment Year"
-                  type="number"
-                  value={formData.establishmentYear}
-                  onChange={(e) => setFormData({ ...formData, establishmentYear: e.target.value })}
-                  placeholder="1952"
-                  startIcon={<Calendar size={20} className="text-blue-600" />}
-                  fullWidth
-                />
-                <SelectField
-                  label="Status"
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  options={statusOptions}
-                  fullWidth
-                />
+                <TextField label="Establishment Year" type="number" value={formData.basicInfo.establishmentYear} onChange={(e) => setFormData({ ...formData, basicInfo: { ...formData.basicInfo, establishmentYear: e.target.value } })} placeholder="1952" startIcon={<Calendar size={20} className="text-blue-600" />} fullWidth />
+                <SelectField label="Status" value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} options={statusOptions} fullWidth />
               </div>
             </div>
           </Card>
@@ -366,24 +501,8 @@ export default function CreatePanchayatPage() {
           <Card sx={{ p: 3, border: '1px solid', borderColor: '#144ae920', backgroundColor: 'white' }}>
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Statistics</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <TextField
-                label="Population"
-                type="number"
-                value={formData.population}
-                onChange={(e) => setFormData({ ...formData, population: e.target.value })}
-                placeholder="5000"
-                startIcon={<Users size={20} className="text-blue-600" />}
-                fullWidth
-              />
-              <TextField
-                label="Area (sq km)"
-                type="number"
-                value={formData.area}
-                onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                placeholder="25.5"
-                startIcon={<Maximize size={20} className="text-blue-600" />}
-                fullWidth
-              />
+              <TextField label="Population" type="number" value={formData.basicInfo.population} onChange={(e) => setFormData({ ...formData, basicInfo: { ...formData.basicInfo, population: e.target.value } })} placeholder="5000" startIcon={<Users size={20} className="text-blue-600" />} fullWidth />
+              <TextField label="Area (sq km)" type="number" value={formData.basicInfo.area} onChange={(e) => setFormData({ ...formData, basicInfo: { ...formData.basicInfo, area: e.target.value } })} placeholder="25.5" startIcon={<Maximize size={20} className="text-blue-600" />} fullWidth />
             </div>
           </Card>
 
@@ -394,53 +513,44 @@ export default function CreatePanchayatPage() {
               <h2 className="text-xl font-semibold text-gray-900">Coordinates *</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <TextField
-                label="Latitude *"
-                type="number"
-                step="any"
-                value={formData.coordinates.lat}
-                onChange={(e) => setFormData({ ...formData, coordinates: { ...formData.coordinates, lat: e.target.value } })}
-                error={!!errors.lat}
-                helperText={errors.lat}
-                placeholder="22.7196"
-                fullWidth
-              />
-              <TextField
-                label="Longitude *"
-                type="number"
-                step="any"
-                value={formData.coordinates.lng}
-                onChange={(e) => setFormData({ ...formData, coordinates: { ...formData.coordinates, lng: e.target.value } })}
-                error={!!errors.lng}
-                helperText={errors.lng}
-                placeholder="75.8577"
-                fullWidth
-              />
+              <TextField label="Latitude *" type="number" step="any" value={formData.coordinates.lat} onChange={(e) => setFormData({ ...formData, coordinates: { ...formData.coordinates, lat: e.target.value } })} error={!!errors.lat} helperText={errors.lat} placeholder="22.7196" fullWidth />
+              <TextField label="Longitude *" type="number" step="any" value={formData.coordinates.lng} onChange={(e) => setFormData({ ...formData, coordinates: { ...formData.coordinates, lng: e.target.value } })} error={!!errors.lng} helperText={errors.lng} placeholder="75.8577" fullWidth />
             </div>
           </Card>
 
           {/* GEOGRAPHY */}
           <Card sx={{ p: 3, border: '1px solid', borderColor: '#144ae920', backgroundColor: 'white' }}>
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Geography</h2>
+            
             <div className="mb-4">
               <h3 className="font-semibold text-gray-900 mb-3">Major Rivers</h3>
               <div className="flex flex-col sm:flex-row gap-2 mb-3">
-                <TextField
-                  value={tempRiver}
-                  onChange={(e) => setTempRiver(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddRiver())}
-                  placeholder="Betwa"
-                  fullWidth
-                />
-                <Button type="button" onClick={handleAddRiver} sx={{ backgroundColor: '#144ae9', fontWeight: '600', minWidth: '100px', '&:hover': { backgroundColor: '#0d3ec7' } }}>
-                  Add
-                </Button>
+                <TextField value={tempRiver} onChange={(e) => setTempRiver(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddRiver())} placeholder="Betwa" fullWidth />
+                <Button type="button" onClick={handleAddRiver} sx={{ backgroundColor: '#144ae9', fontWeight: '600', minWidth: '100px', '&:hover': { backgroundColor: '#0d3ec7' } }}>Add</Button>
               </div>
               <div className="flex flex-wrap gap-2">
-                {formData.majorRivers.map((river, index) => (
+                {formData.basicInfo.majorRivers.map((river, index) => (
                   <div key={index} className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-3 py-1 text-sm font-medium">
                     {river}
                     <button onClick={() => handleRemoveRiver(index)} className="text-blue-600 hover:text-blue-800 rounded-full hover:bg-blue-200 p-0.5">
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-3">Languages Spoken</h3>
+              <div className="flex flex-col sm:flex-row gap-2 mb-3">
+                <TextField value={tempLanguage} onChange={(e) => setTempLanguage(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddLanguage())} placeholder="Hindi" fullWidth />
+                <Button type="button" onClick={handleAddLanguage} sx={{ backgroundColor: '#144ae9', fontWeight: '600', minWidth: '100px', '&:hover': { backgroundColor: '#0d3ec7' } }}>Add</Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {formData.basicInfo.languagesSpoken.map((lang, index) => (
+                  <div key={index} className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-3 py-1 text-sm font-medium">
+                    {lang}
+                    <button onClick={() => handleRemoveLanguage(index)} className="text-blue-600 hover:text-blue-800 rounded-full hover:bg-blue-200 p-0.5">
                       <X size={14} />
                     </button>
                   </div>
@@ -453,56 +563,157 @@ export default function CreatePanchayatPage() {
           <Card sx={{ p: 3, border: '1px solid', borderColor: '#144ae920', backgroundColor: 'white' }}>
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Cultural Information</h2>
             <div className="space-y-4 flex flex-col gap-5">
-              <TextField
-                label="Historical Background"
-                value={formData.historicalBackground}
-                onChange={(e) => setFormData({ ...formData, historicalBackground: e.target.value })}
-                multiline
-                rows={4}
-                placeholder="Write about the historical significance..."
-                fullWidth
-              />
+              <TextField label="Historical Background" value={formData.culturalInfo.historicalBackground} onChange={(e) => setFormData({ ...formData, culturalInfo: { ...formData.culturalInfo, historicalBackground: e.target.value } })} multiline rows={4} placeholder="Write about the historical significance..." fullWidth />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <TextField
-                  label="Local Art"
-                  value={formData.localArt}
-                  onChange={(e) => setFormData({ ...formData, localArt: e.target.value })}
-                  multiline
-                  rows={3}
-                  placeholder="Traditional art forms..."
-                  fullWidth
-                />
-                <TextField
-                  label="Local Cuisine"
-                  value={formData.localCuisine}
-                  onChange={(e) => setFormData({ ...formData, localCuisine: e.target.value })}
-                  multiline
-                  rows={3}
-                  placeholder="Traditional dishes..."
-                  fullWidth
-                />
+                <TextField label="Local Art" value={formData.culturalInfo.localArt} onChange={(e) => setFormData({ ...formData, culturalInfo: { ...formData.culturalInfo, localArt: e.target.value } })} multiline rows={3} placeholder="Traditional art forms..." fullWidth />
+                <TextField label="Local Cuisine" value={formData.culturalInfo.localCuisine} onChange={(e) => setFormData({ ...formData, culturalInfo: { ...formData.culturalInfo, localCuisine: e.target.value } })} multiline rows={3} placeholder="Traditional dishes..." fullWidth />
               </div>
-              <TextField
-                label="Traditions"
-                value={formData.traditions}
-                onChange={(e) => setFormData({ ...formData, traditions: e.target.value })}
-                multiline
-                rows={3}
-                placeholder="Cultural traditions..."
-                fullWidth
-              />
+              <TextField label="Traditions" value={formData.culturalInfo.traditions} onChange={(e) => setFormData({ ...formData, culturalInfo: { ...formData.culturalInfo, traditions: e.target.value } })} multiline rows={3} placeholder="Cultural traditions..." fullWidth />
+            </div>
+          </Card>
+
+          {/* POLITICAL OVERVIEW */}
+          <Card sx={{ p: 3, border: '1px solid', borderColor: '#144ae920', backgroundColor: 'white' }}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Political Overview</h2>
+              <Button type="button" onClick={handleAddPoliticalOverview} startIcon={<Plus size={18} />} sx={{ backgroundColor: '#144ae9', '&:hover': { backgroundColor: '#0d3ec7' } }}>Add Section</Button>
+            </div>
+            <div className="space-y-3">
+              {formData.politicalOverview.map((item, index) => (
+                <div key={index} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="font-semibold text-gray-900">Section {index + 1}</h3>
+                    <Button type="button" onClick={() => handleRemovePoliticalOverview(index)} sx={{ minWidth: 'auto', p: 1, color: '#ef4444', '&:hover': { backgroundColor: '#fee2e2' } }}>
+                      <Trash2 size={18} />
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    <SelectField label="Heading" value={item.heading} onChange={(e) => handlePoliticalOverviewChange(index, 'heading', e.target.value)} options={politicalHeadingOptions} fullWidth />
+                    <TextField label="Description" value={item.description} onChange={(e) => handlePoliticalOverviewChange(index, 'description', e.target.value)} multiline rows={3} placeholder="Enter details..." fullWidth />
+                  </div>
+                </div>
+              ))}
+              {formData.politicalOverview.length === 0 && (
+                <div className="text-center py-8 text-gray-500">No political overview sections added yet. Click "Add Section" to get started.</div>
+              )}
+            </div>
+          </Card>
+
+          {/* TRANSPORTATION SERVICES */}
+          <Card sx={{ p: 3, border: '1px solid', borderColor: '#144ae920', backgroundColor: 'white' }}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Transportation Services</h2>
+              <Button type="button" onClick={handleAddTransportation} startIcon={<Plus size={18} />} sx={{ backgroundColor: '#144ae9', '&:hover': { backgroundColor: '#0d3ec7' } }}>Add Service</Button>
+            </div>
+            <div className="space-y-3">
+              {formData.transportationServices.map((item, index) => (
+                <div key={index} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="font-semibold text-gray-900">Service {index + 1}</h3>
+                    <Button type="button" onClick={() => handleRemoveTransportation(index)} sx={{ minWidth: 'auto', p: 1, color: '#ef4444', '&:hover': { backgroundColor: '#fee2e2' } }}>
+                      <Trash2 size={18} />
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <TextField label="Name" value={item.name} onChange={(e) => handleTransportationChange(index, 'name', e.target.value)} placeholder="Bus Stand" fullWidth />
+                    <TextField label="Type" value={item.type} onChange={(e) => handleTransportationChange(index, 'type', e.target.value)} placeholder="Bus Station" fullWidth />
+                    <TextField label="Location" value={item.location} onChange={(e) => handleTransportationChange(index, 'location', e.target.value)} placeholder="Main Road" fullWidth />
+                  </div>
+                </div>
+              ))}
+              {formData.transportationServices.length === 0 && (
+                <div className="text-center py-8 text-gray-500">No transportation services added yet.</div>
+              )}
+            </div>
+          </Card>
+
+          {/* HOSPITALITY SERVICES */}
+          <Card sx={{ p: 3, border: '1px solid', borderColor: '#144ae920', backgroundColor: 'white' }}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Hospitality Services</h2>
+              <Button type="button" onClick={handleAddHospitality} startIcon={<Plus size={18} />} sx={{ backgroundColor: '#144ae9', '&:hover': { backgroundColor: '#0d3ec7' } }}>Add Service</Button>
+            </div>
+            <div className="space-y-3">
+              {formData.hospitalityServices.map((item, index) => (
+                <div key={index} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="font-semibold text-gray-900">Service {index + 1}</h3>
+                    <Button type="button" onClick={() => handleRemoveHospitality(index)} sx={{ minWidth: 'auto', p: 1, color: '#ef4444', '&:hover': { backgroundColor: '#fee2e2' } }}>
+                      <Trash2 size={18} />
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <TextField label="Name" value={item.name} onChange={(e) => handleHospitalityChange(index, 'name', e.target.value)} placeholder="Hotel Name" fullWidth />
+                    <TextField label="Type" value={item.type} onChange={(e) => handleHospitalityChange(index, 'type', e.target.value)} placeholder="Hotel/Restaurant" fullWidth />
+                    <TextField label="Location" value={item.location} onChange={(e) => handleHospitalityChange(index, 'location', e.target.value)} placeholder="Near Market" fullWidth />
+                    <TextField label="Phone" value={item.contact.phone} onChange={(e) => handleHospitalityChange(index, 'phone', e.target.value)} placeholder="+91 9876543210" fullWidth />
+                  </div>
+                </div>
+              ))}
+              {formData.hospitalityServices.length === 0 && (
+                <div className="text-center py-8 text-gray-500">No hospitality services added yet.</div>
+              )}
+            </div>
+          </Card>
+
+          {/* EMERGENCY DIRECTORY */}
+          <Card sx={{ p: 3, border: '1px solid', borderColor: '#144ae920', backgroundColor: 'white' }}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Emergency Directory</h2>
+              <Button type="button" onClick={handleAddEmergency} startIcon={<Plus size={18} />} sx={{ backgroundColor: '#144ae9', '&:hover': { backgroundColor: '#0d3ec7' } }}>Add Contact</Button>
+            </div>
+            <div className="space-y-3">
+              {formData.emergencyDirectory.map((item, index) => (
+                <div key={index} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="font-semibold text-gray-900">Contact {index + 1}</h3>
+                    <Button type="button" onClick={() => handleRemoveEmergency(index)} sx={{ minWidth: 'auto', p: 1, color: '#ef4444', '&:hover': { backgroundColor: '#fee2e2' } }}>
+                      <Trash2 size={18} />
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <TextField label="Service" value={item.service} onChange={(e) => handleEmergencyChange(index, 'service', e.target.value)} placeholder="Police Station" fullWidth />
+                    <TextField label="Contact Number" value={item.contactNumber} onChange={(e) => handleEmergencyChange(index, 'contactNumber', e.target.value)} placeholder="100" fullWidth />
+                  </div>
+                </div>
+              ))}
+              {formData.emergencyDirectory.length === 0 && (
+                <div className="text-center py-8 text-gray-500">No emergency contacts added yet.</div>
+              )}
+            </div>
+          </Card>
+
+          {/* SPECIAL PERSONS */}
+          <Card sx={{ p: 3, border: '1px solid', borderColor: '#144ae920', backgroundColor: 'white' }}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Special Persons</h2>
+              <Button type="button" onClick={handleAddSpecialPerson} startIcon={<Plus size={18} />} sx={{ backgroundColor: '#144ae9', '&:hover': { backgroundColor: '#0d3ec7' } }}>Add Person</Button>
+            </div>
+            <div className="space-y-3">
+              {formData.specialPersons.map((item, index) => (
+                <div key={index} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="font-semibold text-gray-900">Person {index + 1}</h3>
+                    <Button type="button" onClick={() => handleRemoveSpecialPerson(index)} sx={{ minWidth: 'auto', p: 1, color: '#ef4444', '&:hover': { backgroundColor: '#fee2e2' } }}>
+                      <Trash2 size={18} />
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    <TextField label="Name" value={item.name} onChange={(e) => handleSpecialPersonChange(index, 'name', e.target.value)} placeholder="Person Name" fullWidth />
+                    <TextField label="Achievement" value={item.achievement} onChange={(e) => handleSpecialPersonChange(index, 'achievement', e.target.value)} placeholder="Notable Achievement" fullWidth />
+                    <TextField label="Description" value={item.description} onChange={(e) => handleSpecialPersonChange(index, 'description', e.target.value)} multiline rows={2} placeholder="Brief description..." fullWidth />
+                  </div>
+                </div>
+              ))}
+              {formData.specialPersons.length === 0 && (
+                <div className="text-center py-8 text-gray-500">No special persons added yet.</div>
+              )}
             </div>
           </Card>
 
           {/* SUBMIT BUTTONS */}
           <div className="flex flex-col sm:flex-row gap-3">
-            <Button
-              type="submit"
-              disabled={loading}
-              startIcon={!loading && <Save size={20} />}
-              size="large"
-              sx={{ flex: 1, backgroundColor: '#144ae9', fontWeight: 600, '&:hover': { backgroundColor: '#0d3ec7' } }}
-            >
+            <Button type="submit" disabled={loading} startIcon={!loading && <Save size={20} />} size="large" sx={{ flex: 1, backgroundColor: '#144ae9', fontWeight: 600, '&:hover': { backgroundColor: '#0d3ec7' } }}>
               {loading ? 'Creating...' : 'Create Panchayat'}
             </Button>
             <Link href="/admin/panchayats" className="no-underline flex-1">
@@ -516,6 +727,533 @@ export default function CreatePanchayatPage() {
     </div>
   );
 }
+
+// 'use client'
+// import { useState, useEffect } from 'react';
+// import { useDispatch, useSelector } from 'react-redux';
+// import { useRouter } from 'next/navigation';
+// import { createPanchayat, clearError, clearSuccess } from '@/redux/slices/panchayatSlice.js';
+// import { fetchDistricts } from '@/redux/slices/districtSlice.js';
+// import { toast } from 'react-toastify';
+// import Link from 'next/link';
+// import {
+//   ArrowLeft, Save, MapPin, Image as ImageIcon, CloudUpload,
+//   Link as LinkIcon, X, Calendar, Users, Maximize
+// } from 'lucide-react';
+// import Button from '@/components/ui/Button';
+// import Card from '@/components/ui/Card';
+// import TextField from '@/components/ui/TextField';
+// import SelectField from '@/components/ui/SelectField';
+// import Loader from '@/components/ui/Loader';
+
+// export default function CreatePanchayatPage() {
+//   const router = useRouter();
+//   const dispatch = useDispatch();
+//   const { loading, error, success } = useSelector((state) => state.panchayat);
+//   const { districts } = useSelector((state) => state.district);
+
+//   const [uploadMethod, setUploadMethod] = useState('file');
+//   const [formData, setFormData] = useState({
+//     name: '',
+//     slug: '',
+//     headerImage: '',
+//     district: '',
+//     block: '',
+//     coordinates: { lat: '', lng: '' },
+//     establishmentYear: '',
+//     historicalBackground: '',
+//     population: '',
+//     area: '',
+//     localArt: '',
+//     localCuisine: '',
+//     traditions: '',
+//     majorRivers: [],
+//     status: 'pending'
+//   });
+
+//   const [file, setFile] = useState(null);
+//   const [preview, setPreview] = useState(null);
+//   const [errors, setErrors] = useState({});
+//   const [tempRiver, setTempRiver] = useState('');
+
+//   useEffect(() => {
+//     dispatch(fetchDistricts({ limit: 100 }));
+//   }, []);
+
+//   useEffect(() => {
+//     if (success) {
+//       toast.success('Panchayat created successfully!');
+//       dispatch(clearSuccess());
+//       router.push('/admin/panchayats');
+//     }
+//     if (error) {
+//       toast.error(error.message || 'Failed to create panchayat');
+//       dispatch(clearError());
+//     }
+//   }, [success, error]);
+
+//   useEffect(() => {
+//     if (formData.name) {
+//       const slug = formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+//       setFormData(prev => ({ ...prev, slug }));
+//     }
+//   }, [formData.name]);
+
+//   const handleFileChange = (e) => {
+//     const selectedFile = e.target.files[0];
+    
+//     if (selectedFile) {
+//       const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+//       if (!validTypes.includes(selectedFile.type)) {
+//         toast.error('Please select a valid image file (JPEG, PNG, WebP)');
+//         return;
+//       }
+
+//       const maxSize = 50 * 1024 * 1024;
+//       if (selectedFile.size > maxSize) {
+//         toast.error('File size exceeds 50MB limit');
+//         return;
+//       }
+
+//       setFile(selectedFile);
+      
+//       const reader = new FileReader();
+//       reader.onload = (event) => setPreview(event.target.result);
+//       reader.readAsDataURL(selectedFile);
+//     }
+//   };
+
+//   const handleUrlChange = (url) => {
+//     setFormData(prev => ({ ...prev, headerImage: url }));
+//     setPreview(url);
+//   };
+
+//   const removeFile = () => {
+//     setFile(null);
+//     setPreview(null);
+//     if (uploadMethod === 'url') {
+//       setFormData(prev => ({ ...prev, headerImage: '' }));
+//     }
+//   };
+
+//   const handleAddRiver = () => {
+//     if (!tempRiver.trim()) return;
+//     setFormData(prev => ({ ...prev, majorRivers: [...prev.majorRivers, tempRiver.trim()] }));
+//     setTempRiver('');
+//   };
+
+//   const handleRemoveRiver = (index) => {
+//     setFormData(prev => ({ ...prev, majorRivers: prev.majorRivers.filter((_, i) => i !== index) }));
+//   };
+
+//   const validateForm = () => {
+//     const newErrors = {};
+//     if (!formData.name.trim()) newErrors.name = 'Panchayat name is required';
+//     if (!formData.slug.trim()) newErrors.slug = 'Slug is required';
+//     if (!formData.district) newErrors.district = 'District is required';
+//     if (!formData.block.trim()) newErrors.block = 'Block is required';
+    
+//     if (uploadMethod === 'file' && !file) {
+//       newErrors.headerImage = 'Header image is required';
+//     } else if (uploadMethod === 'url' && !formData.headerImage.trim()) {
+//       newErrors.headerImage = 'Header image URL is required';
+//     }
+    
+//     if (!formData.coordinates.lat) newErrors.lat = 'Latitude is required';
+//     if (!formData.coordinates.lng) newErrors.lng = 'Longitude is required';
+
+//     setErrors(newErrors);
+//     return Object.keys(newErrors).length === 0;
+//   };
+
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
+//     if (!validateForm()) {
+//       toast.error('Please fill all required fields.');
+//       return;
+//     }
+
+//     if (uploadMethod === 'file' && file) {
+//       const submitData = new FormData();
+      
+//       submitData.append('headerImage', file);
+//       submitData.append('uploadMethod', 'file');
+//       submitData.append('name', formData.name);
+//       submitData.append('slug', formData.slug);
+//       submitData.append('district', formData.district);
+//       submitData.append('block', formData.block);
+//       submitData.append('coordinates[lat]', formData.coordinates.lat);
+//       submitData.append('coordinates[lng]', formData.coordinates.lng);
+//       submitData.append('status', formData.status);
+//       submitData.append('establishmentYear', formData.establishmentYear);
+//       submitData.append('historicalBackground', formData.historicalBackground);
+//       submitData.append('population', formData.population);
+//       submitData.append('area', formData.area);
+//       submitData.append('localArt', formData.localArt);
+//       submitData.append('localCuisine', formData.localCuisine);
+//       submitData.append('traditions', formData.traditions);
+//       submitData.append('majorRivers', formData.majorRivers.join(','));
+
+//       dispatch(createPanchayat(submitData));
+//     } else {
+//       dispatch(createPanchayat(formData));
+//     }
+//   };
+
+//   const districtOptions = [
+//     { value: '', label: 'Select a district' },
+//     ...districts.map((district) => ({
+//       value: district._id,
+//       label: district.name
+//     }))
+//   ];
+
+//   const statusOptions = [
+//     { value: 'draft', label: 'Draft' },
+//     { value: 'pending', label: 'Pending' },
+//     { value: 'verified', label: 'Verified' }
+//   ];
+
+//   return (
+//     <div className="p-4 md:p-6 max-w-5xl mx-auto">
+//       {
+//         loading && <div className="fixed inset-0 z-[9999]">
+//           <Loader message={"Creating..."} />
+//         </div>
+//       }
+//       <div className="flex items-center gap-4 mb-6">
+//         <Link href="/admin/panchayats" className="no-underline">
+//           <Button 
+//             variant="outlined" 
+//             sx={{ 
+//               minWidth: 'auto', p: 1.5, borderColor: '#144ae9', color: '#144ae9',
+//               '&:hover': { borderColor: '#0d3ec7', backgroundColor: '#144ae910' }
+//             }}
+//           >
+//             <ArrowLeft size={20} />
+//           </Button>
+//         </Link>
+//         <div>
+//           <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">Create New Panchayat</h1>
+//           <div className="text-sm text-gray-600 mt-1">Add a new gram panchayat to the system</div>
+//         </div>
+//       </div>
+
+//       <form onSubmit={handleSubmit}>
+//         <div className="space-y-4">
+//           {/* BASIC INFO */}
+//           <Card sx={{ p: 3, border: '1px solid', borderColor: '#144ae920', backgroundColor: 'white' }}>
+//             <h2 className="text-xl font-semibold text-gray-900 mb-4">Basic Information</h2>
+//             <div className="space-y-4">
+//               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+//                 <TextField
+//                   label="Panchayat Name *"
+//                   value={formData.name}
+//                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+//                   error={!!errors.name}
+//                   helperText={errors.name}
+//                   fullWidth
+//                 />
+//                 <TextField
+//                   label="Slug *"
+//                   value={formData.slug}
+//                   onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+//                   error={!!errors.slug}
+//                   helperText={errors.slug}
+//                   InputProps={{ readOnly: true }}
+//                   fullWidth
+//                   sx={{ '& .MuiInputBase-input': { backgroundColor: '#144ae905' } }}
+//                 />
+//               </div>
+
+//               {/* HEADER IMAGE */}
+//               <div>
+//                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Header Image *</h3>
+                
+//                 <div className="flex border-b border-gray-200 mb-4">
+//                   <button
+//                     type="button"
+//                     onClick={() => { setUploadMethod('file'); setFile(null); setPreview(null); setFormData(prev => ({ ...prev, headerImage: '' })); }}
+//                     className={`flex items-center gap-2 px-4 py-2 border-b-2 font-medium text-sm ${
+//                       uploadMethod === 'file' 
+//                         ? 'border-blue-600 text-blue-600' 
+//                         : 'border-transparent text-gray-500 hover:text-gray-700'
+//                     }`}
+//                   >
+//                     <CloudUpload size={18} />
+//                     Upload File
+//                   </button>
+//                   <button
+//                     type="button"
+//                     onClick={() => { setUploadMethod('url'); setFile(null); setPreview(null); setFormData(prev => ({ ...prev, headerImage: '' })); }}
+//                     className={`flex items-center gap-2 px-4 py-2 border-b-2 font-medium text-sm ${
+//                       uploadMethod === 'url' 
+//                         ? 'border-blue-600 text-blue-600' 
+//                         : 'border-transparent text-gray-500 hover:text-gray-700'
+//                     }`}
+//                   >
+//                     <LinkIcon size={18} />
+//                     Paste URL
+//                   </button>
+//                 </div>
+
+//                 {uploadMethod === 'file' ? (
+//                   <>
+//                     {!file ? (
+//                       <div
+//                         className="border-2 border-dashed border-blue-600 rounded-lg p-6 text-center cursor-pointer bg-blue-50 hover:bg-blue-100 transition-colors"
+//                         onClick={() => document.getElementById('file-upload').click()}
+//                       >
+//                         <CloudUpload size={36} className="text-blue-600 mx-auto mb-3" />
+//                         <div className="text-lg font-semibold text-gray-900 mb-2">Click to upload header image</div>
+//                         <div className="text-sm text-gray-600">Supports JPG, PNG, WebP (Max 50MB)</div>
+//                       </div>
+//                     ) : (
+//                       <div className="border border-blue-200 rounded-lg p-4 bg-white">
+//                         <div className="flex items-center justify-between mb-3">
+//                           <div className="flex items-center gap-3">
+//                             <ImageIcon size={24} className="text-blue-600" />
+//                             <div>
+//                               <div className="font-semibold text-gray-900">{file.name}</div>
+//                               <div className="text-sm text-gray-600">{(file.size / (1024 * 1024)).toFixed(2)} MB</div>
+//                             </div>
+//                           </div>
+//                           <Button sx={{backgroundColor:'#144ae9'}} type="button" onClick={removeFile} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+//                             Remove
+//                           </Button>
+//                         </div>
+//                         <img src={preview} alt="Preview" className="max-h-48 w-full object-contain rounded-lg" />
+//                       </div>
+//                     )}
+//                     <input id="file-upload" type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+//                   </>
+//                 ) : (
+//                   <TextField
+//                     label="Header Image URL *"
+//                     value={formData.headerImage}
+//                     onChange={(e) => handleUrlChange(e.target.value)}
+//                     error={!!errors.headerImage}
+//                     helperText={errors.headerImage || "Paste direct URL to header image"}
+//                     placeholder="https://example.com/panchayat-header.jpg"
+//                     startIcon={<LinkIcon size={20} className="text-blue-600" />}
+//                     fullWidth
+//                   />
+//                 )}
+
+//                 {preview && (uploadMethod === 'url' && formData.headerImage) && (
+//                   <div className="mt-3 border border-blue-200 rounded-lg p-3 bg-white">
+//                     <div className="text-sm font-semibold text-gray-900 mb-2">Preview:</div>
+//                     <img src={preview} alt="URL Preview" className="max-h-32 w-full object-contain rounded" onError={(e) => { e.target.style.display = 'none'; }} />
+//                   </div>
+//                 )}
+
+//                 {errors.headerImage && <div className="text-red-600 text-sm mt-2">{errors.headerImage}</div>}
+//               </div>
+
+//               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+//                 <SelectField
+//                   label="District *"
+//                   value={formData.district}
+//                   onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+//                   options={districtOptions}
+//                   error={!!errors.district}
+//                   helperText={errors.district}
+//                   fullWidth
+//                 />
+//                 <TextField
+//                   label="Block *"
+//                   value={formData.block}
+//                   onChange={(e) => setFormData({ ...formData, block: e.target.value })}
+//                   error={!!errors.block}
+//                   helperText={errors.block}
+//                   placeholder="e.g., Indore Block"
+//                   fullWidth
+//                 />
+//               </div>
+
+//               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+//                 <TextField
+//                   label="Establishment Year"
+//                   type="number"
+//                   value={formData.establishmentYear}
+//                   onChange={(e) => setFormData({ ...formData, establishmentYear: e.target.value })}
+//                   placeholder="1952"
+//                   startIcon={<Calendar size={20} className="text-blue-600" />}
+//                   fullWidth
+//                 />
+//                 <SelectField
+//                   label="Status"
+//                   value={formData.status}
+//                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+//                   options={statusOptions}
+//                   fullWidth
+//                 />
+//               </div>
+//             </div>
+//           </Card>
+
+//           {/* STATISTICS */}
+//           <Card sx={{ p: 3, border: '1px solid', borderColor: '#144ae920', backgroundColor: 'white' }}>
+//             <h2 className="text-xl font-semibold text-gray-900 mb-4">Statistics</h2>
+//             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+//               <TextField
+//                 label="Population"
+//                 type="number"
+//                 value={formData.population}
+//                 onChange={(e) => setFormData({ ...formData, population: e.target.value })}
+//                 placeholder="5000"
+//                 startIcon={<Users size={20} className="text-blue-600" />}
+//                 fullWidth
+//               />
+//               <TextField
+//                 label="Area (sq km)"
+//                 type="number"
+//                 value={formData.area}
+//                 onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+//                 placeholder="25.5"
+//                 startIcon={<Maximize size={20} className="text-blue-600" />}
+//                 fullWidth
+//               />
+//             </div>
+//           </Card>
+
+//           {/* COORDINATES */}
+//           <Card sx={{ p: 3, border: '1px solid', borderColor: '#144ae920', backgroundColor: 'white' }}>
+//             <div className="flex items-center gap-2 mb-4">
+//               <MapPin size={20} className="text-blue-600" />
+//               <h2 className="text-xl font-semibold text-gray-900">Coordinates *</h2>
+//             </div>
+//             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+//               <TextField
+//                 label="Latitude *"
+//                 type="number"
+//                 step="any"
+//                 value={formData.coordinates.lat}
+//                 onChange={(e) => setFormData({ ...formData, coordinates: { ...formData.coordinates, lat: e.target.value } })}
+//                 error={!!errors.lat}
+//                 helperText={errors.lat}
+//                 placeholder="22.7196"
+//                 fullWidth
+//               />
+//               <TextField
+//                 label="Longitude *"
+//                 type="number"
+//                 step="any"
+//                 value={formData.coordinates.lng}
+//                 onChange={(e) => setFormData({ ...formData, coordinates: { ...formData.coordinates, lng: e.target.value } })}
+//                 error={!!errors.lng}
+//                 helperText={errors.lng}
+//                 placeholder="75.8577"
+//                 fullWidth
+//               />
+//             </div>
+//           </Card>
+
+//           {/* GEOGRAPHY */}
+//           <Card sx={{ p: 3, border: '1px solid', borderColor: '#144ae920', backgroundColor: 'white' }}>
+//             <h2 className="text-xl font-semibold text-gray-900 mb-4">Geography</h2>
+//             <div className="mb-4">
+//               <h3 className="font-semibold text-gray-900 mb-3">Major Rivers</h3>
+//               <div className="flex flex-col sm:flex-row gap-2 mb-3">
+//                 <TextField
+//                   value={tempRiver}
+//                   onChange={(e) => setTempRiver(e.target.value)}
+//                   onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddRiver())}
+//                   placeholder="Betwa"
+//                   fullWidth
+//                 />
+//                 <Button type="button" onClick={handleAddRiver} sx={{ backgroundColor: '#144ae9', fontWeight: '600', minWidth: '100px', '&:hover': { backgroundColor: '#0d3ec7' } }}>
+//                   Add
+//                 </Button>
+//               </div>
+//               <div className="flex flex-wrap gap-2">
+//                 {formData.majorRivers.map((river, index) => (
+//                   <div key={index} className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-3 py-1 text-sm font-medium">
+//                     {river}
+//                     <button onClick={() => handleRemoveRiver(index)} className="text-blue-600 hover:text-blue-800 rounded-full hover:bg-blue-200 p-0.5">
+//                       <X size={14} />
+//                     </button>
+//                   </div>
+//                 ))}
+//               </div>
+//             </div>
+//           </Card>
+
+//           {/* CULTURAL INFO */}
+//           <Card sx={{ p: 3, border: '1px solid', borderColor: '#144ae920', backgroundColor: 'white' }}>
+//             <h2 className="text-xl font-semibold text-gray-900 mb-4">Cultural Information</h2>
+//             <div className="space-y-4 flex flex-col gap-5">
+//               <TextField
+//                 label="Historical Background"
+//                 value={formData.historicalBackground}
+//                 onChange={(e) => setFormData({ ...formData, historicalBackground: e.target.value })}
+//                 multiline
+//                 rows={4}
+//                 placeholder="Write about the historical significance..."
+//                 fullWidth
+//               />
+//               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+//                 <TextField
+//                   label="Local Art"
+//                   value={formData.localArt}
+//                   onChange={(e) => setFormData({ ...formData, localArt: e.target.value })}
+//                   multiline
+//                   rows={3}
+//                   placeholder="Traditional art forms..."
+//                   fullWidth
+//                 />
+//                 <TextField
+//                   label="Local Cuisine"
+//                   value={formData.localCuisine}
+//                   onChange={(e) => setFormData({ ...formData, localCuisine: e.target.value })}
+//                   multiline
+//                   rows={3}
+//                   placeholder="Traditional dishes..."
+//                   fullWidth
+//                 />
+//               </div>
+//               <TextField
+//                 label="Traditions"
+//                 value={formData.traditions}
+//                 onChange={(e) => setFormData({ ...formData, traditions: e.target.value })}
+//                 multiline
+//                 rows={3}
+//                 placeholder="Cultural traditions..."
+//                 fullWidth
+//               />
+//             </div>
+//           </Card>
+
+//           {/* SUBMIT BUTTONS */}
+//           <div className="flex flex-col sm:flex-row gap-3">
+//             <Button
+//               type="submit"
+//               disabled={loading}
+//               startIcon={!loading && <Save size={20} />}
+//               size="large"
+//               sx={{ flex: 1, backgroundColor: '#144ae9', fontWeight: 600, '&:hover': { backgroundColor: '#0d3ec7' } }}
+//             >
+//               {loading ? 'Creating...' : 'Create Panchayat'}
+//             </Button>
+//             <Link href="/admin/panchayats" className="no-underline flex-1">
+//               <Button variant="outlined" size="large" sx={{ width: '100%', borderColor: '#144ae9', color: '#144ae9', '&:hover': { borderColor: '#0d3ec7', backgroundColor: '#144ae910' } }}>
+//                 Cancel
+//               </Button>
+//             </Link>
+//           </div>
+//         </div>
+//       </form>
+//     </div>
+//   );
+// }
+
+
+
+
+
+
+
+
 
 
 // 'use client'

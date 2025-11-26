@@ -15,7 +15,6 @@ const gramPanchayatSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    // Location Info
     district: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "districts",
@@ -23,7 +22,8 @@ const gramPanchayatSchema = new mongoose.Schema({
     },
     block: {
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
     coordinates: {
         lat: {
@@ -35,53 +35,134 @@ const gramPanchayatSchema = new mongoose.Schema({
             required: true
         }
     },
-    // Establishment & Historical Background
-    establishmentYear: {
-        type: Number
+    
+    // Basic Information
+    basicInfo: {
+        establishmentYear: {
+            type: Number
+        },
+        population: {
+            type: Number
+        },
+        area: {
+            type: Number // in sq km
+        },
+        majorRivers: [{
+            type: String,
+            trim: true
+        }],
+        languagesSpoken: [{
+            type: String,
+            trim: true
+        }]
     },
-    historicalBackground: {
-        type: String
+
+    // Cultural information
+    culturalInfo: {
+        historicalBackground: {
+            type: String,
+            trim: true
+        },
+        traditions: {
+            type: String,
+            trim: true
+        },
+        localCuisine: {
+            type: String,
+            trim: true
+        },
+        localArt: {
+            type: String,
+            trim: true
+        }
     },
-    population: {
-        type: Number
-    },
-    area: {
-        type: Number // in sq km
-    },
-    // Cultural Info
-    localArt: {
-        type: String
-    },
-    localCuisine: {
-        type: String 
-    },
-    traditions: {
-        type: String
-    },
-    // Geography
-    majorRivers: [{
-        type: String
+    
+    // Political overview
+    politicalOverview: [{
+        heading: {
+            type: String
+        },
+        description: {
+            type: String
+        }
     }],
-    // Single Media Gallery (replaces photoGallery and videoGallery)
+
+    // Transportation Services
+    transportationServices: [{
+        name: {
+            type: String,
+            trim: true
+        },
+        type: {
+            type: String
+        },
+        location: {
+            type: String
+        }
+    }],
+
+    // Hospitality Services
+    hospitalityServices: [{
+        name: {
+            type: String,
+            trim: true
+        },
+        type: {
+            type: String
+        },
+        location: {
+            type: String
+        },
+        contact: {
+            phone: String
+        }
+    }],
+    
+    // Emergency Directory
+    emergencyDirectory: [{
+        service: {
+            type: String
+        },
+        contactNumber: {
+            type: String
+        }
+    }],
+    
+    // Special Persons
+    specialPersons: [{
+        name: {
+            type: String,
+            trim: true
+        },
+        achievement: {
+            type: String
+        },
+        description: {
+            type: String
+        }
+    }],
+    
     mediaGallery: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "media"
     }],
-    // Report by RTC
+    
     rtcReport: {
         coordinator: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "admins" // RTC who submitted report
+            ref: "admins"
         },
         reportDate: Date,
         summary: String,
         fieldVisitPhotos: [String]
     },
+    
     status: {
         type: String,
-        enum: ['verified', 'pending', 'draft'],
-        default: 'pending'
+        enum: ['Verified', 'Pending', 'Draft'],
+        default: 'Pending'
     },
+    
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "admins",
@@ -92,7 +173,12 @@ const gramPanchayatSchema = new mongoose.Schema({
 });
 
 const GramPanchayat = mongoose.models.gramPanchayats || mongoose.model("gramPanchayats", gramPanchayatSchema);
-export default GramPanchayat;// import mongoose from "mongoose";
+export default GramPanchayat;
+
+
+
+
+// import mongoose from "mongoose";
 
 // const gramPanchayatSchema = new mongoose.Schema({
 //     name: {
@@ -105,11 +191,10 @@ export default GramPanchayat;// import mongoose from "mongoose";
 //         required: true,
 //         lowercase: true
 //     },
-//      headerImage: {
+//     headerImage: {
 //         type: String,
 //         required: true
 //     },
-//     // Location Info
 //     district: {
 //         type: mongoose.Schema.Types.ObjectId,
 //         ref: "districts",
@@ -129,7 +214,6 @@ export default GramPanchayat;// import mongoose from "mongoose";
 //             required: true
 //         }
 //     },
-//     // Establishment & Historical Background
 //     establishmentYear: {
 //         type: Number
 //     },
@@ -139,30 +223,30 @@ export default GramPanchayat;// import mongoose from "mongoose";
 //     population: {
 //         type: Number
 //     },
+//     area: {
+//         type: Number // in sq km
+//     },
 //     localArt: {
 //         type: String
 //     },
 //     localCuisine: {
-//         type: String 
+//         type: String
 //     },
 //     traditions: {
 //         type: String
 //     },
-//     // Photo Gallery (5–10 images)
-//     photoGallery: [{
+//     // Geography
+//     majorRivers: [{
+//         type: String
+//     }],
+//     mediaGallery: [{
 //         type: mongoose.Schema.Types.ObjectId,
 //         ref: "media"
 //     }],
-//     // Optional Video Section
-//     videoGallery: [{
-//         type: mongoose.Schema.Types.ObjectId,
-//         ref: "media"
-//     }],
-//     // Report by RTC
 //     rtcReport: {
 //         coordinator: {
 //             type: mongoose.Schema.Types.ObjectId,
-//             ref: "admins" // RTC who submitted report
+//             ref: "admins"
 //         },
 //         reportDate: Date,
 //         summary: String,
@@ -184,3 +268,8 @@ export default GramPanchayat;// import mongoose from "mongoose";
 
 // const GramPanchayat = mongoose.models.gramPanchayats || mongoose.model("gramPanchayats", gramPanchayatSchema);
 // export default GramPanchayat;
+
+
+
+
+// new model for whose u have to make all file updation 

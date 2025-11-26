@@ -102,7 +102,7 @@ export default function UploadMediaPage() {
       }
 
       // Validate file size (50MB)
-      const maxSize = 50 * 1024 * 1024;
+      const maxSize = 95 * 1024 * 1024;
       if (selectedFile.size > maxSize) {
         toast.error('File size exceeds 50MB limit');
         return;
@@ -319,7 +319,7 @@ export default function UploadMediaPage() {
                         Click to upload or drag and drop
                       </div>
                       <div className="text-sm text-gray-600">
-                        Supports JPG, PNG, WebP, MP4, WebM (Max 50MB)
+                        Supports JPG, PNG, WebP, MP4, WebM (Max 95MB)
                       </div>
                     </div>
                   ) : (
@@ -736,7 +736,7 @@ export default function UploadMediaPage() {
 //       }
 
 //       // Validate file size (50MB)
-//       const maxSize = 50 * 1024 * 1024;
+//       const maxSize = 95 * 1024 * 1024;
 //       if (selectedFile.size > maxSize) {
 //         toast.error('File size exceeds 50MB limit');
 //         return;
@@ -958,7 +958,7 @@ export default function UploadMediaPage() {
 //                       Click to upload or drag and drop
 //                     </div>
 //                     <div className="text-sm text-gray-600">
-//                       Supports JPG, PNG, WebP, MP4, WebM (Max 50MB)
+//                       Supports JPG, PNG, WebP, MP4, WebM (Max 95MB)
 //                     </div>
 //                   </div>
 //                 ) : (
@@ -1373,7 +1373,7 @@ export default function UploadMediaPage() {
 //       }
 
 //       // Validate file size (50MB)
-//       const maxSize = 50 * 1024 * 1024;
+//       const maxSize = 95 * 1024 * 1024;
 //       if (selectedFile.size > maxSize) {
 //         toast.error('File size exceeds 50MB limit');
 //         return;
@@ -1585,7 +1585,7 @@ export default function UploadMediaPage() {
 //                       Click to upload or drag and drop
 //                     </div>
 //                     <div className="text-sm text-gray-600">
-//                       Supports JPG, PNG, WebP, MP4, WebM (Max 50MB)
+//                       Supports JPG, PNG, WebP, MP4, WebM (Max 95MB)
 //                     </div>
 //                   </div>
 //                 ) : (
@@ -2008,7 +2008,7 @@ export default function UploadMediaPage() {
 //       }
 
 //       // Validate file size (50MB)
-//       const maxSize = 50 * 1024 * 1024;
+//       const maxSize = 95 * 1024 * 1024;
 //       if (selectedFile.size > maxSize) {
 //         toast.error('File size exceeds 50MB limit');
 //         return;
@@ -2222,7 +2222,7 @@ export default function UploadMediaPage() {
 //                       Click to upload or drag and drop
 //                     </Typography>
 //                     <Typography variant="body2" color="text.secondary">
-//                       Supports JPG, PNG, WebP, MP4, WebM (Max 50MB)
+//                       Supports JPG, PNG, WebP, MP4, WebM (Max 95MB)
 //                     </Typography>
 //                   </Box>
 //                 ) : (
@@ -2698,7 +2698,7 @@ export default function UploadMediaPage() {
 //       }
 
 //       // Validate file size (50MB)
-//       const maxSize = 50 * 1024 * 1024;
+//       const maxSize = 95 * 1024 * 1024;
 //       if (selectedFile.size > maxSize) {
 //         toast.error('File size exceeds 50MB limit');
 //         return;
@@ -2843,7 +2843,7 @@ export default function UploadMediaPage() {
 //                   Click to upload or drag and drop
 //                 </Typography>
 //                 <Typography variant="body2" color="text.secondary">
-//                   Supports JPG, PNG, WebP, MP4, WebM (Max 50MB)
+//                   Supports JPG, PNG, WebP, MP4, WebM (Max 95MB)
 //                 </Typography>
 //               </Box>
 //             ) : (

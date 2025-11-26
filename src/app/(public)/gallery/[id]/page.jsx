@@ -336,11 +336,16 @@ export default function GalleryDetailPage() {
                     
                     {/* Video Icon Overlay when not playing */}
                     {showVideoIcon && !isPlaying && (
-                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                        <div className="bg-white/20 backdrop-blur-sm rounded-full p-4">
-                          <Play size={48} className="text-white ml-2" />
-                        </div>
-                      </div>
+                      // <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                      //   <div className="bg-white/20 backdrop-blur-sm rounded-full p-4">
+                      //     <Play size={48} className="text-white ml-2" />
+                      //   </div>
+                      // </div>
+                       
+  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-sm rounded-full p-4 hover:bg-white/30 transition-colors">
+    <Play size={32} className="text-white ml-1" />
+  </div>
+
                     )}
                     
                     {/* Video Controls Overlay */}

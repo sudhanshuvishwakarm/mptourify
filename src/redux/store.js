@@ -85,7 +85,8 @@ export const store = configureStore({
     }),
 });
 
-export const persistor = persistStore(store);// import { configureStore } from "@reduxjs/toolkit";
+export const persistor = persistStore(store);
+// import { configureStore } from "@reduxjs/toolkit";
 // import { persistStore, persistReducer } from 'redux-persist';
 // import storage from 'redux-persist/lib/storage';
 // import adminReducer from "./slices/adminSlice.js";

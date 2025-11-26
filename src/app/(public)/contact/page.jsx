@@ -131,7 +131,7 @@ export default function ContactPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8FDF7]">
+    <div className="min-h-screen hideExtra bg-[#F8FDF7]">
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-[#117307]">
         <div className="absolute inset-0 opacity-10" style={{

@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CACHE_DURATION = 3 * 60 * 1000; // 3 minutes for faster real-time updates
 
 // CREATE PANCHAYAT
 export const createPanchayat = createAsyncThunk(
@@ -10,7 +10,6 @@ export const createPanchayat = createAsyncThunk(
         try {
             let res;
             
-            // Check if it's FormData (file upload) or JSON
             if (panchayatData instanceof FormData) {
                 res = await axios.post('/api/panchayat', panchayatData, {
                     headers: {
@@ -27,6 +26,8 @@ export const createPanchayat = createAsyncThunk(
         }
     }
 );
+
+// FETCH PANCHAYATS BY DISTRICT
 export const fetchPanchayatsByDistrict = createAsyncThunk(
     'panchayat/fetchPanchayatsByDistrict',
     async (districtId, { rejectWithValue, getState }) => {
@@ -47,7 +48,7 @@ export const fetchPanchayatsByDistrict = createAsyncThunk(
     }
 );
 
-// FETCH ALL PANCHAYATS with caching
+// FETCH ALL PANCHAYATS
 export const fetchPanchayats = createAsyncThunk(
     'panchayat/fetchPanchayats',
     async (params = {}, { rejectWithValue, getState }) => {
@@ -55,7 +56,6 @@ export const fetchPanchayats = createAsyncThunk(
         const now = Date.now();
         const cacheKey = JSON.stringify(params);
         
-        // Check if we have cached data
         if (state.panchayatsCache[cacheKey] && (now - state.panchayatsCache[cacheKey].lastFetched < CACHE_DURATION)) {
             return { ...state.panchayatsCache[cacheKey].data, fromCache: true };
         }
@@ -70,14 +70,13 @@ export const fetchPanchayats = createAsyncThunk(
     }
 );
 
-// FETCH PANCHAYAT BY ID with caching
+// FETCH PANCHAYAT BY ID
 export const fetchPanchayatById = createAsyncThunk(
     'panchayat/fetchPanchayatById',
     async (id, { rejectWithValue, getState }) => {
         const state = getState().panchayat;
         const now = Date.now();
         
-        // Check cache by ID
         if (state.panchayatCache[id] && (now - state.panchayatCache[id].lastFetched < CACHE_DURATION)) {
             return { panchayat: state.panchayatCache[id].data, fromCache: true };
         }
@@ -90,6 +89,7 @@ export const fetchPanchayatById = createAsyncThunk(
         }
     }
 );
+
 // ADD RTC REPORT
 export const addRTCReport = createAsyncThunk(
     'panchayat/addRTCReport',
@@ -103,8 +103,6 @@ export const addRTCReport = createAsyncThunk(
     }
 );
 
-
-
 // UPDATE PANCHAYAT
 export const updatePanchayat = createAsyncThunk(
     'panchayat/updatePanchayat',
@@ -112,7 +110,6 @@ export const updatePanchayat = createAsyncThunk(
         try {
             let res;
             
-            // Check if it's FormData (file upload) or JSON
             if (panchayatData instanceof FormData) {
                 res = await axios.put(`/api/panchayat/${id}`, panchayatData, {
                     headers: {
@@ -130,7 +127,6 @@ export const updatePanchayat = createAsyncThunk(
     }
 );
 
-
 // DELETE PANCHAYAT
 export const deletePanchayat = createAsyncThunk(
     'panchayat/deletePanchayat',
@@ -144,10 +140,9 @@ export const deletePanchayat = createAsyncThunk(
     }
 );
 
-
 // FETCH MEDIA BY PANCHAYAT
 export const fetchMediaByPanchayat = createAsyncThunk(
-    'media/fetchMediaByPanchayat',
+    'panchayat/fetchMediaByPanchayat',
     async ({ panchayatId, params = {} }, { rejectWithValue }) => {
         try {
             const queryString = new URLSearchParams(params).toString();
@@ -162,6 +157,7 @@ export const fetchMediaByPanchayat = createAsyncThunk(
 const initialState = {
     panchayats: [],
     selectedPanchayat: null,
+    media: [],
     loading: false,
     error: null,
     success: false,
@@ -176,6 +172,7 @@ const initialState = {
 const panchayatSlice = createSlice({
     name: "panchayat",
     initialState,
+    
     reducers: {
         clearError: (state) => {
             state.error = null;
@@ -197,6 +194,10 @@ const panchayatSlice = createSlice({
             state.panchayatsCache = {};
             state.panchayatCache = {};
             state.lastFetched = null;
+        },
+        // Optimistic update for immediate UI feedback
+        addPanchayatOptimistic: (state, action) => {
+            state.panchayats.unshift({ ...action.payload, isOptimistic: true });
         }
     },
     extraReducers: (builder) => {
@@ -209,22 +210,24 @@ const panchayatSlice = createSlice({
             .addCase(createPanchayat.fulfilled, (state, action) => {
                 state.loading = false;
                 state.success = true;
-                // Add to list if returned
+                
+                // Remove optimistic entry and add real data
+                state.panchayats = state.panchayats.filter(p => !p.isOptimistic);
                 if (action.payload.panchayat) {
                     state.panchayats.unshift(action.payload.panchayat);
-                    state.totalPanchayats += 1;
                 }
-                // Clear cache
+                
+                // Clear cache for fresh data
                 state.panchayatsCache = {};
             })
-            .addCase(createPanchayat.rejected, (state, action) => {
-                state.loading = false;
-                state.error = action.payload;
-            })
-
+          .addCase(createPanchayat.rejected, (state, action) => {
+    state.loading = false;
+    state.error = action.payload || { message: 'Failed to create panchayat' };
+    // Remove optimistic entry on error
+    state.panchayats = state.panchayats.filter(p => !p.isOptimistic);
+})
             // FETCH ALL PANCHAYATS
             .addCase(fetchPanchayats.pending, (state) => {
-                // Only show loading if no cached data
                 if (!state.panchayats.length) {
                     state.loading = true;
                 }
@@ -237,7 +240,6 @@ const panchayatSlice = createSlice({
                 state.currentPage = action.payload.currentPage || 1;
                 state.totalPages = action.payload.totalPages || 1;
                 
-                // Cache the data
                 if (!action.payload.fromCache && action.payload.cacheKey) {
                     state.panchayatsCache[action.payload.cacheKey] = {
                         data: {
@@ -267,13 +269,11 @@ const panchayatSlice = createSlice({
                 state.loading = false;
                 state.selectedPanchayat = action.payload.panchayat;
                 
-                // Cache by ID
                 if (!action.payload.fromCache && action.payload.id) {
                     state.panchayatCache[action.payload.id] = {
                         data: action.payload.panchayat,
                         lastFetched: Date.now()
                     };
-                    // Also cache by slug if available
                     if (action.payload.panchayat?.slug) {
                         state.panchayatCache[action.payload.panchayat.slug] = {
                             data: action.payload.panchayat,
@@ -287,7 +287,7 @@ const panchayatSlice = createSlice({
                 state.error = action.payload;
             })
 
-            //  FETCH MEDIA BY PANCHAYAT
+            // FETCH MEDIA BY PANCHAYAT
             .addCase(fetchMediaByPanchayat.pending, (state) => {
                 state.loading = true;
             })
@@ -300,8 +300,7 @@ const panchayatSlice = createSlice({
                 state.error = action.payload?.message || 'Failed to fetch panchayat media';
             })
 
-
-            //  ADD RTC REPORT
+            // ADD RTC REPORT
             .addCase(addRTCReport.pending, (state) => {
                 state.loading = true;
             })
@@ -309,8 +308,13 @@ const panchayatSlice = createSlice({
                 state.loading = false;
                 state.success = true;
                 
-                // Update cache if available
                 if (action.payload.panchayat && action.payload.id) {
+                    // Update selected panchayat
+                    if (state.selectedPanchayat && state.selectedPanchayat._id === action.payload.id) {
+                        state.selectedPanchayat = action.payload.panchayat;
+                    }
+                    
+                    // Update cache
                     state.panchayatCache[action.payload.id] = {
                         data: action.payload.panchayat,
                         lastFetched: Date.now()
@@ -322,8 +326,7 @@ const panchayatSlice = createSlice({
                 state.error = action.payload;
             })
 
-
-                        // FETCH BY DISTRICT
+            // FETCH BY DISTRICT
             .addCase(fetchPanchayatsByDistrict.pending, (state) => {
                 state.loading = true;
             })
@@ -331,7 +334,6 @@ const panchayatSlice = createSlice({
                 state.loading = false;
                 state.panchayats = action.payload.panchayats || [];
                 
-                // Cache the data
                 if (!action.payload.fromCache && action.payload.cacheKey) {
                     state.panchayatsCache[action.payload.cacheKey] = {
                         data: { panchayats: action.payload.panchayats },
@@ -352,8 +354,8 @@ const panchayatSlice = createSlice({
                 state.loading = false;
                 state.success = true;
                 
-                // Update in list
                 if (action.payload.panchayat) {
+                    // Update in list
                     const idx = state.panchayats.findIndex(p => p._id === action.payload.id);
                     if (idx !== -1) {
                         state.panchayats[idx] = action.payload.panchayat;
@@ -377,7 +379,7 @@ const panchayatSlice = createSlice({
                     }
                 }
                 
-                // Clear list cache
+                // Clear list cache for fresh data
                 state.panchayatsCache = {};
             })
             .addCase(updatePanchayat.rejected, (state, action) => {
@@ -410,8 +412,16 @@ const panchayatSlice = createSlice({
     }
 });
 
-export const { clearError, clearSuccess, clearPanchayat, clearCache } = panchayatSlice.actions;
+export const { clearError, clearSuccess, clearPanchayat, clearCache, addPanchayatOptimistic } = panchayatSlice.actions;
 export default panchayatSlice.reducer;
+
+
+
+
+
+
+
+
 
 
 
@@ -425,8 +435,39 @@ export default panchayatSlice.reducer;
 //     'panchayat/createPanchayat',
 //     async (panchayatData, { rejectWithValue }) => {
 //         try {
-//             const res = await axios.post('/api/panchayat', panchayatData);
+//             let res;
+            
+//             // Check if it's FormData (file upload) or JSON
+//             if (panchayatData instanceof FormData) {
+//                 res = await axios.post('/api/panchayat', panchayatData, {
+//                     headers: {
+//                         'Content-Type': 'multipart/form-data'
+//                     }
+//                 });
+//             } else {
+//                 res = await axios.post('/api/panchayat', panchayatData);
+//             }
+            
 //             return res.data;
+//         } catch (error) {
+//             return rejectWithValue(error.response?.data || error.message);
+//         }
+//     }
+// );
+// export const fetchPanchayatsByDistrict = createAsyncThunk(
+//     'panchayat/fetchPanchayatsByDistrict',
+//     async (districtId, { rejectWithValue, getState }) => {
+//         const state = getState().panchayat;
+//         const now = Date.now();
+//         const cacheKey = `district_${districtId}`;
+        
+//         if (state.panchayatsCache[cacheKey] && (now - state.panchayatsCache[cacheKey].lastFetched < CACHE_DURATION)) {
+//             return { ...state.panchayatsCache[cacheKey].data, fromCache: true };
+//         }
+        
+//         try {
+//             const res = await axios.get(`/api/panchayat/district/${districtId}`);
+//             return { ...res.data, fromCache: false, cacheKey };
 //         } catch (error) {
 //             return rejectWithValue(error.response?.data || error.message);
 //         }
@@ -456,41 +497,6 @@ export default panchayatSlice.reducer;
 //     }
 // );
 
-// // SEARCH PANCHAYATS
-// export const searchPanchayats = createAsyncThunk(
-//     'panchayat/searchPanchayats',
-//     async (params = {}, { rejectWithValue }) => {
-//         try {
-//             const queryString = new URLSearchParams(params).toString();
-//             const res = await axios.get(`/api/panchayat/search?${queryString}`);
-//             return res.data;
-//         } catch (error) {
-//             return rejectWithValue(error.response?.data || error.message);
-//         }
-//     }
-// );
-
-// // FETCH PANCHAYAT BY SLUG with caching
-// export const fetchPanchayatBySlug = createAsyncThunk(
-//     'panchayat/fetchPanchayatBySlug',
-//     async (slug, { rejectWithValue, getState }) => {
-//         const state = getState().panchayat;
-//         const now = Date.now();
-        
-//         // Check cache by slug
-//         if (state.panchayatCache[slug] && (now - state.panchayatCache[slug].lastFetched < CACHE_DURATION)) {
-//             return { panchayat: state.panchayatCache[slug].data, fromCache: true };
-//         }
-        
-//         try {
-//             const res = await axios.get(`/api/panchayat/slug/${slug}`);
-//             return { ...res.data, fromCache: false, slug };
-//         } catch (error) {
-//             return rejectWithValue(error.response?.data || error.message);
-//         }
-//     }
-// );
-
 // // FETCH PANCHAYAT BY ID with caching
 // export const fetchPanchayatById = createAsyncThunk(
 //     'panchayat/fetchPanchayatById',
@@ -511,19 +517,46 @@ export default panchayatSlice.reducer;
 //         }
 //     }
 // );
-
-// // UPDATE PANCHAYAT
-// export const updatePanchayat = createAsyncThunk(
-//     'panchayat/updatePanchayat',
-//     async ({ id, panchayatData }, { rejectWithValue }) => {
+// // ADD RTC REPORT
+// export const addRTCReport = createAsyncThunk(
+//     'panchayat/addRTCReport',
+//     async ({ id, reportData }, { rejectWithValue }) => {
 //         try {
-//             const res = await axios.put(`/api/panchayat/${id}`, panchayatData);
+//             const res = await axios.put(`/api/panchayat/${id}/rtc-report`, reportData);
 //             return { ...res.data, id };
 //         } catch (error) {
 //             return rejectWithValue(error.response?.data || error.message);
 //         }
 //     }
 // );
+
+
+
+// // UPDATE PANCHAYAT
+// export const updatePanchayat = createAsyncThunk(
+//     'panchayat/updatePanchayat',
+//     async ({ id, panchayatData }, { rejectWithValue }) => {
+//         try {
+//             let res;
+            
+//             // Check if it's FormData (file upload) or JSON
+//             if (panchayatData instanceof FormData) {
+//                 res = await axios.put(`/api/panchayat/${id}`, panchayatData, {
+//                     headers: {
+//                         'Content-Type': 'multipart/form-data'
+//                     }
+//                 });
+//             } else {
+//                 res = await axios.put(`/api/panchayat/${id}`, panchayatData);
+//             }
+            
+//             return { ...res.data, id };
+//         } catch (error) {
+//             return rejectWithValue(error.response?.data || error.message);
+//         }
+//     }
+// );
+
 
 // // DELETE PANCHAYAT
 // export const deletePanchayat = createAsyncThunk(
@@ -538,68 +571,15 @@ export default panchayatSlice.reducer;
 //     }
 // );
 
-// // ADD RTC REPORT
-// export const addRTCReport = createAsyncThunk(
-//     'panchayat/addRTCReport',
-//     async ({ id, reportData }, { rejectWithValue }) => {
-//         try {
-//             const res = await axios.put(`/api/panchayat/${id}/rtc-report`, reportData);
-//             return { ...res.data, id };
-//         } catch (error) {
-//             return rejectWithValue(error.response?.data || error.message);
-//         }
-//     }
-// );
 
-// // UPDATE PANCHAYAT STATUS
-// export const updatePanchayatStatus = createAsyncThunk(
-//     'panchayat/updatePanchayatStatus',
-//     async ({ id, status }, { rejectWithValue }) => {
+// // FETCH MEDIA BY PANCHAYAT
+// export const fetchMediaByPanchayat = createAsyncThunk(
+//     'media/fetchMediaByPanchayat',
+//     async ({ panchayatId, params = {} }, { rejectWithValue }) => {
 //         try {
-//             const res = await axios.put(`/api/panchayat/${id}/status`, { status });
-//             return { ...res.data, id, status };
-//         } catch (error) {
-//             return rejectWithValue(error.response?.data || error.message);
-//         }
-//     }
-// );
-
-// // FETCH PANCHAYATS BY DISTRICT with caching
-// export const fetchPanchayatsByDistrict = createAsyncThunk(
-//     'panchayat/fetchPanchayatsByDistrict',
-//     async (districtId, { rejectWithValue, getState }) => {
-//         const state = getState().panchayat;
-//         const now = Date.now();
-//         const cacheKey = `district_${districtId}`;
-        
-//         if (state.panchayatsCache[cacheKey] && (now - state.panchayatsCache[cacheKey].lastFetched < CACHE_DURATION)) {
-//             return { ...state.panchayatsCache[cacheKey].data, fromCache: true };
-//         }
-        
-//         try {
-//             const res = await axios.get(`/api/panchayat/district/${districtId}`);
-//             return { ...res.data, fromCache: false, cacheKey };
-//         } catch (error) {
-//             return rejectWithValue(error.response?.data || error.message);
-//         }
-//     }
-// );
-
-// // FETCH PANCHAYATS BY BLOCK with caching
-// export const fetchPanchayatsByBlock = createAsyncThunk(
-//     'panchayat/fetchPanchayatsByBlock',
-//     async (blockName, { rejectWithValue, getState }) => {
-//         const state = getState().panchayat;
-//         const now = Date.now();
-//         const cacheKey = `block_${blockName}`;
-        
-//         if (state.panchayatsCache[cacheKey] && (now - state.panchayatsCache[cacheKey].lastFetched < CACHE_DURATION)) {
-//             return { ...state.panchayatsCache[cacheKey].data, fromCache: true };
-//         }
-        
-//         try {
-//             const res = await axios.get(`/api/panchayat/block/${blockName}`);
-//             return { ...res.data, fromCache: false, cacheKey };
+//             const queryString = new URLSearchParams(params).toString();
+//             const res = await axios.get(`/api/media/panchayat/${panchayatId}?${queryString}`);
+//             return res.data;
 //         } catch (error) {
 //             return rejectWithValue(error.response?.data || error.message);
 //         }
@@ -609,7 +589,6 @@ export default panchayatSlice.reducer;
 // const initialState = {
 //     panchayats: [],
 //     selectedPanchayat: null,
-//     searchResults: [],
 //     loading: false,
 //     error: null,
 //     success: false,
@@ -634,7 +613,6 @@ export default panchayatSlice.reducer;
 //         clearPanchayat: (state) => {
 //             state.panchayats = [];
 //             state.selectedPanchayat = null;
-//             state.searchResults = [];
 //             state.error = null;
 //             state.loading = false;
 //             state.success = false;
@@ -655,17 +633,19 @@ export default panchayatSlice.reducer;
 //                 state.loading = true;
 //                 state.error = null;
 //             })
-//             .addCase(createPanchayat.fulfilled, (state, action) => {
-//                 state.loading = false;
-//                 state.success = true;
-//                 // Add to list if returned
-//                 if (action.payload.panchayat) {
-//                     state.panchayats.unshift(action.payload.panchayat);
-//                     state.totalPanchayats += 1;
-//                 }
-//                 // Clear cache
-//                 state.panchayatsCache = {};
-//             })
+//           .addCase(createPanchayat.fulfilled, (state, action) => {
+//   state.loading = false;
+//   state.success = true;
+  
+//   // Remove optimistic entry and add real data
+//   state.panchayats = state.panchayats.filter(p => !p.isOptimistic);
+//   if (action.payload.panchayat) {
+//     state.panchayats.unshift(action.payload.panchayat);
+//   }
+  
+//   // Clear cache
+//   state.panchayatsCache = {};
+// })
 //             .addCase(createPanchayat.rejected, (state, action) => {
 //                 state.loading = false;
 //                 state.error = action.payload;
@@ -708,47 +688,6 @@ export default panchayatSlice.reducer;
 //                 state.error = action.payload;
 //             })
 
-//             // SEARCH PANCHAYATS
-//             .addCase(searchPanchayats.pending, (state) => {
-//                 state.loading = true;
-//             })
-//             .addCase(searchPanchayats.fulfilled, (state, action) => {
-//                 state.loading = false;
-//                 state.searchResults = action.payload.panchayats || [];
-//             })
-//             .addCase(searchPanchayats.rejected, (state, action) => {
-//                 state.loading = false;
-//                 state.error = action.payload;
-//             })
-
-//             // FETCH BY SLUG
-//             .addCase(fetchPanchayatBySlug.pending, (state) => {
-//                 state.loading = true;
-//             })
-//             .addCase(fetchPanchayatBySlug.fulfilled, (state, action) => {
-//                 state.loading = false;
-//                 state.selectedPanchayat = action.payload.panchayat;
-                
-//                 // Cache by slug
-//                 if (!action.payload.fromCache && action.payload.slug) {
-//                     state.panchayatCache[action.payload.slug] = {
-//                         data: action.payload.panchayat,
-//                         lastFetched: Date.now()
-//                     };
-//                     // Also cache by ID if available
-//                     if (action.payload.panchayat?._id) {
-//                         state.panchayatCache[action.payload.panchayat._id] = {
-//                             data: action.payload.panchayat,
-//                             lastFetched: Date.now()
-//                         };
-//                     }
-//                 }
-//             })
-//             .addCase(fetchPanchayatBySlug.rejected, (state, action) => {
-//                 state.loading = false;
-//                 state.error = action.payload;
-//             })
-
 //             // FETCH BY ID
 //             .addCase(fetchPanchayatById.pending, (state) => {
 //                 state.loading = true;
@@ -773,6 +712,63 @@ export default panchayatSlice.reducer;
 //                 }
 //             })
 //             .addCase(fetchPanchayatById.rejected, (state, action) => {
+//                 state.loading = false;
+//                 state.error = action.payload;
+//             })
+
+//             //  FETCH MEDIA BY PANCHAYAT
+//             .addCase(fetchMediaByPanchayat.pending, (state) => {
+//                 state.loading = true;
+//             })
+//             .addCase(fetchMediaByPanchayat.fulfilled, (state, action) => {
+//                 state.loading = false;
+//                 state.media = action.payload.media || [];
+//             })
+//             .addCase(fetchMediaByPanchayat.rejected, (state, action) => {
+//                 state.loading = false;
+//                 state.error = action.payload?.message || 'Failed to fetch panchayat media';
+//             })
+
+
+//             //  ADD RTC REPORT
+//             .addCase(addRTCReport.pending, (state) => {
+//                 state.loading = true;
+//             })
+//             .addCase(addRTCReport.fulfilled, (state, action) => {
+//                 state.loading = false;
+//                 state.success = true;
+                
+//                 // Update cache if available
+//                 if (action.payload.panchayat && action.payload.id) {
+//                     state.panchayatCache[action.payload.id] = {
+//                         data: action.payload.panchayat,
+//                         lastFetched: Date.now()
+//                     };
+//                 }
+//             })
+//             .addCase(addRTCReport.rejected, (state, action) => {
+//                 state.loading = false;
+//                 state.error = action.payload;
+//             })
+
+
+//                         // FETCH BY DISTRICT
+//             .addCase(fetchPanchayatsByDistrict.pending, (state) => {
+//                 state.loading = true;
+//             })
+//             .addCase(fetchPanchayatsByDistrict.fulfilled, (state, action) => {
+//                 state.loading = false;
+//                 state.panchayats = action.payload.panchayats || [];
+                
+//                 // Cache the data
+//                 if (!action.payload.fromCache && action.payload.cacheKey) {
+//                     state.panchayatsCache[action.payload.cacheKey] = {
+//                         data: { panchayats: action.payload.panchayats },
+//                         lastFetched: Date.now()
+//                     };
+//                 }
+//             })
+//             .addCase(fetchPanchayatsByDistrict.rejected, (state, action) => {
 //                 state.loading = false;
 //                 state.error = action.payload;
 //             })
@@ -839,433 +835,9 @@ export default panchayatSlice.reducer;
 //             .addCase(deletePanchayat.rejected, (state, action) => {
 //                 state.loading = false;
 //                 state.error = action.payload;
-//             })
-
-//             // ADD RTC REPORT
-//             .addCase(addRTCReport.pending, (state) => {
-//                 state.loading = true;
-//             })
-//             .addCase(addRTCReport.fulfilled, (state, action) => {
-//                 state.loading = false;
-//                 state.success = true;
-                
-//                 // Update cache if available
-//                 if (action.payload.panchayat && action.payload.id) {
-//                     state.panchayatCache[action.payload.id] = {
-//                         data: action.payload.panchayat,
-//                         lastFetched: Date.now()
-//                     };
-//                 }
-//             })
-//             .addCase(addRTCReport.rejected, (state, action) => {
-//                 state.loading = false;
-//                 state.error = action.payload;
-//             })
-
-//             // UPDATE STATUS
-//             .addCase(updatePanchayatStatus.pending, (state) => {
-//                 state.loading = true;
-//             })
-//             .addCase(updatePanchayatStatus.fulfilled, (state, action) => {
-//                 state.loading = false;
-//                 state.success = true;
-                
-//                 // Update in list
-//                 const idx = state.panchayats.findIndex(p => p._id === action.payload.id);
-//                 if (idx !== -1 && action.payload.panchayat) {
-//                     state.panchayats[idx] = action.payload.panchayat;
-//                 }
-                
-//                 // Update cache
-//                 if (state.panchayatCache[action.payload.id]) {
-//                     state.panchayatCache[action.payload.id].data.status = action.payload.status;
-//                 }
-                
-//                 // Clear list cache
-//                 state.panchayatsCache = {};
-//             })
-//             .addCase(updatePanchayatStatus.rejected, (state, action) => {
-//                 state.loading = false;
-//                 state.error = action.payload;
-//             })
-
-//             // FETCH BY DISTRICT
-//             .addCase(fetchPanchayatsByDistrict.pending, (state) => {
-//                 state.loading = true;
-//             })
-//             .addCase(fetchPanchayatsByDistrict.fulfilled, (state, action) => {
-//                 state.loading = false;
-//                 state.panchayats = action.payload.panchayats || [];
-                
-//                 // Cache the data
-//                 if (!action.payload.fromCache && action.payload.cacheKey) {
-//                     state.panchayatsCache[action.payload.cacheKey] = {
-//                         data: { panchayats: action.payload.panchayats },
-//                         lastFetched: Date.now()
-//                     };
-//                 }
-//             })
-//             .addCase(fetchPanchayatsByDistrict.rejected, (state, action) => {
-//                 state.loading = false;
-//                 state.error = action.payload;
-//             })
-
-//             // FETCH BY BLOCK
-//             .addCase(fetchPanchayatsByBlock.pending, (state) => {
-//                 state.loading = true;
-//             })
-//             .addCase(fetchPanchayatsByBlock.fulfilled, (state, action) => {
-//                 state.loading = false;
-//                 state.panchayats = action.payload.panchayats || [];
-                
-//                 // Cache the data
-//                 if (!action.payload.fromCache && action.payload.cacheKey) {
-//                     state.panchayatsCache[action.payload.cacheKey] = {
-//                         data: { panchayats: action.payload.panchayats },
-//                         lastFetched: Date.now()
-//                     };
-//                 }
-//             })
-//             .addCase(fetchPanchayatsByBlock.rejected, (state, action) => {
-//                 state.loading = false;
-//                 state.error = action.payload;
 //             });
 //     }
 // });
 
 // export const { clearError, clearSuccess, clearPanchayat, clearCache } = panchayatSlice.actions;
-// export default panchayatSlice.reducer;
-
-// import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-// import axios from "axios";
-
-// // CREATE PANCHAYAT
-// export const createPanchayat = createAsyncThunk(
-//     'panchayat/createPanchayat',
-//     async (panchayatData, { rejectWithValue }) => {
-//         try {
-//             const res = await axios.post('/api/panchayat', panchayatData);
-//             return res.data;
-//         } catch (error) {
-//             return rejectWithValue(error.response?.data || error.message);
-//         }
-//     }
-// );
-
-// // FETCH ALL PANCHAYATS
-// export const fetchPanchayats = createAsyncThunk(
-//     'panchayat/fetchPanchayats',
-//     async (params = {}, { rejectWithValue }) => {
-//         try {
-//             const queryString = new URLSearchParams(params).toString();
-//             const res = await axios.get(`/api/panchayat?${queryString}`);
-//             return res.data;
-//         } catch (error) {
-//             return rejectWithValue(error.response?.data || error.message);
-//         }
-//     }
-// );
-
-// // SEARCH PANCHAYATS
-// export const searchPanchayats = createAsyncThunk(
-//     'panchayat/searchPanchayats',
-//     async (params = {}, { rejectWithValue }) => {
-//         try {
-//             const queryString = new URLSearchParams(params).toString();
-//             const res = await axios.get(`/api/panchayat/search?${queryString}`);
-//             return res.data;
-//         } catch (error) {
-//             return rejectWithValue(error.response?.data || error.message);
-//         }
-//     }
-// );
-
-// // FETCH PANCHAYAT BY SLUG
-// export const fetchPanchayatBySlug = createAsyncThunk(
-//     'panchayat/fetchPanchayatBySlug',
-//     async (slug, { rejectWithValue }) => {
-//         try {
-//             const res = await axios.get(`/api/panchayat/slug/${slug}`);
-//             return res.data;
-//         } catch (error) {
-//             return rejectWithValue(error.response?.data || error.message);
-//         }
-//     }
-// );
-
-// // FETCH PANCHAYAT BY ID
-// export const fetchPanchayatById = createAsyncThunk(
-//     'panchayat/fetchPanchayatById',
-//     async (id, { rejectWithValue }) => {
-//         try {
-//             const res = await axios.get(`/api/panchayat/${id}`);
-//             return res.data;
-//         } catch (error) {
-//             return rejectWithValue(error.response?.data || error.message);
-//         }
-//     }
-// );
-
-// // UPDATE PANCHAYAT
-// export const updatePanchayat = createAsyncThunk(
-//     'panchayat/updatePanchayat',
-//     async ({ id, panchayatData }, { rejectWithValue }) => {
-//         try {
-//             const res = await axios.put(`/api/panchayat/${id}`, panchayatData);
-//             return res.data;
-//         } catch (error) {
-//             return rejectWithValue(error.response?.data || error.message);
-//         }
-//     }
-// );
-
-// // DELETE PANCHAYAT
-// export const deletePanchayat = createAsyncThunk(
-//     'panchayat/deletePanchayat',
-//     async (id, { rejectWithValue }) => {
-//         try {
-//             const res = await axios.delete(`/api/panchayat/${id}`);
-//             return res.data;
-//         } catch (error) {
-//             return rejectWithValue(error.response?.data || error.message);
-//         }
-//     }
-// );
-
-// // ADD RTC REPORT
-// export const addRTCReport = createAsyncThunk(
-//     'panchayat/addRTCReport',
-//     async ({ id, reportData }, { rejectWithValue }) => {
-//         try {
-//             const res = await axios.put(`/api/panchayat/${id}/rtc-report`, reportData);
-//             return res.data;
-//         } catch (error) {
-//             return rejectWithValue(error.response?.data || error.message);
-//         }
-//     }
-// );
-
-// // UPDATE PANCHAYAT STATUS
-// export const updatePanchayatStatus = createAsyncThunk(
-//     'panchayat/updatePanchayatStatus',
-//     async ({ id, status }, { rejectWithValue }) => {
-//         try {
-//             const res = await axios.put(`/api/panchayat/${id}/status`, { status });
-//             return res.data;
-//         } catch (error) {
-//             return rejectWithValue(error.response?.data || error.message);
-//         }
-//     }
-// );
-
-// // FETCH PANCHAYATS BY DISTRICT
-// export const fetchPanchayatsByDistrict = createAsyncThunk(
-//     'panchayat/fetchPanchayatsByDistrict',
-//     async (districtId, { rejectWithValue }) => {
-//         try {
-//             const res = await axios.get(`/api/panchayat/district/${districtId}`);
-//             return res.data;
-//         } catch (error) {
-//             return rejectWithValue(error.response?.data || error.message);
-//         }
-//     }
-// );
-
-// // FETCH PANCHAYATS BY BLOCK
-// export const fetchPanchayatsByBlock = createAsyncThunk(
-//     'panchayat/fetchPanchayatsByBlock',
-//     async (blockName, { rejectWithValue }) => {
-//         try {
-//             const res = await axios.get(`/api/panchayat/block/${blockName}`);
-//             return res.data;
-//         } catch (error) {
-//             return rejectWithValue(error.response?.data || error.message);
-//         }
-//     }
-// );
-
-// const initialState = {
-//     panchayats: [],
-//     selectedPanchayat: null,
-//     searchResults: [],
-//     loading: false,
-//     error: null,
-//     success: false,
-//     totalPanchayats: 0,
-//     currentPage: 1,
-//     totalPages: 1,
-// };
-
-// const panchayatSlice = createSlice({
-//     name: "panchayat",
-//     initialState,
-//     reducers: {
-//         clearError: (state) => {
-//             state.error = null;
-//         },
-//         clearSuccess: (state) => {
-//             state.success = false;
-//         },
-//         clearPanchayat: (state) => {
-//             state.panchayats = [];
-//             state.selectedPanchayat = null;
-//             state.searchResults = [];
-//             state.error = null;
-//             state.loading = false;
-//             state.success = false;
-//         }
-//     },
-//     extraReducers: (builder) => {
-//         builder
-//             // CREATE PANCHAYAT
-//             .addCase(createPanchayat.pending, (state) => {
-//                 state.loading = true;
-//                 state.error = null;
-//             })
-//             .addCase(createPanchayat.fulfilled, (state) => {
-//                 state.loading = false;
-//                 state.success = true;
-//             })
-//             .addCase(createPanchayat.rejected, (state, action) => {
-//                 state.loading = false;
-//                 state.error = action.payload;
-//             })
-
-//             // FETCH ALL PANCHAYATS
-//             .addCase(fetchPanchayats.pending, (state) => {
-//                 state.loading = true;
-//                 state.error = null;
-//             })
-//             .addCase(fetchPanchayats.fulfilled, (state, action) => {
-//                 state.loading = false;
-//                 state.panchayats = action.payload.panchayats || [];
-//                 state.totalPanchayats = action.payload.totalPanchayats || 0;
-//                 state.currentPage = action.payload.currentPage || 1;
-//                 state.totalPages = action.payload.totalPages || 1;
-//             })
-//             .addCase(fetchPanchayats.rejected, (state, action) => {
-//                 state.loading = false;
-//                 state.error = action.payload;
-//             })
-
-//             // SEARCH PANCHAYATS
-//             .addCase(searchPanchayats.pending, (state) => {
-//                 state.loading = true;
-//             })
-//             .addCase(searchPanchayats.fulfilled, (state, action) => {
-//                 state.loading = false;
-//                 state.searchResults = action.payload.panchayats || [];
-//             })
-//             .addCase(searchPanchayats.rejected, (state, action) => {
-//                 state.loading = false;
-//                 state.error = action.payload;
-//             })
-
-//             // FETCH BY SLUG
-//             .addCase(fetchPanchayatBySlug.pending, (state) => {
-//                 state.loading = true;
-//             })
-//             .addCase(fetchPanchayatBySlug.fulfilled, (state, action) => {
-//                 state.loading = false;
-//                 state.selectedPanchayat = action.payload.panchayat;
-//             })
-//             .addCase(fetchPanchayatBySlug.rejected, (state, action) => {
-//                 state.loading = false;
-//                 state.error = action.payload;
-//             })
-
-//             // FETCH BY ID
-//             .addCase(fetchPanchayatById.pending, (state) => {
-//                 state.loading = true;
-//             })
-//             .addCase(fetchPanchayatById.fulfilled, (state, action) => {
-//                 state.loading = false;
-//                 state.selectedPanchayat = action.payload.panchayat;
-//             })
-//             .addCase(fetchPanchayatById.rejected, (state, action) => {
-//                 state.loading = false;
-//                 state.error = action.payload;
-//             })
-
-//             // UPDATE PANCHAYAT
-//             .addCase(updatePanchayat.pending, (state) => {
-//                 state.loading = true;
-//             })
-//             .addCase(updatePanchayat.fulfilled, (state) => {
-//                 state.loading = false;
-//                 state.success = true;
-//             })
-//             .addCase(updatePanchayat.rejected, (state, action) => {
-//                 state.loading = false;
-//                 state.error = action.payload;
-//             })
-
-//             // DELETE PANCHAYAT
-//             .addCase(deletePanchayat.pending, (state) => {
-//                 state.loading = true;
-//             })
-//             .addCase(deletePanchayat.fulfilled, (state) => {
-//                 state.loading = false;
-//                 state.success = true;
-//             })
-//             .addCase(deletePanchayat.rejected, (state, action) => {
-//                 state.loading = false;
-//                 state.error = action.payload;
-//             })
-
-//             // ADD RTC REPORT
-//             .addCase(addRTCReport.pending, (state) => {
-//                 state.loading = true;
-//             })
-//             .addCase(addRTCReport.fulfilled, (state) => {
-//                 state.loading = false;
-//                 state.success = true;
-//             })
-//             .addCase(addRTCReport.rejected, (state, action) => {
-//                 state.loading = false;
-//                 state.error = action.payload;
-//             })
-
-//             // UPDATE STATUS
-//             .addCase(updatePanchayatStatus.pending, (state) => {
-//                 state.loading = true;
-//             })
-//             .addCase(updatePanchayatStatus.fulfilled, (state) => {
-//                 state.loading = false;
-//                 state.success = true;
-//             })
-//             .addCase(updatePanchayatStatus.rejected, (state, action) => {
-//                 state.loading = false;
-//                 state.error = action.payload;
-//             })
-
-//             // FETCH BY DISTRICT
-//             .addCase(fetchPanchayatsByDistrict.pending, (state) => {
-//                 state.loading = true;
-//             })
-//             .addCase(fetchPanchayatsByDistrict.fulfilled, (state, action) => {
-//                 state.loading = false;
-//                 state.panchayats = action.payload.panchayats || [];
-//             })
-//             .addCase(fetchPanchayatsByDistrict.rejected, (state, action) => {
-//                 state.loading = false;
-//                 state.error = action.payload;
-//             })
-
-//             // FETCH BY BLOCK
-//             .addCase(fetchPanchayatsByBlock.pending, (state) => {
-//                 state.loading = true;
-//             })
-//             .addCase(fetchPanchayatsByBlock.fulfilled, (state, action) => {
-//                 state.loading = false;
-//                 state.panchayats = action.payload.panchayats || [];
-//             })
-//             .addCase(fetchPanchayatsByBlock.rejected, (state, action) => {
-//                 state.loading = false;
-//                 state.error = action.payload;
-//             });
-//     }
-// });
-
-// export const { clearError, clearSuccess, clearPanchayat } = panchayatSlice.actions;
 // export default panchayatSlice.reducer;

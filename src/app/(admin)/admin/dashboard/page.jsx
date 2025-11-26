@@ -8,11 +8,12 @@ import {
   Building2,
   Image as ImageIcon,
   Newspaper,
-  Users
+  Users,
+  Video
 } from 'lucide-react';
 import Loader from '@/components/ui/Loader';
 
-export default function AdminDashboard() {
+export default function AdminDashboardPage() {
   const dispatch = useDispatch();
   const { currentAdmin } = useSelector((state) => state.admin);
   const { overview, recentActivity, loading } = useSelector((state) => state.stats);
@@ -71,10 +72,22 @@ export default function AdminDashboard() {
     return num.toString();
   };
 
+  // Function to get appropriate icon based on file type
+  const getMediaIcon = (fileType) => {
+    return fileType === 'video' ? Video : ImageIcon;
+  };
+
+  // Function to get background color based on file type
+  const getMediaBgColor = (fileType) => {
+    return fileType === 'video' ? 'bg-red-500' : 'bg-[#1348e7]';
+  };
+
   if (loading && !overview) {
-    return <div className="fixed inset-0 z-[9999]">
-          <Loader message={"Dashboard..."} />
-        </div>;
+    return (
+      <div className="fixed inset-0 z-[9999]">
+        <Loader message={"Dashboard..."} />
+      </div>
+    );
   }
 
   return (
@@ -139,9 +152,32 @@ export default function AdminDashboard() {
                     key={index} 
                     className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
                   >
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-gray-900 text-sm truncate">{panchayat.name}</p>
-                      <p className="text-xs text-[#1348e7] truncate mt-1">{panchayat.district?.name}</p>
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      {/* Panchayat Thumbnail - Using headerImage */}
+                      <div className="w-12 h-12 rounded-md flex items-center justify-center flex-shrink-0 overflow-hidden bg-gray-200">
+                        {panchayat.headerImage ? (
+                          <img 
+                            src={panchayat.headerImage} 
+                            alt={panchayat.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              // Fallback to icon if image fails to load
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        ) : null}
+                        
+                        {/* Fallback Icon for Panchayat */}
+                        <div 
+                          className={`w-full h-full flex items-center justify-center bg-[#1348e7] ${panchayat.headerImage ? 'hidden' : 'flex'}`}
+                        >
+                          <Building2 className="h-6 w-6 text-white" />
+                        </div>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-gray-900 text-sm truncate">{panchayat.name}</p>
+                        <p className="text-xs text-[#1348e7] truncate mt-1">{panchayat.district?.name}</p>
+                      </div>
                     </div>
                     <p className="text-xs text-gray-500 whitespace-nowrap ml-2">
                       {new Date(panchayat.createdAt).toLocaleDateString()}
@@ -162,25 +198,49 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <div className="p-4 space-y-3">
-                {recentActivity.media.map((media, index) => (
-                  <div 
-                    key={index} 
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
-                  >
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className="w-12 h-12 bg-[#1348e7] rounded-md flex items-center justify-center flex-shrink-0">
-                        <ImageIcon className="h-8 w-8  text-white" />
+                {recentActivity.media.map((media, index) => {
+                  const MediaIcon = getMediaIcon(media.fileType);
+                  const bgColor = getMediaBgColor(media.fileType);
+                  
+                  return (
+                    <div 
+                      key={index} 
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        {/* Media Thumbnail */}
+                        <div className="w-12 h-12 rounded-md flex items-center justify-center flex-shrink-0 overflow-hidden bg-gray-200">
+                          {media.thumbnailUrl || media.fileUrl ? (
+                            <img 
+                              src={media.thumbnailUrl || media.fileUrl} 
+                              alt={media.title}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                // Fallback to icon if image fails to load
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          ) : null}
+                          
+                          {/* Fallback Icon for Media */}
+                          <div 
+                            className={`w-full h-full flex items-center justify-center ${bgColor} ${(media.thumbnailUrl || media.fileUrl) ? 'hidden' : 'flex'}`}
+                          >
+                            <MediaIcon className="h-6 w-6 text-white" />
+                          </div>
+                        </div>
+                        
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-gray-900 text-sm truncate">{media.title}</p>
+                          <p className="text-xs text-[#1348e7] capitalize mt-1">{media.fileType}</p>
+                        </div>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-gray-900 text-sm truncate">{media.title}</p>
-                        <p className="text-xs text-[#1348e7] capitalize mt-1">{media.fileType}</p>
-                      </div>
+                      <p className="text-xs text-gray-500 whitespace-nowrap ml-2">
+                        {new Date(media.createdAt).toLocaleDateString()}
+                      </p>
                     </div>
-                    <p className="text-xs text-gray-500 whitespace-nowrap ml-2">
-                      {new Date(media.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -195,6 +255,205 @@ export default function AdminDashboard() {
     </div>
   );
 }// 'use client'
+// import { useEffect, useMemo } from 'react';
+// import { useDispatch, useSelector } from 'react-redux';
+// import { fetchOverviewStats } from '@/redux/slices/statsSlice';
+// import {
+//   LayoutDashboard,
+//   MapPin,
+//   Building2,
+//   Image as ImageIcon,
+//   Newspaper,
+//   Users
+// } from 'lucide-react';
+// import Loader from '@/components/ui/Loader';
+
+// export default function AdminDashboard() {
+//   const dispatch = useDispatch();
+//   const { currentAdmin } = useSelector((state) => state.admin);
+//   const { overview, recentActivity, loading } = useSelector((state) => state.stats);
+
+//   useEffect(() => {
+//     dispatch(fetchOverviewStats());
+//   }, [dispatch]);
+
+//   const stats = useMemo(() => {
+//     const baseStats = [
+//       {
+//         title: 'Districts',
+//         value: overview?.districts?.total || 0,
+//         icon: MapPin,
+//       },
+//       {
+//         title: 'Gram Panchayats',
+//         value: overview?.panchayats?.total || 0,
+//         icon: Building2,
+//       },
+//       {
+//         title: 'Media Files',
+//         value: overview?.media?.total || 0,
+//         icon: ImageIcon,
+//       },
+//       {
+//         title: 'News Articles',
+//         value: overview?.news?.total || 0,
+//         icon: Newspaper,
+//       },
+//     ];
+
+//     if (currentAdmin?.role === 'admin') {
+//       baseStats.push({
+//         title: 'Total Users',
+//         value: (overview?.admins?.total || 0) + (overview?.admins?.rtcs || 0),
+//         icon: Users,
+//       });
+//     }
+
+//     return baseStats;
+//   }, [overview, currentAdmin]);
+
+//   const hasActivity = useMemo(() => 
+//     recentActivity?.panchayats?.length > 0 || recentActivity?.media?.length > 0,
+//     [recentActivity]
+//   );
+
+//   const formatNumber = (num) => {
+//     if (num >= 1000000) {
+//       return (num / 1000000).toFixed(1) + 'M';
+//     }
+//     if (num >= 1000) {
+//       return (num / 1000).toFixed(1) + 'K';
+//     }
+//     return num.toString();
+//   };
+
+//   if (loading && !overview) {
+//     return <div className="fixed inset-0 z-[9999]">
+//           <Loader message={"Dashboard..."} />
+//         </div>;
+//   }
+
+//   return (
+//     <div className="min-h-screen bg-gray-50 space-y-6 p-4 sm:p-6">
+//       {/* HEADER */}
+//       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+//         <div className="space-y-2">
+//           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+//             Dashboard
+//           </h1>
+//           <p className="text-gray-600 text-sm sm:text-base">
+//             Welcome back, <span className="font-semibold text-[#1348e7]">{currentAdmin?.name}</span> 👋
+//           </p>
+//         </div>
+//         <div className="bg-white rounded-lg px-4 py-2 border border-gray-200">
+//           <p className="text-xs text-gray-500 font-medium">Role</p>
+//           <p className="text-base font-semibold text-[#1348e7] capitalize">
+//             {currentAdmin?.role}
+//           </p>
+//         </div>
+//       </div>
+
+//       {/* SIMPLIFIED STATS GRID */}
+//       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
+//         {stats.map((stat, index) => (
+//           <div 
+//             key={index} 
+//             className="bg-white rounded-lg p-4 border border-gray-200 hover:border-[#1348e7] transition-colors duration-200"
+//           >
+//             <div className="flex items-center gap-3">
+//               <div className="w-14 h-14 rounded-lg bg-[#1348e7] flex items-center justify-center flex-shrink-0">
+//                 <stat.icon className="h-8 w-8 text-white" />
+//               </div>
+//               <div className="min-w-0">
+//                 <p className="text-xs text-gray-500 font-medium mb-1 truncate">
+//                   {stat.title}
+//                 </p>
+//                 <p className="text-xl font-bold text-gray-900">
+//                   {formatNumber(stat.value)}
+//                 </p>
+//               </div>
+//             </div>
+//           </div>
+//         ))}
+//       </div>
+
+//       {/* RECENT ACTIVITY */}
+//       {hasActivity ? (
+//         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+//           {/* RECENT PANCHAYATS */}
+//           {recentActivity?.panchayats?.length > 0 && (
+//             <div className="bg-white rounded-lg border border-gray-200">
+//               <div className="p-4 border-b border-gray-200">
+//                 <div className="flex items-center gap-2">
+//                   <Building2 className="h-8 w-8 text-[#1348e7]" />
+//                   <h2 className="text-lg font-semibold text-gray-900">Recent Panchayats</h2>
+//                 </div>
+//               </div>
+//               <div className="p-4 space-y-3">
+//                 {recentActivity.panchayats.map((panchayat, index) => (
+//                   <div 
+//                     key={index} 
+//                     className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+//                   >
+//                     <div className="min-w-0 flex-1">
+//                       <p className="font-medium text-gray-900 text-sm truncate">{panchayat.name}</p>
+//                       <p className="text-xs text-[#1348e7] truncate mt-1">{panchayat.district?.name}</p>
+//                     </div>
+//                     <p className="text-xs text-gray-500 whitespace-nowrap ml-2">
+//                       {new Date(panchayat.createdAt).toLocaleDateString()}
+//                     </p>
+//                   </div>
+//                 ))}
+//               </div>
+//             </div>
+//           )}
+
+//           {/* RECENT MEDIA */}
+//           {recentActivity?.media?.length > 0 && (
+//             <div className="bg-white rounded-lg border border-gray-200">
+//               <div className="p-4 border-b border-gray-200">
+//                 <div className="flex items-center gap-2">
+//                   <ImageIcon className="h-8 w-8 text-[#1348e7]" />
+//                   <h2 className="text-lg font-semibold text-gray-900">Recent Media</h2>
+//                 </div>
+//               </div>
+//               <div className="p-4 space-y-3">
+//                 {recentActivity.media.map((media, index) => (
+//                   <div 
+//                     key={index} 
+//                     className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+//                   >
+//                     <div className="flex items-center gap-3 min-w-0 flex-1">
+//                       <div className="w-12 h-12 bg-[#1348e7] rounded-md flex items-center justify-center flex-shrink-0">
+//                         <ImageIcon className="h-8 w-8  text-white" />
+//                       </div>
+//                       <div className="min-w-0 flex-1">
+//                         <p className="font-medium text-gray-900 text-sm truncate">{media.title}</p>
+//                         <p className="text-xs text-[#1348e7] capitalize mt-1">{media.fileType}</p>
+//                       </div>
+//                     </div>
+//                     <p className="text-xs text-gray-500 whitespace-nowrap ml-2">
+//                       {new Date(media.createdAt).toLocaleDateString()}
+//                     </p>
+//                   </div>
+//                 ))}
+//               </div>
+//             </div>
+//           )}
+//         </div>
+//       ) : (
+//         <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+//           <LayoutDashboard className="h-12 w-12 text-[#1348e7] mx-auto mb-4" />
+//           <h3 className="text-lg font-semibold text-gray-900 mb-2">No Recent Activity</h3>
+//           <p className="text-gray-600 text-sm">Activity will appear here as users interact with the system.</p>
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
+
+
+// 'use client'
 // import { useEffect, useMemo } from 'react';
 // import { useDispatch, useSelector } from 'react-redux';
 // import { fetchOverviewStats } from '@/redux/slices/statsSlice';

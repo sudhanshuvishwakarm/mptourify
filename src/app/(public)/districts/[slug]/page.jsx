@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
 import { 
   MapPin, Calendar, Users, Mountain, Droplet, 
-  Camera, Newspaper, Building2, ArrowLeft, Share2,
+  Camera, Newspaper, Building2, ArrowLeft, User,Share2,
   Landmark, Trees, BookOpen, Loader2, Video, Image as ImageIcon
 } from 'lucide-react';
 import { fetchDistrictBySlug } from '@/redux/slices/districtSlice';
@@ -20,7 +20,7 @@ export default function DistrictDetailPage() {
   
   const { selectedDistrict, districtCache, error: reduxError } = useSelector(state => state.district);
   const { media } = useSelector(state => state.media);
-  
+  console.log(selectedDistrict)
   const [activeTab, setActiveTab] = useState('history-culture');
   const [isLoading, setIsLoading] = useState(true);
   const [currentDistrict, setCurrentDistrict] = useState(null);
@@ -172,7 +172,7 @@ export default function DistrictDetailPage() {
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="lg:w-3/4">
             <div className="bg-white rounded-lg overflow-hidden shadow-lg mb-8">
-              <div className="relative h-96 bg-[#f5fbf2]">
+              <div className="relative bg-[#f5fbf2]">
                 {currentDistrict.headerImage ? (
                   <img
                     src={currentDistrict.headerImage}
@@ -424,8 +424,28 @@ export default function DistrictDetailPage() {
           </div>
 
           <div className="lg:w-1/4">
-            <div className="space-y-4 sticky top-4">
-              <div className="space-y-3">
+            <div className="space-y-4 sticky top-24">
+                  <Card sx={{ p: 4 }}>
+      <h3 className="text-lg font-bold text-[#0d4d03] mb-3 flex items-center gap-2">
+        <User size={18} className="text-[#117307]" />
+        Created By
+      </h3>
+      {currentDistrict.createdBy ? (
+        <div className="space-y-2">
+          <p className="text-[#1a5e10] text-base">
+            <span className="font-medium">Admin:</span> {currentDistrict.createdBy.name || 'Admin User'}
+          </p>
+          {currentDistrict.createdAt && (
+            <p className="text-[#1a5e10] text-base">
+            <span className="font-medium">Email:</span> {currentDistrict.createdBy.email || ''}
+          </p>
+          )}
+        </div>
+      ) : (
+        <p className="text-[#4d674f] text-base">Information not available</p>
+      )}
+    </Card>
+              <div className="flex flex-col gap-4">
                 <Button
                   variant="contained"
                   fullWidth
@@ -456,8 +476,8 @@ export default function DistrictDetailPage() {
                   Latest News
                 </Button>
               </div>
-
-              <div className="bg-gradient-to-br from-[#117307] to-[#0d5c06] rounded-xl shadow-lg p-4 text-white">
+            
+              {/* <div className="bg-gradient-to-br from-[#117307] to-[#0d5c06] rounded-xl shadow-lg p-4 text-white">
                 <h3 className="font-bold mb-2 text-sm">Stay Updated</h3>
                 <p className="text-white/90 text-xs mb-3">
                   Get updates about {currentDistrict.name}
@@ -465,14 +485,17 @@ export default function DistrictDetailPage() {
                 <button className="w-full bg-white text-[#117307] py-2 rounded-full font-semibold text-sm hover:bg-white/90 transition-colors">
                   Subscribe
                 </button>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
       </div>
     </div>
   );
-}// 'use client';
+}
+
+
+// 'use client';
 
 // import { useState, useEffect } from 'react';
 // import { useRouter, useParams } from 'next/navigation';

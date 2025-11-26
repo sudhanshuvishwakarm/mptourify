@@ -102,7 +102,7 @@ export default function CreateDistrictPage() {
       }
 
       // Validate file size (50MB)
-      const maxSize = 50 * 1024 * 1024;
+      const maxSize = 95 * 1024 * 1024;
       if (selectedFile.size > maxSize) {
         toast.error('File size exceeds 50MB limit');
         return;
@@ -153,7 +153,7 @@ export default function CreateDistrictPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) {
-      toast.error('Please fix all errors');
+      toast.error('Please check all required fields');
       return;
     }
 
@@ -344,7 +344,7 @@ export default function CreateDistrictPage() {
                           Click to upload header image
                         </div>
                         <div className="text-sm text-gray-600">
-                          Supports JPG, PNG, WebP (Max 50MB)
+                          Supports JPG, PNG, WebP (Max 95MB)
                         </div>
                       </div>
                     ) : (
@@ -823,7 +823,7 @@ export default function CreateDistrictPage() {
 //       }
 
 //       // Validate file size (50MB)
-//       const maxSize = 50 * 1024 * 1024;
+//       const maxSize = 95 * 1024 * 1024;
 //       if (selectedFile.size > maxSize) {
 //         toast.error('File size exceeds 50MB limit');
 //         return;
@@ -1081,7 +1081,7 @@ export default function CreateDistrictPage() {
 //                           Click to upload header image
 //                         </Typography>
 //                         <Typography variant="body2" color="text.secondary">
-//                           Supports JPG, PNG, WebP (Max 50MB)
+//                           Supports JPG, PNG, WebP (Max 95MB)
 //                         </Typography>
 //                       </Box>
 //                     ) : (
