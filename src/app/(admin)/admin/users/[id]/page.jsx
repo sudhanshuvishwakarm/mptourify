@@ -15,7 +15,13 @@ import {
   Briefcase,
   MapPin,
   Calendar,
-  Clock
+  Clock,
+  Image as ImageIcon,
+  CloudUpload,
+  Link as LinkIcon,
+  X,
+  Trash2,
+  Edit
 } from 'lucide-react';
 import Loader from '@/components/ui/Loader';
 import Button from '@/components/ui/Button';
@@ -31,6 +37,7 @@ export default function EditUserPage() {
   const { selectedAdmin, loading, error, success } = useSelector((state) => state.admin);
   const { districts } = useSelector((state) => state.district);
 
+  const [uploadMethod, setUploadMethod] = useState('file');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -38,9 +45,13 @@ export default function EditUserPage() {
     role: 'rtc',
     employeeId: '',
     designation: '',
-    assignedDistricts: []
+    assignedDistricts: [],
+    profileImageUrl: ''
   });
 
+  const [file, setFile] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [deleteImage, setDeleteImage] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [errors, setErrors] = useState({});
   const [isSaving, setIsSaving] = useState(false);
@@ -63,8 +74,10 @@ export default function EditUserPage() {
         role: selectedAdmin.role || 'rtc',
         employeeId: selectedAdmin.employeeId || '',
         designation: selectedAdmin.designation || '',
-        assignedDistricts: selectedAdmin.assignedDistricts?.map(d => d._id || d) || []
+        assignedDistricts: selectedAdmin.assignedDistricts?.map(d => d._id || d) || [],
+        profileImageUrl: ''
       });
+      setPreview(selectedAdmin.profileImage || null);
     }
   }, [selectedAdmin, params.id]);
 
@@ -74,13 +87,64 @@ export default function EditUserPage() {
       dispatch(clearSuccess());
       setIsEditing(false);
       setIsSaving(false);
+      setFile(null);
+      setDeleteImage(false);
+      if (params.id) {
+        dispatch(fetchAdminById(params.id));
+      }
     }
     if (error) {
       toast.error(error.message || 'Failed to update user');
       dispatch(clearError());
       setIsSaving(false);
     }
-  }, [success, error, dispatch]);
+  }, [success, error, dispatch, params.id]);
+
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    
+    if (selectedFile) {
+      const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      if (!validTypes.includes(selectedFile.type)) {
+        toast.error('Please select a valid image file (JPEG, PNG, WebP)');
+        return;
+      }
+
+      const maxSize = 10 * 1024 * 1024;
+      if (selectedFile.size > maxSize) {
+        toast.error('File size exceeds 10MB limit');
+        return;
+      }
+
+      setFile(selectedFile);
+      setDeleteImage(false);
+      
+      const reader = new FileReader();
+      reader.onload = (event) => setPreview(event.target.result);
+      reader.readAsDataURL(selectedFile);
+    }
+  };
+
+  const handleUrlChange = (url) => {
+    setFormData(prev => ({ ...prev, profileImageUrl: url }));
+    setPreview(url);
+    setDeleteImage(false);
+  };
+
+  const removeFile = () => {
+    setFile(null);
+    setPreview(selectedAdmin?.profileImage || null);
+    if (uploadMethod === 'url') {
+      setFormData(prev => ({ ...prev, profileImageUrl: '' }));
+    }
+  };
+
+  const handleDeleteImage = () => {
+    setDeleteImage(true);
+    setFile(null);
+    setPreview(null);
+    setFormData(prev => ({ ...prev, profileImageUrl: '' }));
+  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -110,8 +174,38 @@ export default function EditUserPage() {
     }
 
     setIsSaving(true);
+    
     try {
-      await dispatch(updateAdmin({ id: params.id, adminData: formData })).unwrap();
+      if (uploadMethod === 'file' && (file || deleteImage)) {
+        const formDataToSubmit = new FormData();
+        
+        if (file) {
+          formDataToSubmit.append('profileImage', file);
+          formDataToSubmit.append('uploadMethod', 'file');
+        } else if (deleteImage) {
+          formDataToSubmit.append('deleteImage', 'true');
+        }
+        
+        formDataToSubmit.append('name', formData.name);
+        formDataToSubmit.append('phone', formData.phone);
+        formDataToSubmit.append('role', formData.role);
+        formDataToSubmit.append('employeeId', formData.employeeId || '');
+        formDataToSubmit.append('designation', formData.designation || '');
+        formDataToSubmit.append('assignedDistricts', JSON.stringify(formData.assignedDistricts));
+
+        await dispatch(updateAdmin({ id: params.id, adminData: formDataToSubmit })).unwrap();
+      } else if (uploadMethod === 'url' && formData.profileImageUrl) {
+        const dataWithUrl = {
+          ...formData,
+          profileImage: formData.profileImageUrl,
+          uploadMethod: 'url'
+        };
+        delete dataWithUrl.profileImageUrl;
+        await dispatch(updateAdmin({ id: params.id, adminData: dataWithUrl })).unwrap();
+      } else {
+        const { profileImageUrl, ...dataToSubmit } = formData;
+        await dispatch(updateAdmin({ id: params.id, adminData: dataToSubmit })).unwrap();
+      }
     } catch (err) {
       console.error(err);
       setIsSaving(false);
@@ -130,6 +224,9 @@ export default function EditUserPage() {
   const handleCancel = () => {
     setIsEditing(false);
     setIsSaving(false);
+    setFile(null);
+    setDeleteImage(false);
+    setUploadMethod('file');
     if (selectedAdmin) {
       setFormData({
         name: selectedAdmin.name || '',
@@ -138,8 +235,10 @@ export default function EditUserPage() {
         role: selectedAdmin.role || 'rtc',
         employeeId: selectedAdmin.employeeId || '',
         designation: selectedAdmin.designation || '',
-        assignedDistricts: selectedAdmin.assignedDistricts?.map(d => d._id || d) || []
+        assignedDistricts: selectedAdmin.assignedDistricts?.map(d => d._id || d) || [],
+        profileImageUrl: ''
       });
+      setPreview(selectedAdmin.profileImage || null);
     }
     setErrors({});
   };
@@ -152,15 +251,15 @@ export default function EditUserPage() {
   if (loading && !selectedAdmin) {
     return (
       <div className="fixed inset-0 z-[9999]">
-        <Loader message={"Loading..."} />
+        <Loader message={"Loading User..."} />
       </div>
     );
   }
 
   if (isSaving) {
     return (
-      <div className="fixed inset-0 z-[9999]">
-        <Loader message={"Saving..."} />
+      <div className="fixed inset-0 z-[10000]">
+        <Loader message={"Saving Changes..."} />
       </div>
     );
   }
@@ -180,7 +279,6 @@ export default function EditUserPage() {
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div className="flex items-center gap-3">
           <Link href="/admin/users" className="no-underline">
@@ -212,6 +310,7 @@ export default function EditUserPage() {
         {!isEditing && (
           <Button 
             onClick={() => setIsEditing(true)} 
+            startIcon={<Edit size={20} />}
             size="large"
             sx={{ 
               backgroundColor: '#1348e8',
@@ -224,13 +323,20 @@ export default function EditUserPage() {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
-        {/* Sidebar */}
         <div className="w-full lg:w-80 flex-shrink-0">
           <Card className="p-6 border border-gray-200 bg-white">
             <div className="text-center mb-6">
-              <div className="w-20 h-20 rounded-full bg-[#1348e8] flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
-                {selectedAdmin.name?.charAt(0).toUpperCase()}
-              </div>
+              {preview ? (
+                <img
+                  src={preview}
+                  alt={selectedAdmin.name}
+                  className="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-4 border-blue-100"
+                />
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-[#1348e8] flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4">
+                  {selectedAdmin.name?.charAt(0).toUpperCase()}
+                </div>
+              )}
               <div className="text-lg font-semibold text-gray-900">
                 {selectedAdmin.name}
               </div>
@@ -281,10 +387,168 @@ export default function EditUserPage() {
           </Card>
         </div>
 
-        {/* Main Content */}
         <div className="flex-1">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* User Information Card */}
+            {isEditing && (
+              <Card className="p-6 border border-gray-200 bg-white">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                  Update Profile Image
+                </h2>
+                
+                {selectedAdmin.profileImage && !deleteImage && !file && (
+                  <div className="mb-4">
+                    <p className="text-sm text-gray-600 mb-2">Current Image:</p>
+                    <div className="flex items-center gap-4">
+                      <img
+                        src={selectedAdmin.profileImage}
+                        alt="Current profile"
+                        className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+                      />
+                      <Button
+                        type="button"
+                        onClick={handleDeleteImage}
+                        startIcon={<Trash2 size={16} />}
+                        variant="outlined"
+                        sx={{
+                          borderColor: '#ef4444',
+                          color: '#ef4444',
+                          '&:hover': {
+                            borderColor: '#dc2626',
+                            backgroundColor: '#fef2f2'
+                          }
+                        }}
+                      >
+                        Remove Image
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex border-b border-gray-200 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUploadMethod('file');
+                      setFile(null);
+                      setFormData(prev => ({ ...prev, profileImageUrl: '' }));
+                      if (!deleteImage) {
+                        setPreview(selectedAdmin.profileImage);
+                      }
+                    }}
+                    className={`flex items-center gap-2 px-4 py-2 border-b-2 font-medium text-sm ${
+                      uploadMethod === 'file' 
+                        ? 'border-blue-600 text-blue-600' 
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    <CloudUpload size={18} />
+                    Upload File
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUploadMethod('url');
+                      setFile(null);
+                      setFormData(prev => ({ ...prev, profileImageUrl: '' }));
+                      if (!deleteImage) {
+                        setPreview(selectedAdmin.profileImage);
+                      }
+                    }}
+                    className={`flex items-center gap-2 px-4 py-2 border-b-2 font-medium text-sm ${
+                      uploadMethod === 'url' 
+                        ? 'border-blue-600 text-blue-600' 
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    <LinkIcon size={18} />
+                    Paste URL
+                  </button>
+                </div>
+
+                {uploadMethod === 'file' ? (
+                  <>
+                    {!file ? (
+                      <div
+                        className="border-2 border-dashed border-blue-600 rounded-lg p-6 text-center cursor-pointer bg-blue-50 hover:bg-blue-100 transition-colors"
+                        onClick={() => document.getElementById('profile-image-upload-edit').click()}
+                      >
+                        <div className="w-20 h-20 mx-auto mb-3 rounded-full bg-blue-100 flex items-center justify-center">
+                          <User size={36} className="text-blue-600" />
+                        </div>
+                        <div className="text-lg font-semibold text-gray-900 mb-2">
+                          Click to upload new profile image
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          Supports JPG, PNG, WebP (Max 10MB)
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="border border-blue-200 rounded-lg p-4 bg-white">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <ImageIcon size={24} className="text-blue-600" />
+                            <div>
+                              <div className="font-semibold text-gray-900">
+                                {file.name}
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                {(file.size / (1024 * 1024)).toFixed(2)} MB
+                              </div>
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            onClick={removeFile}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <X size={18} />
+                          </Button>
+                        </div>
+                        
+                        <img
+                          src={preview}
+                          alt="New Profile Preview"
+                          className="w-32 h-32 object-cover rounded-full mx-auto border-4 border-blue-100"
+                        />
+                      </div>
+                    )}
+                    
+                    <input
+                      id="profile-image-upload-edit"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <TextField
+                      label="Profile Image URL"
+                      value={formData.profileImageUrl}
+                      onChange={(e) => handleUrlChange(e.target.value)}
+                      placeholder="https://example.com/profile-image.jpg"
+                      startIcon={<LinkIcon size={20} className="text-blue-600" />}
+                      fullWidth
+                    />
+                    {preview && formData.profileImageUrl && (
+                      <div className="mt-4 flex justify-center">
+                        <img
+                          src={preview}
+                          alt="URL Preview"
+                          className="w-32 h-32 object-cover rounded-full border-4 border-blue-100"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            toast.error('Invalid image URL');
+                          }}
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+              </Card>
+            )}
+
             <Card className="p-6 border border-gray-200 bg-white">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
                 User Information
@@ -307,7 +571,7 @@ export default function EditUserPage() {
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    disabled={!isEditing}
+                    disabled={true}
                     error={errors.email}
                     required
                     fullWidth
@@ -358,7 +622,6 @@ export default function EditUserPage() {
               </div>
             </Card>
 
-            {/* Assigned Districts Card */}
             {formData.role === 'rtc' && (
               <Card className="p-6 border border-gray-200 bg-white">
                 <div className="flex items-center gap-2 mb-4">
@@ -409,7 +672,6 @@ export default function EditUserPage() {
               </Card>
             )}
 
-            {/* Action Buttons */}
             {isEditing && (
               <div className="flex gap-3">
                 <Button
@@ -450,6 +712,1180 @@ export default function EditUserPage() {
     </div>
   );
 }
+// 'use client'
+// import { useState, useEffect } from 'react';
+// import { useDispatch, useSelector } from 'react-redux';
+// import { useRouter, useParams } from 'next/navigation';
+// import { fetchAdminById, updateAdmin, clearError, clearSuccess } from '@/redux/slices/adminSlice';
+// import { fetchDistricts } from '@/redux/slices/districtSlice';
+// import { toast } from 'react-toastify';
+// import Link from 'next/link';
+// import {
+//   ArrowLeft,
+//   Save,
+//   User,
+//   Mail,
+//   Phone,
+//   Briefcase,
+//   MapPin,
+//   Calendar,
+//   Clock,
+//   Image as ImageIcon,
+//   CloudUpload,
+//   Link as LinkIcon,
+//   X,
+//   Trash2,
+//   Edit
+// } from 'lucide-react';
+// import Loader from '@/components/ui/Loader';
+// import Button from '@/components/ui/Button';
+// import Card from '@/components/ui/Card';
+// import TextField from '@/components/ui/TextField';
+// import SelectField from '@/components/ui/SelectField';
+// import StatusChip from '@/components/ui/StatusChip';
+
+// export default function EditUserPage() {
+//   const router = useRouter();
+//   const params = useParams();
+//   const dispatch = useDispatch();
+//   const { selectedAdmin, loading, error, success } = useSelector((state) => state.admin);
+//   const { districts } = useSelector((state) => state.district);
+
+//   const [uploadMethod, setUploadMethod] = useState('file');
+//   const [formData, setFormData] = useState({
+//     name: '',
+//     email: '',
+//     phone: '',
+//     role: 'rtc',
+//     employeeId: '',
+//     designation: '',
+//     assignedDistricts: [],
+//     profileImageUrl: ''
+//   });
+
+//   const [file, setFile] = useState(null);
+//   const [preview, setPreview] = useState(null);
+//   const [deleteImage, setDeleteImage] = useState(false);
+//   const [isEditing, setIsEditing] = useState(false);
+//   const [errors, setErrors] = useState({});
+//   const [isSaving, setIsSaving] = useState(false);
+//   useEffect(() => {
+//     if (params.id && (!selectedAdmin || selectedAdmin._id !== params.id)) {
+//       dispatch(fetchAdminById(params.id));
+//     }
+//     if (districts.length === 0) {
+//       dispatch(fetchDistricts({ status: 'active', limit: 100 }));
+//     }
+//   }, [params.id, selectedAdmin?._id, districts.length, dispatch]);
+
+//   useEffect(() => {
+//     if (selectedAdmin && selectedAdmin._id === params.id) {
+//       setFormData({
+//         name: selectedAdmin.name || '',
+//         email: selectedAdmin.email || '',
+//         phone: selectedAdmin.phone || '',
+//         role: selectedAdmin.role || 'rtc',
+//         employeeId: selectedAdmin.employeeId || '',
+//         designation: selectedAdmin.designation || '',
+//         assignedDistricts: selectedAdmin.assignedDistricts?.map(d => d._id || d) || [],
+//         profileImageUrl: ''
+//       });
+//       setPreview(selectedAdmin.profileImage || null);
+//     }
+//   }, [selectedAdmin, params.id]);
+
+//   useEffect(() => {
+//     if (success) {
+//       toast.success('User updated successfully!');
+//       dispatch(clearSuccess());
+//       setIsEditing(false);
+//       setIsSaving(false);
+//       setFile(null);
+//       setDeleteImage(false);
+//       // Refresh admin data
+//       if (params.id) {
+//         dispatch(fetchAdminById(params.id));
+//       }
+//     }
+//     if (error) {
+//       toast.error(error.message || 'Failed to update user');
+//       dispatch(clearError());
+//       setIsSaving(false);
+//     }
+//   }, [success, error, dispatch, params.id]);
+//   const handleFileChange = (e) => {
+//     const selectedFile = e.target.files[0];
+    
+//     if (selectedFile) {
+//       const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+//       if (!validTypes.includes(selectedFile.type)) {
+//         toast.error('Please select a valid image file (JPEG, PNG, WebP)');
+//         return;
+//       }
+
+//       const maxSize = 10 * 1024 * 1024;
+//       if (selectedFile.size > maxSize) {
+//         toast.error('File size exceeds 10MB limit');
+//         return;
+//       }
+
+//       setFile(selectedFile);
+//       setDeleteImage(false);
+      
+//       const reader = new FileReader();
+//       reader.onload = (event) => setPreview(event.target.result);
+//       reader.readAsDataURL(selectedFile);
+//     }
+//   };
+
+//   const handleUrlChange = (url) => {
+//     setFormData(prev => ({ ...prev, profileImageUrl: url }));
+//     setPreview(url);
+//     setDeleteImage(false);
+//   };
+
+//   const removeFile = () => {
+//     setFile(null);
+//     setPreview(selectedAdmin?.profileImage || null);
+//     if (uploadMethod === 'url') {
+//       setFormData(prev => ({ ...prev, profileImageUrl: '' }));
+//     }
+//   };
+
+//   const handleDeleteImage = () => {
+//     setDeleteImage(true);
+//     setFile(null);
+//     setPreview(null);
+//     setFormData(prev => ({ ...prev, profileImageUrl: '' }));
+//   };
+//   const validateForm = () => {
+//     const newErrors = {};
+
+//     if (!formData.name.trim()) newErrors.name = 'Name is required';
+//     if (!formData.email.trim()) newErrors.email = 'Email is required';
+//     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+//       newErrors.email = 'Invalid email format';
+//     }
+//     if (!formData.phone.trim()) newErrors.phone = 'Phone is required';
+//     if (!/^[0-9]{10}$/.test(formData.phone)) {
+//       newErrors.phone = 'Phone must be 10 digits';
+//     }
+//     if (formData.role === 'rtc' && formData.assignedDistricts.length === 0) {
+//       newErrors.assignedDistricts = 'RTC must have at least one assigned district';
+//     }
+
+//     setErrors(newErrors);
+//     return Object.keys(newErrors).length === 0;
+//   };
+
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
+//     if (!validateForm()) {
+//       toast.error('Please fix all errors');
+//       return;
+//     }
+
+//     setIsSaving(true);
+    
+//     try {
+//       // Create FormData for file upload or use JSON
+//       if (uploadMethod === 'file' && (file || deleteImage)) {
+//         const formDataToSubmit = new FormData();
+        
+//         if (file) {
+//           formDataToSubmit.append('profileImage', file);
+//           formDataToSubmit.append('uploadMethod', 'file');
+//         } else if (deleteImage) {
+//           formDataToSubmit.append('deleteImage', 'true');
+//         }
+        
+//         formDataToSubmit.append('name', formData.name);
+//         formDataToSubmit.append('phone', formData.phone);
+//         formDataToSubmit.append('role', formData.role);
+//         formDataToSubmit.append('employeeId', formData.employeeId || '');
+//         formDataToSubmit.append('designation', formData.designation || '');
+//         formDataToSubmit.append('assignedDistricts', JSON.stringify(formData.assignedDistricts));
+
+//         await dispatch(updateAdmin({ id: params.id, adminData: formDataToSubmit })).unwrap();
+//       } else if (uploadMethod === 'url' && formData.profileImageUrl) {
+//         const dataWithUrl = {
+//           ...formData,
+//           profileImage: formData.profileImageUrl,
+//           uploadMethod: 'url'
+//         };
+//         delete dataWithUrl.profileImageUrl;
+//         await dispatch(updateAdmin({ id: params.id, adminData: dataWithUrl })).unwrap();
+//       } else {
+//         // No image change
+//         const { profileImageUrl, ...dataToSubmit } = formData;
+//         await dispatch(updateAdmin({ id: params.id, adminData: dataToSubmit })).unwrap();
+//       }
+//     } catch (err) {
+//       console.error(err);
+//       setIsSaving(false);
+//     }
+//   };
+
+//   const handleDistrictToggle = (districtId) => {
+//     setFormData(prev => ({
+//       ...prev,
+//       assignedDistricts: prev.assignedDistricts.includes(districtId)
+//         ? prev.assignedDistricts.filter(id => id !== districtId)
+//         : [...prev.assignedDistricts, districtId]
+//     }));
+//   };
+
+//   const handleCancel = () => {
+//     setIsEditing(false);
+//     setIsSaving(false);
+//     setFile(null);
+//     setDeleteImage(false);
+//     setUploadMethod('file');
+//     if (selectedAdmin) {
+//       setFormData({
+//         name: selectedAdmin.name || '',
+//         email: selectedAdmin.email || '',
+//         phone: selectedAdmin.phone || '',
+//         role: selectedAdmin.role || 'rtc',
+//         employeeId: selectedAdmin.employeeId || '',
+//         designation: selectedAdmin.designation || '',
+//         assignedDistricts: selectedAdmin.assignedDistricts?.map(d => d._id || d) || [],
+//         profileImageUrl: ''
+//       });
+//       setPreview(selectedAdmin.profileImage || null);
+//     }
+//     setErrors({});
+//   };
+
+//   const roleOptions = [
+//     { value: 'admin', label: 'Admin' },
+//     { value: 'rtc', label: 'RTC' }
+//   ];
+//   if (loading && !selectedAdmin) {
+//     return (
+//       <div className="fixed inset-0 z-[9999]">
+//         <Loader message={"Loading..."} />
+//       </div>
+//     );
+//   }
+
+//   if (isSaving) {
+//     return (
+//       <div className="fixed inset-0 z-[9999]">
+//         <Loader message={"Saving..."} />
+//       </div>
+//     );
+//   }
+
+//   if (!selectedAdmin) {
+//     return (
+//       <div className="text-center py-16">
+//         <div className="text-gray-600 text-lg mb-4">User not found</div>
+//         <Link href="/admin/users" className="no-underline">
+//           <Button variant="outlined" sx={{ mt: 2 }}>
+//             Back to Users
+//           </Button>
+//         </Link>
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className="p-4 md:p-6 max-w-7xl mx-auto">
+//       {/* Header */}
+//       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+//         <div className="flex items-center gap-3">
+//           <Link href="/admin/users" className="no-underline">
+//             <Button 
+//               variant="outlined" 
+//               sx={{ 
+//                 minWidth: 'auto', 
+//                 p: 1,
+//                 borderColor: '#1348e8',
+//                 color: '#1348e8',
+//                 '&:hover': {
+//                   borderColor: '#0d3ec7',
+//                   backgroundColor: 'rgba(19, 72, 232, 0.06)'
+//                 }
+//               }}
+//             >
+//               <ArrowLeft size={20} />
+//             </Button>
+//           </Link>
+//           <div>
+//             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+//               {selectedAdmin.name}
+//             </h1>
+//             <p className="text-gray-600">
+//               {isEditing ? 'Edit user details' : 'View user details'}
+//             </p>
+//           </div>
+//         </div>
+//         {!isEditing && (
+//           <Button 
+//             onClick={() => setIsEditing(true)} 
+//             startIcon={<Edit size={20} />}
+//             size="large"
+//             sx={{ 
+//               backgroundColor: '#1348e8',
+//               '&:hover': { backgroundColor: '#0d3ec7' }
+//             }}
+//           >
+//             Edit User
+//           </Button>
+//         )}
+//       </div>
+
+//       <div className="flex flex-col lg:flex-row gap-6">
+//         {/* Sidebar */}
+//         <div className="w-full lg:w-80 flex-shrink-0">
+//           <Card className="p-6 border border-gray-200 bg-white">
+//             <div className="text-center mb-6">
+//               {preview ? (
+//                 <img
+//                   src={preview}
+//                   alt={selectedAdmin.name}
+//                   className="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-4 border-blue-100"
+//                 />
+//               ) : (
+//                 <div className="w-24 h-24 rounded-full bg-[#1348e8] flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4">
+//                   {selectedAdmin.name?.charAt(0).toUpperCase()}
+//                 </div>
+//               )}
+//               <div className="text-lg font-semibold text-gray-900">
+//                 {selectedAdmin.name}
+//               </div>
+//               <div className="text-[#1348e8] font-medium capitalize">
+//                 {selectedAdmin.role}
+//               </div>
+//             </div>
+
+//             <div className="border-t border-gray-200 my-4"></div>
+
+//             <div className="space-y-4">
+//               <div className="flex justify-between items-center">
+//                 <span className="text-sm text-gray-600 font-medium">Status</span>
+//                 <StatusChip status={selectedAdmin.status} />
+//               </div>
+
+//               <div className="flex justify-between items-center">
+//                 <span className="text-sm text-gray-600 font-medium">Employee ID</span>
+//                 <span className="text-sm font-semibold text-[#1348e8]">
+//                   {selectedAdmin.employeeId || 'N/A'}
+//                 </span>
+//               </div>
+
+//               <div className="flex justify-between items-center">
+//                 <div className="flex items-center gap-2">
+//                   <Calendar size={16} className="text-gray-500" />
+//                   <span className="text-sm text-gray-600 font-medium">Created</span>
+//                 </div>
+//                 <span className="text-sm text-gray-900">
+//                   {selectedAdmin.createdAt
+//                     ? new Date(selectedAdmin.createdAt).toLocaleDateString()
+//                     : 'N/A'}
+//                 </span>
+//               </div>
+
+//               <div className="flex justify-between items-center">
+//                 <div className="flex items-center gap-2">
+//                   <Clock size={16} className="text-gray-500" />
+//                   <span className="text-sm text-gray-600 font-medium">Last Login</span>
+//                 </div>
+//                 <span className="text-sm text-gray-900">
+//                   {selectedAdmin.lastLogin
+//                     ? new Date(selectedAdmin.lastLogin).toLocaleDateString()
+//                     : 'Never'}
+//                 </span>
+//               </div>
+//             </div>
+//           </Card>
+//         </div>
+//         {/* Main Content */}
+//         <div className="flex-1">
+//           <form onSubmit={handleSubmit} className="space-y-6">
+            
+//             {/* Profile Image Update Section */}
+//             {isEditing && (
+//               <Card className="p-6 border border-gray-200 bg-white">
+//                 <h2 className="text-xl font-semibold text-gray-900 mb-4">
+//                   Update Profile Image
+//                 </h2>
+                
+//                 {/* Current Image */}
+//                 {selectedAdmin.profileImage && !deleteImage && !file && (
+//                   <div className="mb-4">
+//                     <p className="text-sm text-gray-600 mb-2">Current Image:</p>
+//                     <div className="flex items-center gap-4">
+//                       <img
+//                         src={selectedAdmin.profileImage}
+//                         alt="Current profile"
+//                         className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+//                       />
+//                       <Button
+//                         type="button"
+//                         onClick={handleDeleteImage}
+//                         startIcon={<Trash2 size={16} />}
+//                         variant="outlined"
+//                         sx={{
+//                           borderColor: '#ef4444',
+//                           color: '#ef4444',
+//                           '&:hover': {
+//                             borderColor: '#dc2626',
+//                             backgroundColor: '#fef2f2'
+//                           }
+//                         }}
+//                       >
+//                         Remove Image
+//                       </Button>
+//                     </div>
+//                   </div>
+//                 )}
+
+//                 {/* Upload Method Selection */}
+//                 <div className="flex border-b border-gray-200 mb-4">
+//                   <button
+//                     type="button"
+//                     onClick={() => {
+//                       setUploadMethod('file');
+//                       setFile(null);
+//                       setFormData(prev => ({ ...prev, profileImageUrl: '' }));
+//                       if (!deleteImage) {
+//                         setPreview(selectedAdmin.profileImage);
+//                       }
+//                     }}
+//                     className={`flex items-center gap-2 px-4 py-2 border-b-2 font-medium text-sm ${
+//                       uploadMethod === 'file' 
+//                         ? 'border-blue-600 text-blue-600' 
+//                         : 'border-transparent text-gray-500 hover:text-gray-700'
+//                     }`}
+//                   >
+//                     <CloudUpload size={18} />
+//                     Upload File
+//                   </button>
+//                   <button
+//                     type="button"
+//                     onClick={() => {
+//                       setUploadMethod('url');
+//                       setFile(null);
+//                       setFormData(prev => ({ ...prev, profileImageUrl: '' }));
+//                       if (!deleteImage) {
+//                         setPreview(selectedAdmin.profileImage);
+//                       }
+//                     }}
+//                     className={`flex items-center gap-2 px-4 py-2 border-b-2 font-medium text-sm ${
+//                       uploadMethod === 'url' 
+//                         ? 'border-blue-600 text-blue-600' 
+//                         : 'border-transparent text-gray-500 hover:text-gray-700'
+//                     }`}
+//                   >
+//                     <LinkIcon size={18} />
+//                     Paste URL
+//                   </button>
+//                 </div>
+
+//                 {uploadMethod === 'file' ? (
+//                   <>
+//                     {!file ? (
+//                       <div
+//                         className="border-2 border-dashed border-blue-600 rounded-lg p-6 text-center cursor-pointer bg-blue-50 hover:bg-blue-100 transition-colors"
+//                         onClick={() => document.getElementById('profile-image-upload-edit').click()}
+//                       >
+//                         <div className="w-20 h-20 mx-auto mb-3 rounded-full bg-blue-100 flex items-center justify-center">
+//                           <User size={36} className="text-blue-600" />
+//                         </div>
+//                         <div className="text-lg font-semibold text-gray-900 mb-2">
+//                           Click to upload new profile image
+//                         </div>
+//                         <div className="text-sm text-gray-600">
+//                           Supports JPG, PNG, WebP (Max 10MB)
+//                         </div>
+//                       </div>
+//                     ) : (
+//                       <div className="border border-blue-200 rounded-lg p-4 bg-white">
+//                         <div className="flex items-center justify-between mb-3">
+//                           <div className="flex items-center gap-3">
+//                             <ImageIcon size={24} className="text-blue-600" />
+//                             <div>
+//                               <div className="font-semibold text-gray-900">
+//                                 {file.name}
+//                               </div>
+//                               <div className="text-sm text-gray-600">
+//                                 {(file.size / (1024 * 1024)).toFixed(2)} MB
+//                               </div>
+//                             </div>
+//                           </div>
+//                           <Button
+//                             type="button"
+//                             onClick={removeFile}
+//                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
+//                           >
+//                             <X size={18} />
+//                           </Button>
+//                         </div>
+                        
+//                         <img
+//                           src={preview}
+//                           alt="New Profile Preview"
+//                           className="w-32 h-32 object-cover rounded-full mx-auto border-4 border-blue-100"
+//                         />
+//                       </div>
+//                     )}
+                    
+//                     <input
+//                       id="profile-image-upload-edit"
+//                       type="file"
+//                       accept="image/*"
+//                       onChange={handleFileChange}
+//                       className="hidden"
+//                     />
+//                   </>
+//                 ) : (
+//                   <>
+//                     <TextField
+//                       label="Profile Image URL"
+//                       value={formData.profileImageUrl}
+//                       onChange={(e) => handleUrlChange(e.target.value)}
+//                       placeholder="https://example.com/profile-image.jpg"
+//                       startIcon={<LinkIcon size={20} className="text-blue-600" />}
+//                       fullWidth
+//                     />
+//                     {preview && formData.profileImageUrl && (
+//                       <div className="mt-4 flex justify-center">
+//                         <img
+//                           src={preview}
+//                           alt="URL Preview"
+//                           className="w-32 h-32 object-cover rounded-full border-4 border-blue-100"
+//                           onError={(e) => {
+//                             e.target.style.display = 'none';
+//                             toast.error('Invalid image URL');
+//                           }}
+//                         />
+//                       </div>
+//                     )}
+//                   </>
+//                 )}
+//               </Card>
+//             )}
+//             {/* User Information Card */}
+//             <Card className="p-6 border border-gray-200 bg-white">
+//               <h2 className="text-xl font-semibold text-gray-900 mb-4">
+//                 User Information
+//               </h2>
+              
+//               <div className="space-y-4">
+//                 <div className="flex flex-col md:flex-row gap-4">
+//                   <TextField
+//                     label="Full Name"
+//                     value={formData.name}
+//                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+//                     disabled={!isEditing}
+//                     error={errors.name}
+//                     required
+//                     fullWidth
+//                     startIcon={<User size={20} className="text-gray-500" />}
+//                   />
+//                   <TextField
+//                     label="Email Address"
+//                     type="email"
+//                     value={formData.email}
+//                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+//                     disabled={true}
+//                     error={errors.email}
+//                     required
+//                     fullWidth
+//                     startIcon={<Mail size={20} className="text-gray-500" />}
+//                   />
+//                 </div>
+
+//                 <div className="flex flex-col md:flex-row gap-4">
+//                   <TextField
+//                     label="Phone Number"
+//                     type="tel"
+//                     value={formData.phone}
+//                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+//                     disabled={!isEditing}
+//                     error={errors.phone}
+//                     required
+//                     fullWidth
+//                     startIcon={<Phone size={20} className="text-gray-500" />}
+//                   />
+//                   <SelectField
+//                     label="Role"
+//                     value={formData.role}
+//                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+//                     options={roleOptions}
+//                     disabled={!isEditing}
+//                     required
+//                     fullWidth
+//                   />
+//                 </div>
+
+//                 <div className="flex flex-col md:flex-row gap-4">
+//                   <TextField
+//                     label="Employee ID"
+//                     value={formData.employeeId}
+//                     onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
+//                     disabled={!isEditing}
+//                     fullWidth
+//                     startIcon={<Briefcase size={20} className="text-gray-500" />}
+//                   />
+//                   <TextField
+//                     label="Designation"
+//                     value={formData.designation}
+//                     onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
+//                     disabled={!isEditing}
+//                     fullWidth
+//                   />
+//                 </div>
+//               </div>
+//             </Card>
+//             {/* Assigned Districts Card */}
+//             {formData.role === 'rtc' && (
+//               <Card className="p-6 border border-gray-200 bg-white">
+//                 <div className="flex items-center gap-2 mb-4">
+//                   <MapPin size={20} className="text-gray-500" />
+//                   <h2 className="text-xl font-semibold text-gray-900">
+//                     Assigned Districts
+//                   </h2>
+//                   <span className="text-red-500">*</span>
+//                   <span className="text-sm text-[#1348e8] font-medium ml-auto">
+//                     Selected: {formData.assignedDistricts.length} district(s)
+//                   </span>
+//                 </div>
+                
+//                 <div className="max-h-96 overflow-y-auto bg-gray-50 p-4 rounded-lg border border-gray-200">
+//                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+//                     {districts.map((district) => (
+//                       <label 
+//                         key={district._id}
+//                         className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-colors ${
+//                           formData.assignedDistricts.includes(district._id)
+//                             ? 'border-[#1348e8] bg-blue-50'
+//                             : 'border-gray-300 bg-white'
+//                         } ${!isEditing ? 'opacity-60 cursor-not-allowed' : 'hover:border-[#1348e8] hover:bg-blue-50'}`}
+//                       >
+//                         <input
+//                           type="checkbox"
+//                           checked={formData.assignedDistricts.includes(district._id)}
+//                           onChange={() => handleDistrictToggle(district._id)}
+//                           disabled={!isEditing}
+//                           className="w-4 h-4 text-[#1348e8] bg-gray-100 border-gray-300 rounded focus:ring-[#1348e8] focus:ring-2"
+//                         />
+//                         <span className={`text-sm font-medium ${
+//                           formData.assignedDistricts.includes(district._id)
+//                             ? 'text-[#1348e8]'
+//                             : 'text-gray-700'
+//                         }`}>
+//                           {district.name}
+//                         </span>
+//                       </label>
+//                     ))}
+//                   </div>
+//                 </div>
+//                 {errors.assignedDistricts && (
+//                   <div className="text-red-500 text-sm mt-2">
+//                     {errors.assignedDistricts}
+//                   </div>
+//                 )}
+//               </Card>
+//             )}
+
+//             {/* Action Buttons */}
+//             {isEditing && (
+//               <div className="flex gap-3">
+//                 <Button
+//                   type="submit"
+//                   disabled={isSaving}
+//                   startIcon={<Save size={20} />}
+//                   size="large"
+//                   sx={{ 
+//                     backgroundColor: '#1348e8',
+//                     '&:hover': { backgroundColor: '#0d3ec7' },
+//                     '&.Mui-disabled': {
+//                       backgroundColor: 'rgba(19, 72, 232, 0.3)'
+//                     }
+//                   }}
+//                 >
+//                   {isSaving ? 'Saving...' : 'Save Changes'}
+//                 </Button>
+//                 <Button
+//                   variant="outlined"
+//                   onClick={handleCancel}
+//                   size="large"
+//                   sx={{ 
+//                     borderColor: '#1348e8',
+//                     color: '#1348e8',
+//                     '&:hover': {
+//                       borderColor: '#0d3ec7',
+//                       backgroundColor: 'rgba(19, 72, 232, 0.06)'
+//                     }
+//                   }}
+//                 >
+//                   Cancel
+//                 </Button>
+//               </div>
+//             )}
+//           </form>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
+
+// 'use client'
+// import { useState, useEffect } from 'react';
+// import { useDispatch, useSelector } from 'react-redux';
+// import { useRouter, useParams } from 'next/navigation';
+// import { fetchAdminById, updateAdmin, clearError, clearSuccess } from '@/redux/slices/adminSlice';
+// import { fetchDistricts } from '@/redux/slices/districtSlice';
+// import { toast } from 'react-toastify';
+// import Link from 'next/link';
+// import {
+//   ArrowLeft,
+//   Save,
+//   User,
+//   Mail,
+//   Phone,
+//   Briefcase,
+//   MapPin,
+//   Calendar,
+//   Clock
+// } from 'lucide-react';
+// import Loader from '@/components/ui/Loader';
+// import Button from '@/components/ui/Button';
+// import Card from '@/components/ui/Card';
+// import TextField from '@/components/ui/TextField';
+// import SelectField from '@/components/ui/SelectField';
+// import StatusChip from '@/components/ui/StatusChip';
+
+// export default function EditUserPage() {
+//   const router = useRouter();
+//   const params = useParams();
+//   const dispatch = useDispatch();
+//   const { selectedAdmin, loading, error, success } = useSelector((state) => state.admin);
+//   const { districts } = useSelector((state) => state.district);
+
+//   const [formData, setFormData] = useState({
+//     name: '',
+//     email: '',
+//     phone: '',
+//     role: 'rtc',
+//     employeeId: '',
+//     designation: '',
+//     assignedDistricts: []
+//   });
+
+//   const [isEditing, setIsEditing] = useState(false);
+//   const [errors, setErrors] = useState({});
+//   const [isSaving, setIsSaving] = useState(false);
+
+//   useEffect(() => {
+//     if (params.id && (!selectedAdmin || selectedAdmin._id !== params.id)) {
+//       dispatch(fetchAdminById(params.id));
+//     }
+//     if (districts.length === 0) {
+//       dispatch(fetchDistricts({ status: 'active', limit: 100 }));
+//     }
+//   }, [params.id, selectedAdmin?._id, districts.length, dispatch]);
+
+//   useEffect(() => {
+//     if (selectedAdmin && selectedAdmin._id === params.id) {
+//       setFormData({
+//         name: selectedAdmin.name || '',
+//         email: selectedAdmin.email || '',
+//         phone: selectedAdmin.phone || '',
+//         role: selectedAdmin.role || 'rtc',
+//         employeeId: selectedAdmin.employeeId || '',
+//         designation: selectedAdmin.designation || '',
+//         assignedDistricts: selectedAdmin.assignedDistricts?.map(d => d._id || d) || []
+//       });
+//     }
+//   }, [selectedAdmin, params.id]);
+
+//   useEffect(() => {
+//     if (success) {
+//       toast.success('User updated successfully!');
+//       dispatch(clearSuccess());
+//       setIsEditing(false);
+//       setIsSaving(false);
+//     }
+//     if (error) {
+//       toast.error(error.message || 'Failed to update user');
+//       dispatch(clearError());
+//       setIsSaving(false);
+//     }
+//   }, [success, error, dispatch]);
+
+//   const validateForm = () => {
+//     const newErrors = {};
+
+//     if (!formData.name.trim()) newErrors.name = 'Name is required';
+//     if (!formData.email.trim()) newErrors.email = 'Email is required';
+//     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+//       newErrors.email = 'Invalid email format';
+//     }
+//     if (!formData.phone.trim()) newErrors.phone = 'Phone is required';
+//     if (!/^[0-9]{10}$/.test(formData.phone)) {
+//       newErrors.phone = 'Phone must be 10 digits';
+//     }
+//     if (formData.role === 'rtc' && formData.assignedDistricts.length === 0) {
+//       newErrors.assignedDistricts = 'RTC must have at least one assigned district';
+//     }
+
+//     setErrors(newErrors);
+//     return Object.keys(newErrors).length === 0;
+//   };
+
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
+//     if (!validateForm()) {
+//       toast.error('Please fix all errors');
+//       return;
+//     }
+
+//     setIsSaving(true);
+//     try {
+//       await dispatch(updateAdmin({ id: params.id, adminData: formData })).unwrap();
+//     } catch (err) {
+//       console.error(err);
+//       setIsSaving(false);
+//     }
+//   };
+
+//   const handleDistrictToggle = (districtId) => {
+//     setFormData(prev => ({
+//       ...prev,
+//       assignedDistricts: prev.assignedDistricts.includes(districtId)
+//         ? prev.assignedDistricts.filter(id => id !== districtId)
+//         : [...prev.assignedDistricts, districtId]
+//     }));
+//   };
+
+//   const handleCancel = () => {
+//     setIsEditing(false);
+//     setIsSaving(false);
+//     if (selectedAdmin) {
+//       setFormData({
+//         name: selectedAdmin.name || '',
+//         email: selectedAdmin.email || '',
+//         phone: selectedAdmin.phone || '',
+//         role: selectedAdmin.role || 'rtc',
+//         employeeId: selectedAdmin.employeeId || '',
+//         designation: selectedAdmin.designation || '',
+//         assignedDistricts: selectedAdmin.assignedDistricts?.map(d => d._id || d) || []
+//       });
+//     }
+//     setErrors({});
+//   };
+
+//   const roleOptions = [
+//     { value: 'admin', label: 'Admin' },
+//     { value: 'rtc', label: 'RTC' }
+//   ];
+
+//   if (loading && !selectedAdmin) {
+//     return (
+//       <div className="fixed inset-0 z-[9999]">
+//         <Loader message={"Loading..."} />
+//       </div>
+//     );
+//   }
+
+//   if (isSaving) {
+//     return (
+//       <div className="fixed inset-0 z-[9999]">
+//         <Loader message={"Saving..."} />
+//       </div>
+//     );
+//   }
+
+//   if (!selectedAdmin) {
+//     return (
+//       <div className="text-center py-16">
+//         <div className="text-gray-600 text-lg mb-4">User not found</div>
+//         <Link href="/admin/users" className="no-underline">
+//           <Button variant="outlined" sx={{ mt: 2 }}>
+//             Back to Users
+//           </Button>
+//         </Link>
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className="p-4 md:p-6 max-w-7xl mx-auto">
+//       {/* Header */}
+//       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+//         <div className="flex items-center gap-3">
+//           <Link href="/admin/users" className="no-underline">
+//             <Button 
+//               variant="outlined" 
+//               sx={{ 
+//                 minWidth: 'auto', 
+//                 p: 1,
+//                 borderColor: '#1348e8',
+//                 color: '#1348e8',
+//                 '&:hover': {
+//                   borderColor: '#0d3ec7',
+//                   backgroundColor: 'rgba(19, 72, 232, 0.06)'
+//                 }
+//               }}
+//             >
+//               <ArrowLeft size={20} />
+//             </Button>
+//           </Link>
+//           <div>
+//             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+//               {selectedAdmin.name}
+//             </h1>
+//             <p className="text-gray-600">
+//               {isEditing ? 'Edit user details' : 'View user details'}
+//             </p>
+//           </div>
+//         </div>
+//         {!isEditing && (
+//           <Button 
+//             onClick={() => setIsEditing(true)} 
+//             size="large"
+//             sx={{ 
+//               backgroundColor: '#1348e8',
+//               '&:hover': { backgroundColor: '#0d3ec7' }
+//             }}
+//           >
+//             Edit User
+//           </Button>
+//         )}
+//       </div>
+
+//       <div className="flex flex-col lg:flex-row gap-6">
+//         {/* Sidebar */}
+//         <div className="w-full lg:w-80 flex-shrink-0">
+//           <Card className="p-6 border border-gray-200 bg-white">
+//             <div className="text-center mb-6">
+//               <div className="w-20 h-20 rounded-full bg-[#1348e8] flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
+//                 {selectedAdmin.name?.charAt(0).toUpperCase()}
+//               </div>
+//               <div className="text-lg font-semibold text-gray-900">
+//                 {selectedAdmin.name}
+//               </div>
+//               <div className="text-[#1348e8] font-medium capitalize">
+//                 {selectedAdmin.role}
+//               </div>
+//             </div>
+
+//             <div className="border-t border-gray-200 my-4"></div>
+
+//             <div className="space-y-4">
+//               <div className="flex justify-between items-center">
+//                 <span className="text-sm text-gray-600 font-medium">Status</span>
+//                 <StatusChip status={selectedAdmin.status} />
+//               </div>
+
+//               <div className="flex justify-between items-center">
+//                 <span className="text-sm text-gray-600 font-medium">Employee ID</span>
+//                 <span className="text-sm font-semibold text-[#1348e8]">
+//                   {selectedAdmin.employeeId || 'N/A'}
+//                 </span>
+//               </div>
+
+//               <div className="flex justify-between items-center">
+//                 <div className="flex items-center gap-2">
+//                   <Calendar size={16} className="text-gray-500" />
+//                   <span className="text-sm text-gray-600 font-medium">Created</span>
+//                 </div>
+//                 <span className="text-sm text-gray-900">
+//                   {selectedAdmin.createdAt
+//                     ? new Date(selectedAdmin.createdAt).toLocaleDateString()
+//                     : 'N/A'}
+//                 </span>
+//               </div>
+
+//               <div className="flex justify-between items-center">
+//                 <div className="flex items-center gap-2">
+//                   <Clock size={16} className="text-gray-500" />
+//                   <span className="text-sm text-gray-600 font-medium">Last Login</span>
+//                 </div>
+//                 <span className="text-sm text-gray-900">
+//                   {selectedAdmin.lastLogin
+//                     ? new Date(selectedAdmin.lastLogin).toLocaleDateString()
+//                     : 'Never'}
+//                 </span>
+//               </div>
+//             </div>
+//           </Card>
+//         </div>
+
+//         {/* Main Content */}
+//         <div className="flex-1">
+//           <form onSubmit={handleSubmit} className="space-y-6">
+//             {/* User Information Card */}
+//             <Card className="p-6 border border-gray-200 bg-white">
+//               <h2 className="text-xl font-semibold text-gray-900 mb-4">
+//                 User Information
+//               </h2>
+              
+//               <div className="space-y-4">
+//                 <div className="flex flex-col md:flex-row gap-4">
+//                   <TextField
+//                     label="Full Name"
+//                     value={formData.name}
+//                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+//                     disabled={!isEditing}
+//                     error={errors.name}
+//                     required
+//                     fullWidth
+//                     startIcon={<User size={20} className="text-gray-500" />}
+//                   />
+//                   <TextField
+//                     label="Email Address"
+//                     type="email"
+//                     value={formData.email}
+//                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+//                     disabled={!isEditing}
+//                     error={errors.email}
+//                     required
+//                     fullWidth
+//                     startIcon={<Mail size={20} className="text-gray-500" />}
+//                   />
+//                 </div>
+
+//                 <div className="flex flex-col md:flex-row gap-4">
+//                   <TextField
+//                     label="Phone Number"
+//                     type="tel"
+//                     value={formData.phone}
+//                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+//                     disabled={!isEditing}
+//                     error={errors.phone}
+//                     required
+//                     fullWidth
+//                     startIcon={<Phone size={20} className="text-gray-500" />}
+//                   />
+//                   <SelectField
+//                     label="Role"
+//                     value={formData.role}
+//                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+//                     options={roleOptions}
+//                     disabled={!isEditing}
+//                     required
+//                     fullWidth
+//                   />
+//                 </div>
+
+//                 <div className="flex flex-col md:flex-row gap-4">
+//                   <TextField
+//                     label="Employee ID"
+//                     value={formData.employeeId}
+//                     onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
+//                     disabled={!isEditing}
+//                     fullWidth
+//                     startIcon={<Briefcase size={20} className="text-gray-500" />}
+//                   />
+//                   <TextField
+//                     label="Designation"
+//                     value={formData.designation}
+//                     onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
+//                     disabled={!isEditing}
+//                     fullWidth
+//                   />
+//                 </div>
+//               </div>
+//             </Card>
+
+//             {/* Assigned Districts Card */}
+//             {formData.role === 'rtc' && (
+//               <Card className="p-6 border border-gray-200 bg-white">
+//                 <div className="flex items-center gap-2 mb-4">
+//                   <MapPin size={20} className="text-gray-500" />
+//                   <h2 className="text-xl font-semibold text-gray-900">
+//                     Assigned Districts
+//                   </h2>
+//                   <span className="text-red-500">*</span>
+//                   <span className="text-sm text-[#1348e8] font-medium ml-auto">
+//                     Selected: {formData.assignedDistricts.length} district(s)
+//                   </span>
+//                 </div>
+                
+//                 <div className="max-h-96 overflow-y-auto bg-gray-50 p-4 rounded-lg border border-gray-200">
+//                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+//                     {districts.map((district) => (
+//                       <label 
+//                         key={district._id}
+//                         className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-colors ${
+//                           formData.assignedDistricts.includes(district._id)
+//                             ? 'border-[#1348e8] bg-blue-50'
+//                             : 'border-gray-300 bg-white'
+//                         } ${!isEditing ? 'opacity-60 cursor-not-allowed' : 'hover:border-[#1348e8] hover:bg-blue-50'}`}
+//                       >
+//                         <input
+//                           type="checkbox"
+//                           checked={formData.assignedDistricts.includes(district._id)}
+//                           onChange={() => handleDistrictToggle(district._id)}
+//                           disabled={!isEditing}
+//                           className="w-4 h-4 text-[#1348e8] bg-gray-100 border-gray-300 rounded focus:ring-[#1348e8] focus:ring-2"
+//                         />
+//                         <span className={`text-sm font-medium ${
+//                           formData.assignedDistricts.includes(district._id)
+//                             ? 'text-[#1348e8]'
+//                             : 'text-gray-700'
+//                         }`}>
+//                           {district.name}
+//                         </span>
+//                       </label>
+//                     ))}
+//                   </div>
+//                 </div>
+//                 {errors.assignedDistricts && (
+//                   <div className="text-red-500 text-sm mt-2">
+//                     {errors.assignedDistricts}
+//                   </div>
+//                 )}
+//               </Card>
+//             )}
+
+//             {/* Action Buttons */}
+//             {isEditing && (
+//               <div className="flex gap-3">
+//                 <Button
+//                   type="submit"
+//                   disabled={isSaving}
+//                   startIcon={<Save size={20} />}
+//                   size="large"
+//                   sx={{ 
+//                     backgroundColor: '#1348e8',
+//                     '&:hover': { backgroundColor: '#0d3ec7' },
+//                     '&.Mui-disabled': {
+//                       backgroundColor: 'rgba(19, 72, 232, 0.3)'
+//                     }
+//                   }}
+//                 >
+//                   {isSaving ? 'Saving...' : 'Save Changes'}
+//                 </Button>
+//                 <Button
+//                   variant="outlined"
+//                   onClick={handleCancel}
+//                   size="large"
+//                   sx={{ 
+//                     borderColor: '#1348e8',
+//                     color: '#1348e8',
+//                     '&:hover': {
+//                       borderColor: '#0d3ec7',
+//                       backgroundColor: 'rgba(19, 72, 232, 0.06)'
+//                     }
+//                   }}
+//                 >
+//                   Cancel
+//                 </Button>
+//               </div>
+//             )}
+//           </form>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
 
 
 // 'use client'

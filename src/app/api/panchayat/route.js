@@ -286,21 +286,21 @@ export async function POST(request) {
         }
 
         // Validate politicalOverview headings
-        if (politicalOverview && politicalOverview.length > 0) {
-            const validHeadings = [
-                'Current Leadership', 'Political History', 'Governing Structure',
-                'Major Achievements', 'Recent Developments', 'Election History',
-                'Administrative Setup', 'Future Plans', 'Public Participation', 'Key Challenges'
-            ];
+        // if (politicalOverview && politicalOverview.length > 0) {
+        //     const validHeadings = [
+        //         'Current Leadership', 'Political History', 'Governing Structure',
+        //         'Major Achievements', 'Recent Developments', 'Election History',
+        //         'Administrative Setup', 'Future Plans', 'Public Participation', 'Key Challenges'
+        //     ];
             
-            const invalidHeadings = politicalOverview.filter(item => !validHeadings.includes(item.heading));
-            if (invalidHeadings.length > 0) {
-                return NextResponse.json(
-                    { success: false, message: `Invalid political overview headings: ${invalidHeadings.map(i => i.heading).join(', ')}` },
-                    { status: 400 }
-                );
-            }
-        }
+        //     const invalidHeadings = politicalOverview.filter(item => !validHeadings.includes(item.heading));
+        //     if (invalidHeadings.length > 0) {
+        //         return NextResponse.json(
+        //             { success: false, message: `Invalid political overview headings: ${invalidHeadings.map(i => i.heading).join(', ')}` },
+        //             { status: 400 }
+        //         );
+        //     }
+        // }
 
         console.log('Creating panchayat in database...');
 

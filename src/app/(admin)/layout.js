@@ -13,16 +13,19 @@ export default function AdminLayout({ children }) {
   const dispatch = useDispatch();
   const { isAuthenticated, loading, currentAdmin } = useSelector((state) => state.admin);
   const [authChecked, setAuthChecked] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-  // <CHANGE> Add initial auth check - only call once and track with authChecked flag
   useEffect(() => {
     if (pathname !== '/admin/login' && !authChecked) {
-      dispatch(getProfile());
-      setAuthChecked(true);
+      dispatch(getProfile()).finally(() => {
+        setAuthChecked(true);
+        setIsInitialLoading(false);
+      });
+    } else {
+      setIsInitialLoading(false);
     }
   }, [dispatch, pathname, authChecked]);
 
-  // <CHANGE> Only redirect after auth is checked and not loading
   useEffect(() => {
     if (authChecked && !loading) {
       if (!isAuthenticated && pathname !== '/admin/login') {
@@ -31,15 +34,15 @@ export default function AdminLayout({ children }) {
     }
   }, [isAuthenticated, loading, pathname, router, authChecked]);
 
-  // LOADING STATE
-  if (loading || !authChecked) {
+  // LOADING STATE - Only show for initial auth check, not for Redux loading
+  if (isInitialLoading) {
     if (pathname === '/admin/login') {
       return children;
     }
     return (
       <div className="fixed inset-0 z-[9999]">
-          <Loader message={"Loading..."} />
-        </div>
+        <Loader message={"Loading..."} />
+      </div>
     );
   }
 
@@ -60,6 +63,69 @@ export default function AdminLayout({ children }) {
     </div>
   );
 }
+
+// 'use client'
+// import { useEffect, useState } from 'react';
+// import { useRouter, usePathname } from 'next/navigation';
+// import { useDispatch, useSelector } from 'react-redux';
+// import { getProfile } from '@/redux/slices/adminSlice.js';
+// import AdminSidebar from '@/components/admin/AdminSidebar.jsx';
+// import { Loader2 } from 'lucide-react';
+// import Loader from '@/components/ui/Loader';
+
+// export default function AdminLayout({ children }) {
+//   const router = useRouter();
+//   const pathname = usePathname();
+//   const dispatch = useDispatch();
+//   const { isAuthenticated, loading, currentAdmin } = useSelector((state) => state.admin);
+//   const [authChecked, setAuthChecked] = useState(false);
+
+//   // <CHANGE> Add initial auth check - only call once and track with authChecked flag
+//   useEffect(() => {
+//     if (pathname !== '/admin/login' && !authChecked) {
+//       dispatch(getProfile());
+//       setAuthChecked(true);
+//     }
+//   }, [dispatch, pathname, authChecked]);
+
+//   // <CHANGE> Only redirect after auth is checked and not loading
+//   useEffect(() => {
+//     if (authChecked && !loading) {
+//       if (!isAuthenticated && pathname !== '/admin/login') {
+//         router.push('/admin/login');
+//       }
+//     }
+//   }, [isAuthenticated, loading, pathname, router, authChecked]);
+
+//   // LOADING STATE
+//   if (loading || !authChecked) {
+//     if (pathname === '/admin/login') {
+//       return children;
+//     }
+//     return (
+//       <div className="fixed inset-0 z-[9999]">
+//           <Loader message={"Loading..."} />
+//         </div>
+//     );
+//   }
+
+//   // LOGIN PAGE (NO SIDEBAR)
+//   if (pathname === '/admin/login') {
+//     return children;
+//   }
+
+//   // ADMIN PANEL WITH SIDEBAR
+//   return (
+//     <div className="flex h-screen bg-gray-50">
+//       <AdminSidebar />
+//       <main className="flex-1 overflow-y-auto">
+//         <div className=" p-2 lg:p-8 ">
+//           {children}
+//         </div>
+//       </main>
+//     </div>
+//   );
+// }
 // 'use client'
 // import { useEffect } from 'react';
 // import { useRouter, usePathname } from 'next/navigation';

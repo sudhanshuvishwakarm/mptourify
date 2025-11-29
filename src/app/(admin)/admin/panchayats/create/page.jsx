@@ -394,19 +394,7 @@ export default function CreatePanchayatPage() {
     { value: 'Verified', label: 'Verified' }
   ];
 
-  const politicalHeadingOptions = [
-    { value: '', label: 'Select Heading' },
-    { value: 'Current Leadership', label: 'Current Leadership' },
-    { value: 'Political History', label: 'Political History' },
-    { value: 'Governing Structure', label: 'Governing Structure' },
-    { value: 'Major Achievements', label: 'Major Achievements' },
-    { value: 'Recent Developments', label: 'Recent Developments' },
-    { value: 'Election History', label: 'Election History' },
-    { value: 'Administrative Setup', label: 'Administrative Setup' },
-    { value: 'Future Plans', label: 'Future Plans' },
-    { value: 'Public Participation', label: 'Public Participation' },
-    { value: 'Key Challenges', label: 'Key Challenges' }
-  ];
+ 
 
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto">
@@ -588,7 +576,13 @@ export default function CreatePanchayatPage() {
                     </Button>
                   </div>
                   <div className="space-y-3">
-                    <SelectField label="Heading" value={item.heading} onChange={(e) => handlePoliticalOverviewChange(index, 'heading', e.target.value)} options={politicalHeadingOptions} fullWidth />
+                  <TextField 
+  label="Heading *" 
+  value={item.heading} 
+  onChange={(e) => handlePoliticalOverviewChange(index, 'heading', e.target.value)} 
+  placeholder="Enter custom heading (e.g., Current Leadership, Political History)" 
+  fullWidth 
+/>
                     <TextField label="Description" value={item.description} onChange={(e) => handlePoliticalOverviewChange(index, 'description', e.target.value)} multiline rows={3} placeholder="Enter details..." fullWidth />
                   </div>
                 </div>

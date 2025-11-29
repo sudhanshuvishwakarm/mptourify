@@ -10,8 +10,8 @@ export default function HomePage() {
     <>
       <HomeHero/>
       <HomeAbout/>
-      <HomeMpOverview/>
       <HomeNavigationTiles/>
+      <HomeMpOverview/>
     </>
   );
 }

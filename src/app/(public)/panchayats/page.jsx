@@ -9,6 +9,7 @@ import {
   Search, ChevronDown, Home, ArrowRight, Sparkles, Loader2, X
 } from 'lucide-react';
 import TextField from '@/components/ui/TextField';
+import { clearCache } from '@/redux/slices/adminSlice';
 
 export default function PanchayatPage() {
   const dispatch = useDispatch();
@@ -55,20 +56,36 @@ useEffect(() => {
     }
   }, [searchParams]);
 
-  useEffect(() => {
-    const oneHourAgo = Date.now() - (60 * 60 * 1000);
-    
-    const shouldFetchPanchayats = panchayats.length === 0 || !lastFetched || lastFetched < oneHourAgo;
-    const shouldFetchDistricts = districts.length === 0;
+ useEffect(() => {
+  const oneHourAgo = Date.now() - (60 * 60 * 1000);
+  
+  const shouldFetchPanchayats = panchayats.length === 0 || !lastFetched || lastFetched < oneHourAgo;
+  const shouldFetchDistricts = districts.length === 0;
 
-    if (shouldFetchPanchayats) {
-      dispatch(fetchPanchayats({ limit: 100 }));
-    }
+  if (shouldFetchPanchayats) {
+    // Clear cache before fetching to ensure fresh verified data
+    dispatch(clearCache());
+    dispatch(fetchPanchayats({ limit: 100, status: 'Verified' }));
+  }
+  
+  if (shouldFetchDistricts) {
+    dispatch(fetchDistricts());
+  }
+}, [dispatch, districts.length, lastFetched]); // Remove panchayats.length from dependencies
+  // useEffect(() => {
+  //   const oneHourAgo = Date.now() - (60 * 60 * 1000);
     
-    if (shouldFetchDistricts) {
-      dispatch(fetchDistricts());
-    }
-  }, [dispatch, panchayats.length, districts.length, lastFetched]);
+  //   const shouldFetchPanchayats = panchayats.length === 0 || !lastFetched || lastFetched < oneHourAgo;
+  //   const shouldFetchDistricts = districts.length === 0;
+
+  //   if (shouldFetchPanchayats) {
+  //     dispatch(fetchPanchayats({ limit: 100 }));
+  //   }
+    
+  //   if (shouldFetchDistricts) {
+  //     dispatch(fetchDistricts());
+  //   }
+  // }, [dispatch, panchayats.length, districts.length, lastFetched]);
 
   const districtOptions = useMemo(() => [
     { value: 'all', label: 'All Districts' },
@@ -76,21 +93,26 @@ useEffect(() => {
   ], [districts]);
 
   const filteredPanchayats = useMemo(() => {
-    return panchayats.filter(item => {
-      if (searchTerm && 
-          !item.name?.toLowerCase().includes(searchTerm.toLowerCase()) &&
-          !item.block?.toLowerCase().includes(searchTerm.toLowerCase()) &&
-          !item.district?.name?.toLowerCase().includes(searchTerm.toLowerCase())) {
-        return false;
-      }
-      
-      const matchesDistrict = selectedDistrict === 'all' || 
-                             item.district?._id === selectedDistrict ||
-                             item.district === selectedDistrict;
-      
-      return matchesDistrict;
-    });
-  }, [panchayats, selectedDistrict, searchTerm]);
+  return panchayats.filter(item => {
+    // Only show verified panchayats on public page
+    if (item.status !== 'Verified') {
+      return false;
+    }
+    
+    if (searchTerm && 
+        !item.name?.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !item.block?.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !item.district?.name?.toLowerCase().includes(searchTerm.toLowerCase())) {
+      return false;
+    }
+    
+    const matchesDistrict = selectedDistrict === 'all' || 
+                           item.district?._id === selectedDistrict ||
+                           item.district === selectedDistrict;
+    
+    return matchesDistrict;
+  });
+}, [panchayats, selectedDistrict, searchTerm]);
 
   const handleDistrictChange = useCallback((district) => {
   setSelectedDistrict(district);

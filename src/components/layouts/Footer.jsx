@@ -19,22 +19,12 @@ export default function HomeFooter() {
   const router = useRouter();
 
   const colors = {
-    primary: '#117307',       // Main green from your theme
-    primaryDark: '#0d5c06',   // Darker green for hover states
-    primaryLight: '#f5fbf2',  // Light green background
-    saffron: '#F3902C',       // Accent color
+    primary: '#117307',      
     white: '#FFFFFF',
-    textDark: '#0d4d03',      // Dark green text
-    textLight: '#1a5e10',     // Medium green text
-    textLighter: '#4d674f',   // Light green text
-    footerBg: '#0d4d03',      // Dark green footer background
-    footerText: '#e0f0dd',    // Light green footer text
-    footerBorder: '#1a5e10'   // Border color
-  };
-
-  const handleSubscribe = (e) => {
-    e.preventDefault();
-    setEmail('');
+    textDark: '#0d4d03',    
+    footerBg: '#0d5c06',   
+    footerText: '#e0f0dd',   
+    footerBorder: '#1a5e10' 
   };
 
   const footerLinks = [
@@ -174,7 +164,6 @@ export default function HomeFooter() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm">
             <div className="flex items-center gap-2 font-semibold">
               <span>© 2025 MP Tourify. All rights reserved</span>
-              <Heart size={14} style={{ color: colors.saffron }} fill={colors.saffron} />
             </div>
             
             <div className="flex flex-wrap gap-6 ">

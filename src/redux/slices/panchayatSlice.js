@@ -49,6 +49,27 @@ export const fetchPanchayatsByDistrict = createAsyncThunk(
 );
 
 // FETCH ALL PANCHAYATS
+// export const fetchPanchayats = createAsyncThunk(
+//     'panchayat/fetchPanchayats',
+//     async (params = {}, { rejectWithValue, getState }) => {
+//         const state = getState().panchayat;
+//         const now = Date.now();
+//         const cacheKey = JSON.stringify(params);
+        
+//         if (state.panchayatsCache[cacheKey] && (now - state.panchayatsCache[cacheKey].lastFetched < CACHE_DURATION)) {
+//             return { ...state.panchayatsCache[cacheKey].data, fromCache: true };
+//         }
+        
+//         try {
+//             const queryString = new URLSearchParams(params).toString();
+//             const res = await axios.get(`/api/panchayat?${queryString}`);
+//             return { ...res.data, fromCache: false, cacheKey };
+//         } catch (error) {
+//             return rejectWithValue(error.response?.data || error.message);
+//         }
+//     }
+// );
+// FETCH ALL PANCHAYATS
 export const fetchPanchayats = createAsyncThunk(
     'panchayat/fetchPanchayats',
     async (params = {}, { rejectWithValue, getState }) => {
@@ -56,7 +77,11 @@ export const fetchPanchayats = createAsyncThunk(
         const now = Date.now();
         const cacheKey = JSON.stringify(params);
         
-        if (state.panchayatsCache[cacheKey] && (now - state.panchayatsCache[cacheKey].lastFetched < CACHE_DURATION)) {
+        // IMPORTANT: Don't use cache if params change (especially status)
+        const shouldUseCache = state.panchayatsCache[cacheKey] && 
+                              (now - state.panchayatsCache[cacheKey].lastFetched < CACHE_DURATION);
+        
+        if (shouldUseCache) {
             return { ...state.panchayatsCache[cacheKey].data, fromCache: true };
         }
         

@@ -1,7 +1,369 @@
+// 'use client'
+// import { useEffect, useState, useCallback } from 'react';
+// import { useDispatch, useSelector } from 'react-redux';
+// import { fetchDistricts, deleteDistrict, clearError, clearSuccess } from '@/redux/slices/districtSlice.js';
+// import { toast } from 'react-toastify';
+// import Link from 'next/link';
+// import { useRouter } from 'next/navigation';
+// import {
+//   MapPin,
+//   Plus,
+//   Search,
+//   Filter,
+//   Trash2,
+//   Eye,
+//   Map as MapIcon
+// } from 'lucide-react';
+// import {
+//   Box,
+//   Typography,
+//   Card,
+//   Button
+// } from '@mui/material';
+// import Loader from '@/components/ui/Loader';
+// import TextField from '@/components/ui/TextField';
+// import SelectField from '@/components/ui/SelectField';
+// import ConfirmDialog from '@/components/ui/ConfirmDialog';
+
+// export default function AllDistrictsPage() {
+//   const dispatch = useDispatch();
+//   const router = useRouter();
+//   const { districts, loading, error, success, totalDistricts } = useSelector((state) => state.district);
+
+//   const [filters, setFilters] = useState({ status: '', search: '' });
+//   const [deleteConfirm, setDeleteConfirm] = useState(null);
+//   const [deletingId, setDeletingId] = useState(null);
+//   const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+//   useEffect(() => {
+//     const hasCachedData = districts.length > 0;
+    
+//     if (!hasCachedData) {
+//       dispatch(fetchDistricts({ limit: 100 })).finally(() => {
+//         setIsInitialLoading(false);
+//       });
+//     } else {
+//       setIsInitialLoading(false);
+//     }
+//   }, [dispatch]);
+
+//   useEffect(() => {
+//     if (success) {
+//       toast.success('Action completed successfully!');
+//       dispatch(clearSuccess());
+//       dispatch(fetchDistricts({ limit: 100 }));
+//     }
+//     if (error) {
+//       toast.error(error.message || 'Something went wrong');
+//       dispatch(clearError());
+//     }
+//   }, [success, error, dispatch]);
+
+//   const handleSearch = useCallback(() => {
+//     const params = { limit: 100 };
+//     if (filters.status) params.status = filters.status;
+//     if (filters.search) params.search = filters.search;
+//     dispatch(fetchDistricts(params));
+//   }, [filters, dispatch]);
+
+//   const handleReset = useCallback(() => {
+//     setFilters({ status: '', search: '' });
+//     dispatch(fetchDistricts({ limit: 100 }));
+//   }, [dispatch]);
+
+//   const handleDelete = useCallback(async (id) => {
+//     try {
+//       setDeletingId(id);
+//       await dispatch(deleteDistrict(id)).unwrap();
+//       toast.success('District deleted successfully');
+//       setDeleteConfirm(null);
+//     } catch (err) {
+//       toast.error(err.message || 'Failed to delete district');
+//     } finally {
+//       setDeletingId(null);
+//     }
+//   }, [dispatch]);
+
+//   const handleCardClick = (id) => {
+//     router.push(`/admin/districts/${id}`);
+//   };
+
+//   const statusOptions = [
+//     { value: '', label: 'All Status' },
+//     { value: 'active', label: 'Active' },
+//     { value: 'draft', label: 'Draft' }
+//   ];
+
+//   return (
+//     <Box sx={{ p: { xs: 2, sm: 2, md: 3 } }}>
+//       {isInitialLoading && districts.length === 0 && (
+//         <div className="fixed inset-0 z-[9999]">
+//           <Loader message={"Loading Districts..."} />
+//         </div>
+//       )}
+
+//       {deletingId && (
+//         <div className="fixed inset-0 z-[10000]">
+//           <Loader message={"Deleting District..."} />
+//         </div>
+//       )}
+
+//       <Box sx={{ 
+//         display: 'flex', 
+//         flexDirection: { xs: 'column', sm: 'row' }, 
+//         justifyContent: 'space-between', 
+//         alignItems: { xs: 'flex-start', sm: 'center' }, 
+//         gap: 2, 
+//         mb: { xs: 3, sm: 4 } 
+//       }}>
+//         <Box>
+//           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+//             <MapPin size={28} color="#144ae9" className="sm:w-8 sm:h-8" />
+//             <Typography variant="h4" fontWeight={700} color="text.primary" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
+//               Districts ({totalDistricts || 0})
+//             </Typography>
+//           </Box>
+//           <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+//             Manage all districts of Madhya Pradesh
+//           </Typography>
+//         </Box>
+//         <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}>
+//           <Link href="/districts" target="_blank" style={{ textDecoration: 'none', flex: { xs: 1, sm: 'unset' } }}>
+//             <Button
+//               variant="outlined"
+//               startIcon={<MapIcon size={18} />}
+//               fullWidth
+//               sx={{
+//                 borderColor: '#144ae9',
+//                 color: '#144ae9',
+//                 fontSize: { xs: '0.8rem', sm: '0.875rem' },
+//                 px: { xs: 2, sm: 3 },
+//                 '&:hover': {
+//                   borderColor: '#0d3ec7',
+//                   backgroundColor: '#144ae910'
+//                 }
+//               }}
+//             >
+//               View Map
+//             </Button>
+//           </Link>
+//           <Link href="/admin/districts/create" style={{ textDecoration: 'none', flex: { xs: 1, sm: 'unset' } }}>
+//             <Button
+//               startIcon={<Plus size={18} />}
+//               fullWidth
+//               sx={{
+//                 backgroundColor: '#144ae9',
+//                 color: 'white',
+//                 fontSize: { xs: '0.8rem', sm: '0.875rem' },
+//                 px: { xs: 2, sm: 3 },
+//                 '&:hover': { backgroundColor: '#0d3ec7', color: 'white' }
+//               }}
+//             >
+//               Add District
+//             </Button>
+//           </Link>
+//         </Box>
+//       </Box>
+
+//       <Card sx={{ p: { xs: 2, sm: 3 }, border: '1px solid #144ae920', mb: { xs: 3, sm: 4 } }}>
+//         <Box sx={{ 
+//           display: 'flex', 
+//           gap: { xs: 1.5, sm: 2 }, 
+//           alignItems: 'stretch',
+//           flexDirection: { xs: 'column', sm: 'row' },
+//           flexWrap: 'wrap'
+//         }}>
+//           <Box sx={{ flex: 1, minWidth: { xs: '100%', sm: '200px' } }}>
+//             <TextField
+//               label="Search"
+//               value={filters.search}
+//               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+//               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+//               placeholder="Search districts..."
+//               startIcon={<Search size={18} color="#144ae9" />}
+//               fullWidth
+//               sx={{ '& .MuiInputBase-root': { height: { xs: '44px', sm: '56px' } } }}
+//             />
+//           </Box>
+
+//           <Box sx={{ width: { xs: '100%', sm: '160px' } }}>
+//             <SelectField
+//               label="Status"
+//               value={filters.status}
+//               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+//               options={statusOptions}
+//               fullWidth
+//               sx={{ '& .MuiInputBase-root': { height: { xs: '44px', sm: '56px' } } }}
+//             />
+//           </Box>
+
+//           <Box sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' } }}>
+//             <Button
+//               onClick={handleSearch}
+//               disabled={loading || deletingId}
+//               startIcon={<Filter size={16} />}
+//               fullWidth={false}
+//               sx={{
+//                 backgroundColor: '#144ae9',
+//                 color: 'white',
+//                 height: { xs: '44px', sm: '56px' },
+//                 minWidth: { xs: '0', sm: '100px' },
+//                 flex: { xs: 1, sm: 'unset' },
+//                 fontSize: { xs: '0.75rem', sm: '0.875rem' },
+//                 '&:hover': { backgroundColor: '#0d3ec7', color: 'white' },
+//                 '&.Mui-disabled': { backgroundColor: '#144ae950', color: 'white' }
+//               }}
+//             >
+//               Apply
+//             </Button>
+//             <Button
+//               variant="outlined"
+//               onClick={handleReset}
+//               disabled={deletingId}
+//               fullWidth={false}
+//               sx={{
+//                 borderColor: '#144ae9',
+//                 color: '#144ae9',
+//                 height: { xs: '44px', sm: '56px' },
+//                 minWidth: { xs: '0', sm: '100px' },
+//                 flex: { xs: 1, sm: 'unset' },
+//                 fontSize: { xs: '0.75rem', sm: '0.875rem' },
+//                 '&:hover': {
+//                   borderColor: '#0d3ec7',
+//                   backgroundColor: '#144ae910',
+//                   color: '#0d3ec7'
+//                 },
+//                 '&.Mui-disabled': {
+//                   borderColor: '#144ae950',
+//                   color: '#144ae950'
+//                 }
+//               }}
+//             >
+//               Reset
+//             </Button>
+//           </Box>
+//         </Box>
+//       </Card>
+
+//       <Card sx={{ border: '1px solid #144ae920' }}>
+//         {districts.length === 0 && !isInitialLoading ? (
+//           <Box sx={{ textAlign: 'center', py: { xs: 6, sm: 8 } }}>
+//             <MapPin size={40} color="#144ae9" style={{ marginBottom: 16, opacity: 0.5 }} className="sm:w-12 sm:h-12" />
+//             <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
+//               No districts found
+//             </Typography>
+//           </Box>
+//         ) : (
+//           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 p-4 sm:p-6 justify-center">
+//             {districts.map((district) => (
+//               <div
+//                 key={district._id}
+//                 className={`bg-white rounded-lg border border-blue-100 shadow-sm hover:shadow-[#144ae9] hover:shadow-sm transition-all duration-200 ease-in-out overflow-hidden relative cursor-pointer ${
+//                   deletingId === district._id ? 'opacity-60' : 'opacity-100'
+//                 }`}
+//                 onClick={() => handleCardClick(district._id)}
+//               >
+//                 {deletingId === district._id && (
+//                   <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
+//                     <span className="text-blue-600 font-semibold text-sm">Deleting...</span>
+//                   </div>
+//                 )}
+
+//                 <div className="relative h-40 sm:h-48 bg-blue-600">
+//                   {district.headerImage ? (
+//                     <img
+//                       src={district.headerImage}
+//                       alt={district.name}
+//                       className="w-full h-full object-cover"
+//                     />
+//                   ) : (
+//                     <div className="flex items-center justify-center h-full">
+//                       <MapPin size={40} color="white" className="opacity-50" />
+//                     </div>
+//                   )}
+//                 </div>
+
+//                 <div className="p-4 sm:p-6">
+//                   <div className="flex items-center justify-between mb-2">
+//                     <h3 className="text-lg sm:text-xl font-semibold text-gray-900 truncate flex-1 mr-2">
+//                       {district.name}
+//                     </h3>
+//                     <span
+//                       className={`px-2 py-1 text-xs font-semibold rounded-full text-white whitespace-nowrap ${
+//                         district.status === 'active' ? 'bg-blue-600' : 'bg-gray-500'
+//                       }`}
+//                     >
+//                       {district.status}
+//                     </span>
+//                   </div>
+
+//                   <div className="flex justify-between mb-3">
+//                     {district.area && (
+//                       <p className="text-sm font-semibold text-gray-600 text-xs sm:text-sm">
+//                         Area: {district.area} sq km
+//                       </p>
+//                     )}
+//                     {district.formationYear && (
+//                       <p className="text-sm font-semibold text-gray-600 text-xs sm:text-sm">
+//                         Formed: {district.formationYear}
+//                       </p>
+//                     )}
+//                   </div>
+
+//                   {district.population && (
+//                     <p className="text-sm font-semibold text-gray-600 mb-4 sm:mb-6 text-xs sm:text-sm">
+//                       Population: {district.population.toLocaleString()}
+//                     </p>
+//                   )}
+
+//                   <div className="grid grid-cols-2 gap-2" onClick={(e) => e.stopPropagation()}>
+//                     <Link
+//                       href={`/admin/districts/${district._id}`}
+//                       className="no-underline"
+//                     >
+//                       <button
+//                         className="w-full bg-blue-50 text-blue-600 text-xs sm:text-sm py-2 px-3 rounded-md border border-transparent hover:bg-blue-100 hover:border-blue-200 transition-all duration-200 flex items-center justify-center gap-2 font-medium"
+//                       >
+//                         <Eye size={14} />
+//                         View
+//                       </button>
+//                     </Link>
+
+//                     <button
+//                       disabled={deletingId === district._id}
+//                       onClick={() => setDeleteConfirm(district._id)}
+//                       className="w-full bg-red-50 text-red-600 text-xs sm:text-sm py-2 px-3 rounded-md border border-transparent hover:bg-red-100 hover:border-red-200 transition-all duration-200 flex items-center justify-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+//                     >
+//                       <Trash2 size={14} />
+//                       Delete
+//                     </button>
+//                   </div>
+//                 </div>
+//               </div>
+//             ))}
+//           </div>
+//         )}
+//       </Card>
+
+//       <ConfirmDialog
+//         open={!!deleteConfirm}
+//         onClose={() => setDeleteConfirm(null)}
+//         onConfirm={() => handleDelete(deleteConfirm)}
+//         title="Delete District"
+//         message="Are you sure you want to delete this district? This will also affect all associated panchayats."
+//         confirmText="Delete"
+//         cancelText="Cancel"
+//         confirmColor="error"
+//         icon={<Trash2 size={24} color="#144ae9" />}
+//         loading={deletingId === deleteConfirm}
+//       />
+//     </Box>
+//   );
+// }
 'use client'
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchAllAdmins, deleteAdmin, updateAdminStatus, clearError, clearSuccess, clearCache } from '@/redux/slices/adminSlice';
+import { fetchAllAdmins, deleteAdmin, clearError, clearSuccess, clearCache } from '@/redux/slices/adminSlice';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -17,7 +379,8 @@ import {
   XCircle,
   Eye,
   Mail,
-  Phone
+  Phone,
+  User
 } from 'lucide-react';
 import Loader from '@/components/ui/Loader';
 import Button from '@/components/ui/Button';
@@ -31,26 +394,28 @@ export default function AllAdminsPage() {
   const dispatch = useDispatch();
   const router = useRouter();
   const { admins, stats, loading, error, success } = useSelector((state) => state.admin);
-
+  
   const [filters, setFilters] = useState({
     role: '',
     status: '',
     search: ''
   });
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const [imageErrors, setImageErrors] = useState({});
+  const [isPageLoading, setIsPageLoading] = useState(true);
 
-  // Always fetch data when component mounts
   useEffect(() => {
-    dispatch(fetchAllAdmins({}));
+    dispatch(fetchAllAdmins({ forceRefresh: true })).finally(() => {
+      setIsPageLoading(false);
+    });
   }, [dispatch]);
 
-  // Handle success/error messages and refetch when success occurs
   useEffect(() => {
     if (success) {
       toast.success('Action completed successfully!');
       dispatch(clearSuccess());
       
-      // Clear cache and refetch data after successful action
       dispatch(clearCache());
       const params = {};
       if (filters.role) params.role = filters.role;
@@ -64,30 +429,60 @@ export default function AllAdminsPage() {
     }
   }, [success, error, dispatch, filters.role, filters.status, filters.search]);
 
-  const handleSearch = () => {
+  const handleSearch = useCallback(() => {
     const params = {};
     if (filters.role) params.role = filters.role;
     if (filters.status) params.status = filters.status;
     if (filters.search) params.search = filters.search;
     dispatch(fetchAllAdmins(params));
-  };
+  }, [filters, dispatch]);
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setFilters({ role: '', status: '', search: '' });
     dispatch(fetchAllAdmins({}));
-  };
+  }, [dispatch]);
 
-  const handleDelete = async (id) => {
+  const handleDelete = useCallback(async (id) => {
     try {
+      setDeletingId(id);
       await dispatch(deleteAdmin(id)).unwrap();
+      toast.success('User deleted successfully');
       setDeleteConfirm(null);
     } catch (err) {
-      console.error(err);
+      toast.error(err.message || 'Failed to delete user');
+    } finally {
+      setDeletingId(null);
     }
-  };
+  }, [dispatch]);
 
   const handleRowClick = (id) => {
     router.push(`/admin/users/${id}`);
+  };
+
+  const handleImageError = (adminId) => {
+    setImageErrors(prev => ({
+      ...prev,
+      [adminId]: true
+    }));
+  };
+
+  const renderProfileImage = (admin) => {
+    if (imageErrors[admin._id] || !admin.profileImage) {
+      return (
+        <div className="w-9 h-9 rounded-full bg-[#1348e8] flex items-center justify-center text-white font-bold flex-shrink-0 text-sm">
+          {admin.name ? admin.name.charAt(0).toUpperCase() : <User size={16} />}
+        </div>
+      );
+    }
+    
+    return (
+      <img
+        src={admin.profileImage}
+        alt={admin.name}
+        className="w-9 h-9 rounded-full object-cover flex-shrink-0 border border-gray-300"
+        onError={() => handleImageError(admin._id)}
+      />
+    );
   };
 
   const roleOptions = [
@@ -104,14 +499,21 @@ export default function AllAdminsPage() {
 
   return (
     <div>
-      {loading && (
+      {/* Only show loading loader when page is initially loading AND not deleting */}
+      {isPageLoading && !deletingId && (
         <div className="fixed inset-0 z-[9999]">
           <Loader message={"Loading Users..."} />
         </div>
       )}
 
+      {/* Show deleting loader with highest priority */}
+      {deletingId && (
+        <div className="fixed inset-0 z-[10000]">
+          <Loader message={"Deleting User..."} />
+        </div>
+      )}
+
       <div className="p-4 md:p-6">
-        {/* HEADER */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
             <div className="flex items-center gap-3 mb-2">
@@ -140,7 +542,6 @@ export default function AllAdminsPage() {
           </Link>
         </div>
 
-        {/* STATS */}
         {stats && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <StatCard 
@@ -164,10 +565,8 @@ export default function AllAdminsPage() {
           </div>
         )}
 
-        {/* FILTERS */}
         <Card className="p-4 sm:p-6 border border-gray-200 mb-8">
           <div className="flex flex-col sm:flex-row gap-4 items-center flex-wrap">
-            {/* SEARCH FIELD */}
             <div className="flex-1 min-w-full sm:min-w-[200px] flex items-center">
               <TextField
                 label="Search"
@@ -185,7 +584,6 @@ export default function AllAdminsPage() {
               />
             </div>
 
-            {/* ROLE FILTER */}
             <div className="w-full sm:w-[180px] flex items-center">
               <SelectField
                 label="Role"
@@ -201,7 +599,6 @@ export default function AllAdminsPage() {
               />
             </div>
 
-            {/* STATUS FILTER */}
             <div className="w-full sm:w-[180px] flex items-center">
               <SelectField
                 label="Status"
@@ -217,12 +614,11 @@ export default function AllAdminsPage() {
               />
             </div>
 
-            {/* BUTTONS */}
             <div className="w-full sm:w-auto flex items-center mt-2 sm:mt-0">
               <div className="flex gap-2 flex-row w-full sm:w-auto">
                 <Button
                   onClick={handleSearch}
-                  disabled={loading}
+                  disabled={loading || deletingId}
                   startIcon={<Filter size={18} />}
                   size="large"
                   sx={{
@@ -248,6 +644,7 @@ export default function AllAdminsPage() {
                 <Button
                   variant="outlined"
                   onClick={handleReset}
+                  disabled={deletingId}
                   size="large"
                   sx={{
                     borderColor: '#1348e8',
@@ -260,6 +657,10 @@ export default function AllAdminsPage() {
                       backgroundColor: 'rgba(19, 72, 232, 0.06)',
                       color: '#0d3ec7'
                     },
+                    '&.Mui-disabled': {
+                      borderColor: '#144ae950',
+                      color: '#144ae950'
+                    },
                     fontSize: '0.875rem',
                     whiteSpace: 'nowrap'
                   }}
@@ -271,9 +672,8 @@ export default function AllAdminsPage() {
           </div>
         </Card>
 
-        {/* USERS TABLE CONTAINER */}
         <Card className="border border-gray-200">
-          {admins.length === 0 && !loading ? (
+          {admins.length === 0 && !isPageLoading ? (
             <div className="text-center py-16">
               <Users size={48} className="text-gray-400 mb-4 mx-auto" />
               <p className="text-gray-600">
@@ -283,7 +683,6 @@ export default function AllAdminsPage() {
           ) : (
             <div className="overflow-x-auto">
               <div className="min-w-[900px]">
-                {/* TABLE HEADER */}
                 <div className="grid grid-cols-12 gap-4 px-4 py-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-700">
                   <div className="col-span-3 font-semibold text-lg">User Info</div>
                   <div className="col-span-2 font-semibold text-lg">Role & Status</div>
@@ -292,18 +691,24 @@ export default function AllAdminsPage() {
                   <div className="col-span-2 font-semibold text-lg">Actions</div>
                 </div>
 
-                {/* TABLE ROWS */}
                 <div className="max-h-[500px] overflow-y-auto">
                   {admins.map((admin) => (
                     <div
                       key={admin._id}
-                      className="grid grid-cols-12 gap-4 px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors min-h-[65px] items-center"
+                      className={`grid grid-cols-12 gap-4 px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors min-h-[65px] items-center ${
+                        deletingId === admin._id ? 'opacity-60' : ''
+                      }`}
                       onClick={() => handleRowClick(admin._id)}
                     >
-                      {/* USER INFO */}
+                      {deletingId === admin._id && (
+                        <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
+                          <span className="text-[#1348e8] font-semibold text-sm">Deleting...</span>
+                        </div>
+                      )}
+
                       <div className="col-span-3 flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-[#1348e8] flex items-center justify-center text-white font-bold flex-shrink-0 text-sm">
-                          {admin.name.charAt(0).toUpperCase()}
+                        <div className="relative">
+                          {renderProfileImage(admin)}
                         </div>
                         <div className="min-w-0">
                           <h3 className="text-sm font-semibold text-gray-900 truncate">
@@ -315,7 +720,6 @@ export default function AllAdminsPage() {
                         </div>
                       </div>
 
-                      {/* ROLE & STATUS */}
                       <div className="col-span-2 flex items-center gap-2">
                         <span className={`px-2 py-1 rounded text-xs font-semibold text-white ${
                           admin.role === 'admin' ? 'bg-purple-600' : 'bg-blue-600'
@@ -330,7 +734,6 @@ export default function AllAdminsPage() {
                         </span>
                       </div>
 
-                      {/* CONTACT INFO */}
                       <div className="col-span-3 flex flex-col gap-1">
                         <div className="flex items-center gap-2">
                           <Mail size={12} className="text-gray-500 flex-shrink-0" />
@@ -346,14 +749,12 @@ export default function AllAdminsPage() {
                         </div>
                       </div>
 
-                      {/* LAST LOGIN */}
                       <div className="col-span-2">
                         <span className="text-xs text-gray-600 font-medium">
                           {admin.lastLogin ? new Date(admin.lastLogin).toLocaleDateString() : 'Never'}
                         </span>
                       </div>
 
-                      {/* ACTIONS */}
                       <div className="col-span-2 flex gap-1" onClick={(e) => e.stopPropagation()}>
                         <Link href={`/admin/users/${admin._id}`} className="no-underline">
                           <button className="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded transition-colors border border-gray-300">
@@ -366,8 +767,9 @@ export default function AllAdminsPage() {
                           </button>
                         </Link>
                         <button 
-                          className="w-7 h-7 flex items-center justify-center text-red-600 hover:bg-red-50 rounded transition-colors border border-gray-300"
+                          className="w-7 h-7 flex items-center justify-center text-red-600 hover:bg-red-50 rounded transition-colors border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                           onClick={() => setDeleteConfirm(admin._id)}
+                          disabled={deletingId === admin._id}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -380,7 +782,6 @@ export default function AllAdminsPage() {
           )}
         </Card>
 
-        {/* DELETE CONFIRMATION */}
         <ConfirmDialog
           open={!!deleteConfirm}
           onClose={() => setDeleteConfirm(null)}
@@ -391,11 +792,862 @@ export default function AllAdminsPage() {
           cancelText="Cancel"
           confirmColor="error"
           icon={<Trash2 size={24} color="#1348e8" />}
+          loading={deletingId === deleteConfirm}
         />
       </div>
     </div>
   );
 }
+
+
+
+// 'use client'
+// import { useEffect, useState, useCallback } from 'react';
+// import { useDispatch, useSelector } from 'react-redux';
+// import { fetchAllAdmins, deleteAdmin, clearError, clearSuccess, clearCache } from '@/redux/slices/adminSlice';
+// import { toast } from 'react-toastify';
+// import Link from 'next/link';
+// import { useRouter } from 'next/navigation';
+// import {
+//   Users,
+//   Plus,
+//   Search,
+//   Filter,
+//   Edit,
+//   Trash2,
+//   UserCog,
+//   CheckCircle,
+//   XCircle,
+//   Eye,
+//   Mail,
+//   Phone,
+//   User
+// } from 'lucide-react';
+// import Loader from '@/components/ui/Loader';
+// import Button from '@/components/ui/Button';
+// import Card from '@/components/ui/Card';
+// import TextField from '@/components/ui/TextField';
+// import SelectField from '@/components/ui/SelectField';
+// import StatCard from '@/components/ui/StatCard';
+// import ConfirmDialog from '@/components/ui/ConfirmDialog';
+
+// export default function AllAdminsPage() {
+//   const dispatch = useDispatch();
+//   const router = useRouter();
+//   const { admins, stats, loading, error, success } = useSelector((state) => state.admin);
+  
+//   const [filters, setFilters] = useState({
+//     role: '',
+//     status: '',
+//     search: ''
+//   });
+//   const [deleteConfirm, setDeleteConfirm] = useState(null);
+//   const [deletingId, setDeletingId] = useState(null);
+//   const [imageErrors, setImageErrors] = useState({});
+
+//   // Always fetch data when component mounts
+//   useEffect(() => {
+//     dispatch(fetchAllAdmins({}));
+//   }, [dispatch]);
+
+//   // Handle success/error messages and refetch when success occurs
+//   useEffect(() => {
+//     if (success) {
+//       toast.success('Action completed successfully!');
+//       dispatch(clearSuccess());
+      
+//       // Clear cache and refetch data after successful action
+//       dispatch(clearCache());
+//       const params = {};
+//       if (filters.role) params.role = filters.role;
+//       if (filters.status) params.status = filters.status;
+//       if (filters.search) params.search = filters.search;
+//       dispatch(fetchAllAdmins(params));
+//     }
+//     if (error) {
+//       toast.error(error.message || 'Something went wrong');
+//       dispatch(clearError());
+//     }
+//   }, [success, error, dispatch, filters.role, filters.status, filters.search]);
+
+//   const handleSearch = useCallback(() => {
+//     const params = {};
+//     if (filters.role) params.role = filters.role;
+//     if (filters.status) params.status = filters.status;
+//     if (filters.search) params.search = filters.search;
+//     dispatch(fetchAllAdmins(params));
+//   }, [filters, dispatch]);
+
+//   const handleReset = useCallback(() => {
+//     setFilters({ role: '', status: '', search: '' });
+//     dispatch(fetchAllAdmins({}));
+//   }, [dispatch]);
+
+//   const handleDelete = useCallback(async (id) => {
+//     try {
+//       setDeletingId(id);
+//       await dispatch(deleteAdmin(id)).unwrap();
+//       toast.success('User deleted successfully');
+//       setDeleteConfirm(null);
+//     } catch (err) {
+//       toast.error(err.message || 'Failed to delete user');
+//     } finally {
+//       setDeletingId(null);
+//     }
+//   }, [dispatch]);
+
+//   const handleRowClick = (id) => {
+//     router.push(`/admin/users/${id}`);
+//   };
+
+//   // Handle image loading errors
+//   const handleImageError = (adminId) => {
+//     setImageErrors(prev => ({
+//       ...prev,
+//       [adminId]: true
+//     }));
+//   };
+
+//   // Function to render profile image or fallback
+//   const renderProfileImage = (admin) => {
+//     // If image has error or no profile image, show fallback
+//     if (imageErrors[admin._id] || !admin.profileImage) {
+//       return (
+//         <div className="w-9 h-9 rounded-full bg-[#1348e8] flex items-center justify-center text-white font-bold flex-shrink-0 text-sm">
+//           {admin.name ? admin.name.charAt(0).toUpperCase() : <User size={16} />}
+//         </div>
+//       );
+//     }
+    
+//     // Show profile image using img tag
+//     return (
+//       <img
+//         src={admin.profileImage}
+//         alt={admin.name}
+//         className="w-9 h-9 rounded-full object-cover flex-shrink-0 border border-gray-300"
+//         onError={() => handleImageError(admin._id)}
+//       />
+//     );
+//   };
+
+//   const roleOptions = [
+//     { value: '', label: 'All Roles' },
+//     { value: 'admin', label: 'Admin' },
+//     { value: 'rtc', label: 'RTC' }
+//   ];
+
+//   const statusOptions = [
+//     { value: '', label: 'All Status' },
+//     { value: 'active', label: 'Active' },
+//     { value: 'inactive', label: 'Inactive' }
+//   ];
+
+//   return (
+//     <div>
+//       {/* Show global loader when deleting */}
+//       {deletingId && (
+//         <div className="fixed inset-0 z-[9999]">
+//           <Loader message={"Deleting User..."} />
+//         </div>
+//       )}
+
+//       <div className="p-4 md:p-6">
+//         {/* HEADER */}
+//         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+//           <div>
+//             <div className="flex items-center gap-3 mb-2">
+//               <Users size={28} className="text-[#1348e8]" />
+//               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+//                 Users Management ({stats?.activeCount || 0})
+//               </h1>
+//             </div>
+//             <p className="text-sm text-gray-600">
+//               Manage admins and RTCs
+//             </p>
+//           </div>
+//           <Link href="/admin/users/create" className="no-underline">
+//             <Button 
+//               startIcon={<Plus size={20} />} 
+//               size="large"
+//               sx={{ 
+//                 backgroundColor: '#1348e8',
+//                 '&:hover': {
+//                   backgroundColor: '#0d3ec7'
+//                 }
+//               }}
+//             >
+//               Add New User
+//             </Button>
+//           </Link>
+//         </div>
+
+//         {/* STATS */}
+//         {stats && (
+//           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+//             <StatCard 
+//               label="Total Admins" 
+//               value={stats.totalAdmins || 0}
+//               icon={<UserCog size={28} />}
+//               color="#1348e8"
+//             />
+//             <StatCard 
+//               label="Total RTCs" 
+//               value={stats.totalRTCs || 0}
+//               icon={<Users size={28} />}
+//               color="#1348e8"
+//             />
+//             <StatCard 
+//               label="Active Users" 
+//               value={stats.activeCount || 0}
+//               icon={<CheckCircle size={28} />}
+//               color="#1348e8"
+//             />
+//           </div>
+//         )}
+
+//         {/* FILTERS */}
+//         <Card className="p-4 sm:p-6 border border-gray-200 mb-8">
+//           <div className="flex flex-col sm:flex-row gap-4 items-center flex-wrap">
+//             {/* SEARCH FIELD */}
+//             <div className="flex-1 min-w-full sm:min-w-[200px] flex items-center">
+//               <TextField
+//                 label="Search"
+//                 value={filters.search}
+//                 onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+//                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+//                 placeholder="Search by name, email, or employee ID..."
+//                 startIcon={<Search size={20} className="text-gray-600" />}
+//                 fullWidth
+//                 sx={{
+//                   '& .MuiInputBase-root': {
+//                     height: '56px'
+//                   }
+//                 }}
+//               />
+//             </div>
+
+//             {/* ROLE FILTER */}
+//             <div className="w-full sm:w-[180px] flex items-center">
+//               <SelectField
+//                 label="Role"
+//                 value={filters.role}
+//                 onChange={(e) => setFilters({ ...filters, role: e.target.value })}
+//                 options={roleOptions}
+//                 fullWidth
+//                 sx={{
+//                   '& .MuiInputBase-root': {
+//                     height: '56px'
+//                   }
+//                 }}
+//               />
+//             </div>
+
+//             {/* STATUS FILTER */}
+//             <div className="w-full sm:w-[180px] flex items-center">
+//               <SelectField
+//                 label="Status"
+//                 value={filters.status}
+//                 onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+//                 options={statusOptions}
+//                 fullWidth
+//                 sx={{
+//                   '& .MuiInputBase-root': {
+//                     height: '56px'
+//                   }
+//                 }}
+//               />
+//             </div>
+
+//             {/* BUTTONS */}
+//             <div className="w-full sm:w-auto flex items-center mt-2 sm:mt-0">
+//               <div className="flex gap-2 flex-row w-full sm:w-auto">
+//                 <Button
+//                   onClick={handleSearch}
+//                   disabled={loading}
+//                   startIcon={<Filter size={18} />}
+//                   size="large"
+//                   sx={{
+//                     backgroundColor: '#1348e8',
+//                     color: 'white',
+//                     height: '56px',
+//                     minWidth: '120px',
+//                     width: '120px',
+//                     '&:hover': {
+//                       backgroundColor: '#0d3ec7',
+//                       color: 'white'
+//                     },
+//                     '&.Mui-disabled': {
+//                       backgroundColor: 'rgba(19, 72, 232, 0.3)',
+//                       color: 'white'
+//                     },
+//                     fontSize: '0.875rem',
+//                     whiteSpace: 'nowrap'
+//                   }}
+//                 >
+//                   Apply
+//                 </Button>
+//                 <Button
+//                   variant="outlined"
+//                   onClick={handleReset}
+//                   size="large"
+//                   sx={{
+//                     borderColor: '#1348e8',
+//                     color: '#1348e8',
+//                     height: '56px',
+//                     minWidth: '120px',
+//                     width: '120px',
+//                     '&:hover': {
+//                       borderColor: '#0d3ec7',
+//                       backgroundColor: 'rgba(19, 72, 232, 0.06)',
+//                       color: '#0d3ec7'
+//                     },
+//                     fontSize: '0.875rem',
+//                     whiteSpace: 'nowrap'
+//                   }}
+//                 >
+//                   Reset
+//                 </Button>
+//               </div>
+//             </div>
+//           </div>
+//         </Card>
+
+//         {/* USERS TABLE CONTAINER */}
+//         <Card className="border border-gray-200">
+//           {admins.length === 0 && !loading ? (
+//             <div className="text-center py-16">
+//               <Users size={48} className="text-gray-400 mb-4 mx-auto" />
+//               <p className="text-gray-600">
+//                 No users found
+//               </p>
+//             </div>
+//           ) : (
+//             <div className="overflow-x-auto">
+//               <div className="min-w-[900px]">
+//                 {/* TABLE HEADER */}
+//                 <div className="grid grid-cols-12 gap-4 px-4 py-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-700">
+//                   <div className="col-span-3 font-semibold text-lg">User Info</div>
+//                   <div className="col-span-2 font-semibold text-lg">Role & Status</div>
+//                   <div className="col-span-3 font-semibold text-lg">Contact Info</div>
+//                   <div className="col-span-2 font-semibold text-lg">Last Login</div>
+//                   <div className="col-span-2 font-semibold text-lg">Actions</div>
+//                 </div>
+
+//                 {/* TABLE ROWS */}
+//                 <div className="max-h-[500px] overflow-y-auto">
+//                   {admins.map((admin) => (
+//                     <div
+//                       key={admin._id}
+//                       className={`grid grid-cols-12 gap-4 px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors min-h-[65px] items-center ${
+//                         deletingId === admin._id ? 'opacity-60' : ''
+//                       }`}
+//                       onClick={() => handleRowClick(admin._id)}
+//                     >
+//                       {/* Deleting Overlay */}
+//                       {deletingId === admin._id && (
+//                         <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
+//                           <span className="text-[#1348e8] font-semibold text-sm">Deleting...</span>
+//                         </div>
+//                       )}
+
+//                       {/* USER INFO */}
+//                       <div className="col-span-3 flex items-center gap-3">
+//                         <div className="relative">
+//                           {renderProfileImage(admin)}
+//                         </div>
+//                         <div className="min-w-0">
+//                           <h3 className="text-sm font-semibold text-gray-900 truncate">
+//                             {admin.name}
+//                           </h3>
+//                           <p className="text-xs text-gray-500 truncate">
+//                             {admin.employeeId || 'N/A'}
+//                           </p>
+//                         </div>
+//                       </div>
+
+//                       {/* ROLE & STATUS */}
+//                       <div className="col-span-2 flex items-center gap-2">
+//                         <span className={`px-2 py-1 rounded text-xs font-semibold text-white ${
+//                           admin.role === 'admin' ? 'bg-purple-600' : 'bg-blue-600'
+//                         }`}>
+//                           {admin.role.toUpperCase()}
+//                         </span>
+//                         <span className={`px-2 py-1 rounded text-xs font-semibold text-white flex items-center gap-1 ${
+//                           admin.status === 'active' ? 'bg-green-600' : 'bg-red-600'
+//                         }`}>
+//                           {admin.status === 'active' ? <CheckCircle size={10} /> : <XCircle size={10} />}
+//                           <span className="capitalize">{admin.status}</span>
+//                         </span>
+//                       </div>
+
+//                       {/* CONTACT INFO */}
+//                       <div className="col-span-3 flex flex-col gap-1">
+//                         <div className="flex items-center gap-2">
+//                           <Mail size={12} className="text-gray-500 flex-shrink-0" />
+//                           <span className="text-xs text-gray-600 truncate">
+//                             {admin.email}
+//                           </span>
+//                         </div>
+//                         <div className="flex items-center gap-2">
+//                           <Phone size={12} className="text-gray-500 flex-shrink-0" />
+//                           <span className="text-xs text-gray-600 truncate">
+//                             {admin.phone}
+//                           </span>
+//                         </div>
+//                       </div>
+
+//                       {/* LAST LOGIN */}
+//                       <div className="col-span-2">
+//                         <span className="text-xs text-gray-600 font-medium">
+//                           {admin.lastLogin ? new Date(admin.lastLogin).toLocaleDateString() : 'Never'}
+//                         </span>
+//                       </div>
+
+//                       {/* ACTIONS */}
+//                       <div className="col-span-2 flex gap-1" onClick={(e) => e.stopPropagation()}>
+//                         <Link href={`/admin/users/${admin._id}`} className="no-underline">
+//                           <button className="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded transition-colors border border-gray-300">
+//                             <Eye size={14} />
+//                           </button>
+//                         </Link>
+//                         <Link href={`/admin/users/${admin._id}`} className="no-underline">
+//                           <button className="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded transition-colors border border-gray-300">
+//                             <Edit size={14} />
+//                           </button>
+//                         </Link>
+//                         <button 
+//                           className="w-7 h-7 flex items-center justify-center text-red-600 hover:bg-red-50 rounded transition-colors border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+//                           onClick={() => setDeleteConfirm(admin._id)}
+//                           disabled={deletingId === admin._id}
+//                         >
+//                           <Trash2 size={14} />
+//                         </button>
+//                       </div>
+//                     </div>
+//                   ))}
+//                 </div>
+//               </div>
+//             </div>
+//           )}
+//         </Card>
+
+//         {/* DELETE CONFIRMATION */}
+//         <ConfirmDialog
+//           open={!!deleteConfirm}
+//           onClose={() => setDeleteConfirm(null)}
+//           onConfirm={() => handleDelete(deleteConfirm)}
+//           title="Delete User"
+//           message="Are you sure you want to delete this user? This action cannot be undone."
+//           confirmText="Delete"
+//           cancelText="Cancel"
+//           confirmColor="error"
+//           icon={<Trash2 size={24} color="#1348e8" />}
+//           loading={deletingId === deleteConfirm}
+//         />
+//       </div>
+//     </div>
+//   );
+// }
+
+
+// 'use client'
+// import { useEffect, useState } from 'react';
+// import { useDispatch, useSelector } from 'react-redux';
+// import { fetchAllAdmins, deleteAdmin, updateAdminStatus, clearError, clearSuccess, clearCache } from '@/redux/slices/adminSlice';
+// import { toast } from 'react-toastify';
+// import Link from 'next/link';
+// import { useRouter } from 'next/navigation';
+// import {
+//   Users,
+//   Plus,
+//   Search,
+//   Filter,
+//   Edit,
+//   Trash2,
+//   UserCog,
+//   CheckCircle,
+//   XCircle,
+//   Eye,
+//   Mail,
+//   Phone
+// } from 'lucide-react';
+// import Loader from '@/components/ui/Loader';
+// import Button from '@/components/ui/Button';
+// import Card from '@/components/ui/Card';
+// import TextField from '@/components/ui/TextField';
+// import SelectField from '@/components/ui/SelectField';
+// import StatCard from '@/components/ui/StatCard';
+// import ConfirmDialog from '@/components/ui/ConfirmDialog';
+
+// export default function AllAdminsPage() {
+//   const dispatch = useDispatch();
+//   const router = useRouter();
+//   const { admins, stats, loading, error, success } = useSelector((state) => state.admin);
+
+//   const [filters, setFilters] = useState({
+//     role: '',
+//     status: '',
+//     search: ''
+//   });
+//   const [deleteConfirm, setDeleteConfirm] = useState(null);
+
+//   // Always fetch data when component mounts
+//   useEffect(() => {
+//     dispatch(fetchAllAdmins({}));
+//   }, [dispatch]);
+
+//   // Handle success/error messages and refetch when success occurs
+//   useEffect(() => {
+//     if (success) {
+//       toast.success('Action completed successfully!');
+//       dispatch(clearSuccess());
+      
+//       // Clear cache and refetch data after successful action
+//       dispatch(clearCache());
+//       const params = {};
+//       if (filters.role) params.role = filters.role;
+//       if (filters.status) params.status = filters.status;
+//       if (filters.search) params.search = filters.search;
+//       dispatch(fetchAllAdmins(params));
+//     }
+//     if (error) {
+//       toast.error(error.message || 'Something went wrong');
+//       dispatch(clearError());
+//     }
+//   }, [success, error, dispatch, filters.role, filters.status, filters.search]);
+
+//   const handleSearch = () => {
+//     const params = {};
+//     if (filters.role) params.role = filters.role;
+//     if (filters.status) params.status = filters.status;
+//     if (filters.search) params.search = filters.search;
+//     dispatch(fetchAllAdmins(params));
+//   };
+
+//   const handleReset = () => {
+//     setFilters({ role: '', status: '', search: '' });
+//     dispatch(fetchAllAdmins({}));
+//   };
+
+//   const handleDelete = async (id) => {
+//     try {
+//       await dispatch(deleteAdmin(id)).unwrap();
+//       setDeleteConfirm(null);
+//     } catch (err) {
+//       console.error(err);
+//     }
+//   };
+
+//   const handleRowClick = (id) => {
+//     router.push(`/admin/users/${id}`);
+//   };
+
+//   const roleOptions = [
+//     { value: '', label: 'All Roles' },
+//     { value: 'admin', label: 'Admin' },
+//     { value: 'rtc', label: 'RTC' }
+//   ];
+
+//   const statusOptions = [
+//     { value: '', label: 'All Status' },
+//     { value: 'active', label: 'Active' },
+//     { value: 'inactive', label: 'Inactive' }
+//   ];
+
+//   return (
+//     <div>
+//       {loading && (
+//         <div className="fixed inset-0 z-[9999]">
+//           <Loader message={"Loading Users..."} />
+//         </div>
+//       )}
+
+//       <div className="p-4 md:p-6">
+//         {/* HEADER */}
+//         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+//           <div>
+//             <div className="flex items-center gap-3 mb-2">
+//               <Users size={28} className="text-[#1348e8]" />
+//               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+//                 Users Management ({stats?.activeCount || 0})
+//               </h1>
+//             </div>
+//             <p className="text-sm text-gray-600">
+//               Manage admins and RTCs
+//             </p>
+//           </div>
+//           <Link href="/admin/users/create" className="no-underline">
+//             <Button 
+//               startIcon={<Plus size={20} />} 
+//               size="large"
+//               sx={{ 
+//                 backgroundColor: '#1348e8',
+//                 '&:hover': {
+//                   backgroundColor: '#0d3ec7'
+//                 }
+//               }}
+//             >
+//               Add New User
+//             </Button>
+//           </Link>
+//         </div>
+
+//         {/* STATS */}
+//         {stats && (
+//           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+//             <StatCard 
+//               label="Total Admins" 
+//               value={stats.totalAdmins || 0}
+//               icon={<UserCog size={28} />}
+//               color="#1348e8"
+//             />
+//             <StatCard 
+//               label="Total RTCs" 
+//               value={stats.totalRTCs || 0}
+//               icon={<Users size={28} />}
+//               color="#1348e8"
+//             />
+//             <StatCard 
+//               label="Active Users" 
+//               value={stats.activeCount || 0}
+//               icon={<CheckCircle size={28} />}
+//               color="#1348e8"
+//             />
+//           </div>
+//         )}
+
+//         {/* FILTERS */}
+//         <Card className="p-4 sm:p-6 border border-gray-200 mb-8">
+//           <div className="flex flex-col sm:flex-row gap-4 items-center flex-wrap">
+//             {/* SEARCH FIELD */}
+//             <div className="flex-1 min-w-full sm:min-w-[200px] flex items-center">
+//               <TextField
+//                 label="Search"
+//                 value={filters.search}
+//                 onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+//                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+//                 placeholder="Search by name, email, or employee ID..."
+//                 startIcon={<Search size={20} className="text-gray-600" />}
+//                 fullWidth
+//                 sx={{
+//                   '& .MuiInputBase-root': {
+//                     height: '56px'
+//                   }
+//                 }}
+//               />
+//             </div>
+
+//             {/* ROLE FILTER */}
+//             <div className="w-full sm:w-[180px] flex items-center">
+//               <SelectField
+//                 label="Role"
+//                 value={filters.role}
+//                 onChange={(e) => setFilters({ ...filters, role: e.target.value })}
+//                 options={roleOptions}
+//                 fullWidth
+//                 sx={{
+//                   '& .MuiInputBase-root': {
+//                     height: '56px'
+//                   }
+//                 }}
+//               />
+//             </div>
+
+//             {/* STATUS FILTER */}
+//             <div className="w-full sm:w-[180px] flex items-center">
+//               <SelectField
+//                 label="Status"
+//                 value={filters.status}
+//                 onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+//                 options={statusOptions}
+//                 fullWidth
+//                 sx={{
+//                   '& .MuiInputBase-root': {
+//                     height: '56px'
+//                   }
+//                 }}
+//               />
+//             </div>
+
+//             {/* BUTTONS */}
+//             <div className="w-full sm:w-auto flex items-center mt-2 sm:mt-0">
+//               <div className="flex gap-2 flex-row w-full sm:w-auto">
+//                 <Button
+//                   onClick={handleSearch}
+//                   disabled={loading}
+//                   startIcon={<Filter size={18} />}
+//                   size="large"
+//                   sx={{
+//                     backgroundColor: '#1348e8',
+//                     color: 'white',
+//                     height: '56px',
+//                     minWidth: '120px',
+//                     width: '120px',
+//                     '&:hover': {
+//                       backgroundColor: '#0d3ec7',
+//                       color: 'white'
+//                     },
+//                     '&.Mui-disabled': {
+//                       backgroundColor: 'rgba(19, 72, 232, 0.3)',
+//                       color: 'white'
+//                     },
+//                     fontSize: '0.875rem',
+//                     whiteSpace: 'nowrap'
+//                   }}
+//                 >
+//                   Apply
+//                 </Button>
+//                 <Button
+//                   variant="outlined"
+//                   onClick={handleReset}
+//                   size="large"
+//                   sx={{
+//                     borderColor: '#1348e8',
+//                     color: '#1348e8',
+//                     height: '56px',
+//                     minWidth: '120px',
+//                     width: '120px',
+//                     '&:hover': {
+//                       borderColor: '#0d3ec7',
+//                       backgroundColor: 'rgba(19, 72, 232, 0.06)',
+//                       color: '#0d3ec7'
+//                     },
+//                     fontSize: '0.875rem',
+//                     whiteSpace: 'nowrap'
+//                   }}
+//                 >
+//                   Reset
+//                 </Button>
+//               </div>
+//             </div>
+//           </div>
+//         </Card>
+
+//         {/* USERS TABLE CONTAINER */}
+//         <Card className="border border-gray-200">
+//           {admins.length === 0 && !loading ? (
+//             <div className="text-center py-16">
+//               <Users size={48} className="text-gray-400 mb-4 mx-auto" />
+//               <p className="text-gray-600">
+//                 No users found
+//               </p>
+//             </div>
+//           ) : (
+//             <div className="overflow-x-auto">
+//               <div className="min-w-[900px]">
+//                 {/* TABLE HEADER */}
+//                 <div className="grid grid-cols-12 gap-4 px-4 py-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-700">
+//                   <div className="col-span-3 font-semibold text-lg">User Info</div>
+//                   <div className="col-span-2 font-semibold text-lg">Role & Status</div>
+//                   <div className="col-span-3 font-semibold text-lg">Contact Info</div>
+//                   <div className="col-span-2 font-semibold text-lg">Last Login</div>
+//                   <div className="col-span-2 font-semibold text-lg">Actions</div>
+//                 </div>
+
+//                 {/* TABLE ROWS */}
+//                 <div className="max-h-[500px] overflow-y-auto">
+//                   {admins.map((admin) => (
+//                     <div
+//                       key={admin._id}
+//                       className="grid grid-cols-12 gap-4 px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors min-h-[65px] items-center"
+//                       onClick={() => handleRowClick(admin._id)}
+//                     >
+//                       {/* USER INFO */}
+//                       <div className="col-span-3 flex items-center gap-3">
+//                         <div className="w-9 h-9 rounded-full bg-[#1348e8] flex items-center justify-center text-white font-bold flex-shrink-0 text-sm">
+//                           {admin.name.charAt(0).toUpperCase()}
+//                         </div>
+//                         <div className="min-w-0">
+//                           <h3 className="text-sm font-semibold text-gray-900 truncate">
+//                             {admin.name}
+//                           </h3>
+//                           <p className="text-xs text-gray-500 truncate">
+//                             {admin.employeeId || 'N/A'}
+//                           </p>
+//                         </div>
+//                       </div>
+
+//                       {/* ROLE & STATUS */}
+//                       <div className="col-span-2 flex items-center gap-2">
+//                         <span className={`px-2 py-1 rounded text-xs font-semibold text-white ${
+//                           admin.role === 'admin' ? 'bg-purple-600' : 'bg-blue-600'
+//                         }`}>
+//                           {admin.role.toUpperCase()}
+//                         </span>
+//                         <span className={`px-2 py-1 rounded text-xs font-semibold text-white flex items-center gap-1 ${
+//                           admin.status === 'active' ? 'bg-green-600' : 'bg-red-600'
+//                         }`}>
+//                           {admin.status === 'active' ? <CheckCircle size={10} /> : <XCircle size={10} />}
+//                           <span className="capitalize">{admin.status}</span>
+//                         </span>
+//                       </div>
+
+//                       {/* CONTACT INFO */}
+//                       <div className="col-span-3 flex flex-col gap-1">
+//                         <div className="flex items-center gap-2">
+//                           <Mail size={12} className="text-gray-500 flex-shrink-0" />
+//                           <span className="text-xs text-gray-600 truncate">
+//                             {admin.email}
+//                           </span>
+//                         </div>
+//                         <div className="flex items-center gap-2">
+//                           <Phone size={12} className="text-gray-500 flex-shrink-0" />
+//                           <span className="text-xs text-gray-600 truncate">
+//                             {admin.phone}
+//                           </span>
+//                         </div>
+//                       </div>
+
+//                       {/* LAST LOGIN */}
+//                       <div className="col-span-2">
+//                         <span className="text-xs text-gray-600 font-medium">
+//                           {admin.lastLogin ? new Date(admin.lastLogin).toLocaleDateString() : 'Never'}
+//                         </span>
+//                       </div>
+
+//                       {/* ACTIONS */}
+//                       <div className="col-span-2 flex gap-1" onClick={(e) => e.stopPropagation()}>
+//                         <Link href={`/admin/users/${admin._id}`} className="no-underline">
+//                           <button className="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded transition-colors border border-gray-300">
+//                             <Eye size={14} />
+//                           </button>
+//                         </Link>
+//                         <Link href={`/admin/users/${admin._id}`} className="no-underline">
+//                           <button className="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded transition-colors border border-gray-300">
+//                             <Edit size={14} />
+//                           </button>
+//                         </Link>
+//                         <button 
+//                           className="w-7 h-7 flex items-center justify-center text-red-600 hover:bg-red-50 rounded transition-colors border border-gray-300"
+//                           onClick={() => setDeleteConfirm(admin._id)}
+//                         >
+//                           <Trash2 size={14} />
+//                         </button>
+//                       </div>
+//                     </div>
+//                   ))}
+//                 </div>
+//               </div>
+//             </div>
+//           )}
+//         </Card>
+
+//         {/* DELETE CONFIRMATION */}
+//         <ConfirmDialog
+//           open={!!deleteConfirm}
+//           onClose={() => setDeleteConfirm(null)}
+//           onConfirm={() => handleDelete(deleteConfirm)}
+//           title="Delete User"
+//           message="Are you sure you want to delete this user? This action cannot be undone."
+//           confirmText="Delete"
+//           cancelText="Cancel"
+//           confirmColor="error"
+//           icon={<Trash2 size={24} color="#1348e8" />}
+//         />
+//       </div>
+//     </div>
+//   );
+// }
 
 // 'use client'
 // import { useEffect, useState } from 'react';

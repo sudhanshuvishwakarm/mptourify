@@ -277,19 +277,19 @@ const [tempPerson, setTempPerson] = useState({ name: '', achievement: '', descri
     setErrors({});
   };
 
-  const politicalHeadingOptions = [
-    { value: '', label: 'Select Heading' },
-    { value: 'Current Leadership', label: 'Current Leadership' },
-    { value: 'Political History', label: 'Political History' },
-    { value: 'Governing Structure', label: 'Governing Structure' },
-    { value: 'Major Achievements', label: 'Major Achievements' },
-    { value: 'Recent Developments', label: 'Recent Developments' },
-    { value: 'Election History', label: 'Election History' },
-    { value: 'Administrative Setup', label: 'Administrative Setup' },
-    { value: 'Future Plans', label: 'Future Plans' },
-    { value: 'Public Participation', label: 'Public Participation' },
-    { value: 'Key Challenges', label: 'Key Challenges' }
-  ];
+  // const politicalHeadingOptions = [
+  //   { value: '', label: 'Select Heading' },
+  //   { value: 'Current Leadership', label: 'Current Leadership' },
+  //   { value: 'Political History', label: 'Political History' },
+  //   { value: 'Governing Structure', label: 'Governing Structure' },
+  //   { value: 'Major Achievements', label: 'Major Achievements' },
+  //   { value: 'Recent Developments', label: 'Recent Developments' },
+  //   { value: 'Election History', label: 'Election History' },
+  //   { value: 'Administrative Setup', label: 'Administrative Setup' },
+  //   { value: 'Future Plans', label: 'Future Plans' },
+  //   { value: 'Public Participation', label: 'Public Participation' },
+  //   { value: 'Key Challenges', label: 'Key Challenges' }
+  // ];
 
   if (loading && !selectedPanchayat) return <div className="fixed inset-0 z-[9999]"><Loader message="Loading..." /></div>;
 
@@ -925,18 +925,18 @@ const [tempPerson, setTempPerson] = useState({ name: '', achievement: '', descri
                             <Trash2 size={18} />
                           </Button>
                         </div>
-                        <SelectField 
-                          label="Heading" 
-                          value={item.heading} 
-                          onChange={(e) => setFormData(prev => ({ ...prev, politicalOverview: prev.politicalOverview.map((po, idx) => idx === i ? { ...po, heading: e.target.value } : po) }))} 
-                          options={politicalHeadingOptions} 
-                          fullWidth 
-                          sx={{
-                            '& .MuiSelect-select': {
-                              fontSize: '0.9375rem'
-                            }
-                          }}
-                        />
+                       <TextField 
+  label="Heading *" 
+  value={item.heading} 
+  onChange={(e) => setFormData(prev => ({ ...prev, politicalOverview: prev.politicalOverview.map((po, idx) => idx === i ? { ...po, heading: e.target.value } : po) }))} 
+  placeholder="Enter custom heading (e.g., Current Leadership, Political History)"
+  fullWidth 
+  sx={{
+    '& .MuiOutlinedInput-input': {
+      fontSize: '0.9375rem'
+    }
+  }}
+/>
                         <TextField 
                           label="Description" 
                           value={item.description} 
@@ -1383,7 +1383,7 @@ const [tempPerson, setTempPerson] = useState({ name: '', achievement: '', descri
     </form>
   </div>
 </>);
-
+}
 //   return (
 //     <>
 //       {isSaving && <div className="fixed inset-0 z-[9999]"><Loader message="Saving..." /></div>}
@@ -1765,7 +1765,7 @@ const [tempPerson, setTempPerson] = useState({ name: '', achievement: '', descri
 //       </div>
 //     </>
 //   );
-}
+
 
 
 

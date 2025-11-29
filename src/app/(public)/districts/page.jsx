@@ -21,15 +21,15 @@ export default function MeraPradeshPage() {
   // Fetch districts data on component mount
   useEffect(() => {
     // Fetch districts if not already loaded or data is stale
-    if (districts.length === 0 || !lastFetched || Date.now() - lastFetched > 300000) { // 5 minutes
-      dispatch(fetchDistricts());
-    }
-    
-    // Fetch map coordinates specifically
-    if (mapDistricts.length === 0 || !mapLastFetched || Date.now() - mapLastFetched > 300000) {
-      dispatch(fetchMapCoordinates());
-    }
-  }, [dispatch, districts.length, lastFetched, mapDistricts.length, mapLastFetched]);
+  if (!lastFetched || Date.now() - lastFetched > 300000) {
+    dispatch(fetchDistricts());
+  }
+  
+  // Fetch map coordinates specifically
+  if (!mapLastFetched || Date.now() - mapLastFetched > 300000) {
+    dispatch(fetchMapCoordinates());
+  }
+  }, [dispatch, lastFetched, mapLastFetched]);
 
   // Filter districts based on search
   const filteredDistricts = districts.filter(district => {
@@ -588,6 +588,10 @@ export default function MeraPradeshPage() {
     </div>
   );
 }
+
+
+
+
 // 'use client';
 
 // import { useState, useEffect, useRef } from 'react';

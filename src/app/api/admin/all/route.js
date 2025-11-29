@@ -49,7 +49,7 @@ export async function GET(request) {
         // FETCH ALL ADMINS
         const admins = await Admin.find(query)
             .select('-password')
-            .populate('assignedDistricts', 'name')
+            .populate('assignedDistricts')
             .sort({ createdAt: -1 });
 
         // GET COUNTS

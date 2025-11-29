@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { updateProfile, clearError, clearSuccess } from '@/redux/slices/adminSlice';
+import { updateProfile, clearError, clearSuccess, getProfile, clearCache } from '@/redux/slices/adminSlice';
 import { toast } from 'react-toastify';
 import {
   User,
@@ -12,7 +12,12 @@ import {
   Save,
   Shield,   
   Calendar,
-  MapPin
+  MapPin,
+  Image as ImageIcon,
+  CloudUpload,
+  Link as LinkIcon,
+  X,
+  Trash2
 } from 'lucide-react';
 import { Box, Typography, Avatar, Chip } from '@mui/material';
 import Loader from '@/components/ui/Loader';
@@ -24,29 +29,46 @@ import StatusChip from '@/components/ui/StatusChip';
 export default function AdminProfilePage() {
   const dispatch = useDispatch();
   const { currentAdmin, loading, error, success } = useSelector((state) => state.admin);
-  
+  console.log('Current Admin:', currentAdmin);
   const [isEditing, setIsEditing] = useState(false);
+  const [uploadMethod, setUploadMethod] = useState('file');
+  const [file, setFile] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [deleteImage, setDeleteImage] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
     employeeId: '',
     designation: '',
+    profileImageUrl: '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
   const [errors, setErrors] = useState({});
 
+  // Fetch profile on mount
+  useEffect(() => {
+     dispatch(clearCache());
+    dispatch(getProfile());
+  }, [dispatch]);
+
   // POPULATE FORM WHEN ADMIN DATA LOADS
   useEffect(() => {
-    if (currentAdmin) {
-      setFormData(prev => ({
-        ...prev,
+    if (currentAdmin && currentAdmin.name) {
+      setFormData({
         name: currentAdmin.name || '',
         phone: currentAdmin.phone || '',
         employeeId: currentAdmin.employeeId || '',
-        designation: currentAdmin.designation || ''
-      }));
+        designation: currentAdmin.designation || '',
+        profileImageUrl: '',
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      setPreview(currentAdmin.profileImage || null);
     }
   }, [currentAdmin]);
 
@@ -56,8 +78,12 @@ export default function AdminProfilePage() {
       toast.success('Profile updated successfully!');
       dispatch(clearSuccess());
       setIsEditing(false);
+      setIsSaving(false);
+      setFile(null);
+      setDeleteImage(false);
       setFormData(prev => ({
         ...prev,
+        profileImageUrl: '',
         currentPassword: '',
         newPassword: '',
         confirmPassword: ''
@@ -66,9 +92,58 @@ export default function AdminProfilePage() {
     if (error) {
       toast.error(error.message || 'Failed to update profile');
       dispatch(clearError());
+      setIsSaving(false);
     }
   }, [success, error, dispatch]);
 
+  // IMAGE HANDLING FUNCTIONS
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    
+    if (selectedFile) {
+      const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      if (!validTypes.includes(selectedFile.type)) {
+        toast.error('Please select a valid image file (JPEG, PNG, WebP)');
+        return;
+      }
+
+      const maxSize = 10 * 1024 * 1024;
+      if (selectedFile.size > maxSize) {
+        toast.error('File size exceeds 10MB limit');
+        return;
+      }
+
+      setFile(selectedFile);
+      setDeleteImage(false);
+      
+      const reader = new FileReader();
+      reader.onload = (event) => setPreview(event.target.result);
+      reader.readAsDataURL(selectedFile);
+    }
+  };
+
+  const handleUrlChange = (url) => {
+    setFormData(prev => ({ ...prev, profileImageUrl: url }));
+    setPreview(url);
+    setDeleteImage(false);
+  };
+
+  const removeFile = () => {
+    setFile(null);
+    setPreview(currentAdmin?.profileImage || null);
+    if (uploadMethod === 'url') {
+      setFormData(prev => ({ ...prev, profileImageUrl: '' }));
+    }
+  };
+
+  const handleDeleteImage = () => {
+    setDeleteImage(true);
+    setFile(null);
+    setPreview(null);
+    setFormData(prev => ({ ...prev, profileImageUrl: '' }));
+  };
+
+  // VALIDATION
   const validateForm = () => {
     const newErrors = {};
 
@@ -94,6 +169,7 @@ export default function AdminProfilePage() {
     return Object.keys(newErrors).length === 0;
   };
 
+  // SUBMIT HANDLER
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) {
@@ -101,36 +177,108 @@ export default function AdminProfilePage() {
       return;
     }
 
-    const submitData = {
-      name: formData.name,
-      phone: formData.phone,
-      employeeId: formData.employeeId,
-      designation: formData.designation
-    };
+    setIsSaving(true);
+    
+    try {
+      // Create FormData for file upload or use JSON
+      if (uploadMethod === 'file' && (file || deleteImage)) {
+        const formDataToSubmit = new FormData();
+        
+        if (file) {
+          formDataToSubmit.append('profileImage', file);
+          formDataToSubmit.append('uploadMethod', 'file');
+        } else if (deleteImage) {
+          formDataToSubmit.append('deleteImage', 'true');
+        }
+        
+        formDataToSubmit.append('name', formData.name);
+        formDataToSubmit.append('phone', formData.phone);
+        formDataToSubmit.append('employeeId', formData.employeeId || '');
+        formDataToSubmit.append('designation', formData.designation || '');
+        
+        if (formData.newPassword) {
+          formDataToSubmit.append('currentPassword', formData.currentPassword);
+          formDataToSubmit.append('newPassword', formData.newPassword);
+        }
 
-    if (formData.newPassword) {
-      submitData.currentPassword = formData.currentPassword;
-      submitData.newPassword = formData.newPassword;
+        await dispatch(updateProfile(formDataToSubmit)).unwrap();
+      } else if (uploadMethod === 'url' && formData.profileImageUrl) {
+        const dataWithUrl = {
+          name: formData.name,
+          phone: formData.phone,
+          employeeId: formData.employeeId,
+          designation: formData.designation,
+          profileImage: formData.profileImageUrl,
+          uploadMethod: 'url'
+        };
+        
+        if (formData.newPassword) {
+          dataWithUrl.currentPassword = formData.currentPassword;
+          dataWithUrl.newPassword = formData.newPassword;
+        }
+        
+        await dispatch(updateProfile(dataWithUrl)).unwrap();
+      } else {
+        // No image change
+        const submitData = {
+          name: formData.name,
+          phone: formData.phone,
+          employeeId: formData.employeeId,
+          designation: formData.designation
+        };
+
+        if (formData.newPassword) {
+          submitData.currentPassword = formData.currentPassword;
+          submitData.newPassword = formData.newPassword;
+        }
+
+        await dispatch(updateProfile(submitData)).unwrap();
+      }
+    } catch (err) {
+      console.error(err);
+      setIsSaving(false);
     }
-
-    dispatch(updateProfile(submitData));
   };
 
+  // CANCEL HANDLER
   const handleCancel = () => {
     setIsEditing(false);
+    setIsSaving(false);
+    setFile(null);
+    setDeleteImage(false);
+    setUploadMethod('file');
     if (currentAdmin) {
       setFormData({
         name: currentAdmin.name || '',
         phone: currentAdmin.phone || '',
         employeeId: currentAdmin.employeeId || '',
         designation: currentAdmin.designation || '',
+        profileImageUrl: '',
         currentPassword: '',
         newPassword: '',
         confirmPassword: ''
       });
+      setPreview(currentAdmin.profileImage || null);
     }
     setErrors({});
   };
+
+  // Show loading only if saving or if we don't have the data yet
+  if (isSaving) {
+    return (
+      <div className="fixed inset-0 z-[9999]">
+        <Loader message={"Saving..."} />
+      </div>
+    );
+  }
+
+  if (!currentAdmin || !currentAdmin.name) {
+    return (
+      <div className="fixed inset-0 z-[9999]">
+        <Loader message={"Loading profile..."} />
+      </div>
+    );
+  }
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: '1200px', margin: '0 auto' }}>
@@ -155,23 +303,31 @@ export default function AdminProfilePage() {
           }}>
             {/* AVATAR */}
             <Box sx={{ textAlign: 'center', mb: 4 }}>
-              <Avatar sx={{ 
-                width: 96, 
-                height: 96, 
-                bgcolor: '#144ae9',
-                fontSize: '2.5rem',
-                fontWeight: 700,
-                mx: 'auto',
-                mb: 2
-              }}>
-                {currentAdmin?.name?.charAt(0).toUpperCase()}
-              </Avatar>
+              {preview ? (
+                <img
+                  src={preview}
+                  alt={currentAdmin?.name}
+                  className="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-4 border-blue-100"
+                />
+              ) : (
+               <Avatar sx={{ 
+  width: 96, 
+  height: 96, 
+  bgcolor: '#144ae9',
+  fontSize: '2.5rem',
+  fontWeight: 700,
+  mx: 'auto',
+  mb: 2
+}}>
+  {currentAdmin?.name?.charAt(0).toUpperCase() || 'U'}
+</Avatar>
+              )}
               <Typography variant="h5" fontWeight={600} color="text.primary">
-                {currentAdmin?.name}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                {currentAdmin?.email}
-              </Typography>
+  {currentAdmin?.name || 'Loading...'}
+</Typography>
+<Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+  {currentAdmin?.email || 'Loading...'}
+</Typography>
               <Chip
                 label={currentAdmin?.role?.toUpperCase()}
                 size="small"
@@ -243,6 +399,175 @@ export default function AdminProfilePage() {
         {/* EDIT FORM */}
         <Box sx={{ flex: 1 }}>
           <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            
+            {/* PROFILE IMAGE UPDATE SECTION */}
+            {isEditing && (
+              <Card sx={{ 
+                p: 4, 
+                border: '1px solid',
+                borderColor: '#144ae920',
+                backgroundColor: 'white'
+              }}>
+                <Typography variant="h5" fontWeight={600} color="text.primary" sx={{ mb: 4 }}>
+                  Update Profile Image
+                </Typography>
+                
+                {/* Current Image */}
+                {currentAdmin?.profileImage && !deleteImage && !file && (
+                  <div className="mb-4">
+                    <p className="text-sm text-gray-600 mb-2">Current Image:</p>
+                    <div className="flex items-center gap-4">
+                      <img
+                        src={currentAdmin.profileImage}
+                        alt="Current profile"
+                        className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+                      />
+                      <Button
+                        type="button"
+                        onClick={handleDeleteImage}
+                        startIcon={<Trash2 size={16} />}
+                        variant="outlined"
+                        sx={{
+                          borderColor: '#ef4444',
+                          color: '#ef4444',
+                          '&:hover': {
+                            borderColor: '#dc2626',
+                            backgroundColor: '#fef2f2'
+                          }
+                        }}
+                      >
+                        Remove Image
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Upload Method Selection */}
+                <div className="flex border-b border-gray-200 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUploadMethod('file');
+                      setFile(null);
+                      setFormData(prev => ({ ...prev, profileImageUrl: '' }));
+                      if (!deleteImage) {
+                        setPreview(currentAdmin?.profileImage);
+                      }
+                    }}
+                    className={`flex items-center gap-2 px-4 py-2 border-b-2 font-medium text-sm ${
+                      uploadMethod === 'file' 
+                        ? 'border-blue-600 text-blue-600' 
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    <CloudUpload size={18} />
+                    Upload File
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUploadMethod('url');
+                      setFile(null);
+                      setFormData(prev => ({ ...prev, profileImageUrl: '' }));
+                      if (!deleteImage) {
+                        setPreview(currentAdmin?.profileImage);
+                      }
+                    }}
+                    className={`flex items-center gap-2 px-4 py-2 border-b-2 font-medium text-sm ${
+                      uploadMethod === 'url' 
+                        ? 'border-blue-600 text-blue-600' 
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    <LinkIcon size={18} />
+                    Paste URL
+                  </button>
+                </div>
+
+                {uploadMethod === 'file' ? (
+                  <>
+                    {!file ? (
+                      <div
+                        className="border-2 border-dashed border-blue-600 rounded-lg p-6 text-center cursor-pointer bg-blue-50 hover:bg-blue-100 transition-colors"
+                        onClick={() => document.getElementById('profile-image-upload').click()}
+                      >
+                        <div className="w-20 h-20 mx-auto mb-3 rounded-full bg-blue-100 flex items-center justify-center">
+                          <User size={36} className="text-blue-600" />
+                        </div>
+                        <div className="text-lg font-semibold text-gray-900 mb-2">
+                          Click to upload new profile image
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          Supports JPG, PNG, WebP (Max 10MB)
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="border border-blue-200 rounded-lg p-4 bg-white">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <ImageIcon size={24} className="text-blue-600" />
+                            <div>
+                              <div className="font-semibold text-gray-900">
+                                {file.name}
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                {(file.size / (1024 * 1024)).toFixed(2)} MB
+                              </div>
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            onClick={removeFile}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <X size={18} />
+                          </Button>
+                        </div>
+                        
+                        <img
+                          src={preview}
+                          alt="New Profile Preview"
+                          className="w-32 h-32 object-cover rounded-full mx-auto border-4 border-blue-100"
+                        />
+                      </div>
+                    )}
+                    
+                    <input
+                      id="profile-image-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <TextField
+                      label="Profile Image URL"
+                      value={formData.profileImageUrl}
+                      onChange={(e) => handleUrlChange(e.target.value)}
+                      placeholder="https://example.com/profile-image.jpg"
+                      startIcon={<LinkIcon size={20} className="text-blue-600" />}
+                      fullWidth
+                    />
+                    {preview && formData.profileImageUrl && (
+                      <div className="mt-4 flex justify-center">
+                        <img
+                          src={preview}
+                          alt="URL Preview"
+                          className="w-32 h-32 object-cover rounded-full border-4 border-blue-100"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            toast.error('Invalid image URL');
+                          }}
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+              </Card>
+            )}
+
             {/* BASIC INFO */}
             <Card sx={{ 
               p: 4, 
@@ -260,8 +585,7 @@ export default function AdminProfilePage() {
                     sx={{ 
                       color: '#FFFFFF',
                       fontWeight: 600,
-                        backgroundColor: '#144ae9'
-                      
+                      backgroundColor: '#144ae9'
                     }}
                   >
                     Edit Profile
@@ -270,7 +594,6 @@ export default function AdminProfilePage() {
               </Box>
 
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {/* FIRST ROW */}
                 <Box sx={{ display: 'flex', gap: 4, flexDirection: { xs: 'column', md: 'row' } }}>
                   <TextField
                     label="Full Name *"
@@ -291,7 +614,6 @@ export default function AdminProfilePage() {
                   />
                 </Box>
 
-                {/* SECOND ROW */}
                 <Box sx={{ display: 'flex', gap: 4, flexDirection: { xs: 'column', md: 'row' } }}>
                   <TextField
                     label="Phone Number *"
@@ -314,7 +636,6 @@ export default function AdminProfilePage() {
                   />
                 </Box>
 
-                {/* DESIGNATION */}
                 <TextField
                   label="Designation"
                   value={formData.designation}
@@ -338,7 +659,6 @@ export default function AdminProfilePage() {
                 </Typography>
                 
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {/* CURRENT PASSWORD */}
                   <TextField
                     label="Current Password"
                     type="password"
@@ -350,7 +670,6 @@ export default function AdminProfilePage() {
                     fullWidth
                   />
 
-                  {/* NEW PASSWORDS */}
                   <Box sx={{ display: 'flex', gap: 4, flexDirection: { xs: 'column', md: 'row' } }}>
                     <TextField
                       label="New Password"
@@ -386,10 +705,8 @@ export default function AdminProfilePage() {
               <Box sx={{ display: 'flex', gap: 3 }}>
                 <Button
                   type="submit"
-                  disabled={loading}
-                  startIcon={loading ? <div className="fixed inset-0 z-[9999]">
-          <Loader message={"Loading..."} />
-        </div> : <Save size={20} />}
+                  disabled={isSaving}
+                  startIcon={<Save size={20} />}
                   size="large"
                   sx={{ 
                     backgroundColor: '#144ae9',
@@ -398,7 +715,7 @@ export default function AdminProfilePage() {
                     }
                   }}
                 >
-                  {loading ? 'Saving...' : 'Save Changes'}
+                  {isSaving ? 'Saving...' : 'Save Changes'}
                 </Button>
                 <Button
                   variant="outlined"
@@ -423,6 +740,439 @@ export default function AdminProfilePage() {
     </Box>
   );
 }
+
+
+
+
+
+// 'use client';
+// import { useState, useEffect } from 'react';
+// import { useDispatch, useSelector } from 'react-redux';
+// import { updateProfile, clearError, clearSuccess } from '@/redux/slices/adminSlice';
+// import { toast } from 'react-toastify';
+// import {
+//   User,
+//   Mail,
+//   Phone,
+//   Briefcase,
+//   Lock,
+//   Save,
+//   Shield,   
+//   Calendar,
+//   MapPin
+// } from 'lucide-react';
+// import { Box, Typography, Avatar, Chip } from '@mui/material';
+// import Loader from '@/components/ui/Loader';
+// import Button from '@/components/ui/Button';
+// import Card from '@/components/ui/Card';
+// import TextField from '@/components/ui/TextField';
+// import StatusChip from '@/components/ui/StatusChip';
+
+// export default function AdminProfilePage() {
+//   const dispatch = useDispatch();
+//   const { currentAdmin, loading, error, success } = useSelector((state) => state.admin);
+  
+//   const [isEditing, setIsEditing] = useState(false);
+//   const [formData, setFormData] = useState({
+//     name: '',
+//     phone: '',
+//     employeeId: '',
+//     designation: '',
+//     currentPassword: '',
+//     newPassword: '',
+//     confirmPassword: ''
+//   });
+//   const [errors, setErrors] = useState({});
+
+//   // POPULATE FORM WHEN ADMIN DATA LOADS
+//   useEffect(() => {
+//     if (currentAdmin) {
+//       setFormData(prev => ({
+//         ...prev,
+//         name: currentAdmin.name || '',
+//         phone: currentAdmin.phone || '',
+//         employeeId: currentAdmin.employeeId || '',
+//         designation: currentAdmin.designation || ''
+//       }));
+//     }
+//   }, [currentAdmin]);
+
+//   // HANDLE SUCCESS/ERROR
+//   useEffect(() => {
+//     if (success) {
+//       toast.success('Profile updated successfully!');
+//       dispatch(clearSuccess());
+//       setIsEditing(false);
+//       setFormData(prev => ({
+//         ...prev,
+//         currentPassword: '',
+//         newPassword: '',
+//         confirmPassword: ''
+//       }));
+//     }
+//     if (error) {
+//       toast.error(error.message || 'Failed to update profile');
+//       dispatch(clearError());
+//     }
+//   }, [success, error, dispatch]);
+
+//   const validateForm = () => {
+//     const newErrors = {};
+
+//     if (!formData.name.trim()) newErrors.name = 'Name is required';
+//     if (!formData.phone.trim()) newErrors.phone = 'Phone is required';
+//     if (!/^[0-9]{10}$/.test(formData.phone)) {
+//       newErrors.phone = 'Phone must be 10 digits';
+//     }
+
+//     if (formData.newPassword) {
+//       if (!formData.currentPassword) {
+//         newErrors.currentPassword = 'Current password is required';
+//       }
+//       if (formData.newPassword.length < 8) {
+//         newErrors.newPassword = 'Password must be at least 8 characters';
+//       }
+//       if (formData.newPassword !== formData.confirmPassword) {
+//         newErrors.confirmPassword = 'Passwords do not match';
+//       }
+//     }
+
+//     setErrors(newErrors);
+//     return Object.keys(newErrors).length === 0;
+//   };
+
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
+//     if (!validateForm()) {
+//       toast.error('Please fix all errors');
+//       return;
+//     }
+
+//     const submitData = {
+//       name: formData.name,
+//       phone: formData.phone,
+//       employeeId: formData.employeeId,
+//       designation: formData.designation
+//     };
+
+//     if (formData.newPassword) {
+//       submitData.currentPassword = formData.currentPassword;
+//       submitData.newPassword = formData.newPassword;
+//     }
+
+//     dispatch(updateProfile(submitData));
+//   };
+
+//   const handleCancel = () => {
+//     setIsEditing(false);
+//     if (currentAdmin) {
+//       setFormData({
+//         name: currentAdmin.name || '',
+//         phone: currentAdmin.phone || '',
+//         employeeId: currentAdmin.employeeId || '',
+//         designation: currentAdmin.designation || '',
+//         currentPassword: '',
+//         newPassword: '',
+//         confirmPassword: ''
+//       });
+//     }
+//     setErrors({});
+//   };
+
+//   return (
+//     <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: '1200px', margin: '0 auto' }}>
+//       {/* HEADER */}
+//       <Box sx={{ mb: 6 }}>
+//         <Typography variant="h4" fontWeight={700} color="text.primary">
+//           My Profile
+//         </Typography>
+//         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+//           Manage your account settings
+//         </Typography>
+//       </Box>
+
+//       <Box sx={{ display: 'flex', gap: 6, flexDirection: { xs: 'column', lg: 'row' } }}>
+//         {/* PROFILE CARD */}
+//         <Box sx={{ width: { xs: '100%', lg: '320px' }, flexShrink: 0 }}>
+//           <Card sx={{ 
+//             p: 4, 
+//             border: '1px solid',
+//             borderColor: '#144ae920',
+//             backgroundColor: 'white'
+//           }}>
+//             {/* AVATAR */}
+//             <Box sx={{ textAlign: 'center', mb: 4 }}>
+//               <Avatar sx={{ 
+//                 width: 96, 
+//                 height: 96, 
+//                 bgcolor: '#144ae9',
+//                 fontSize: '2.5rem',
+//                 fontWeight: 700,
+//                 mx: 'auto',
+//                 mb: 2
+//               }}>
+//                 {currentAdmin?.name?.charAt(0).toUpperCase()}
+//               </Avatar>
+//               <Typography variant="h5" fontWeight={600} color="text.primary">
+//                 {currentAdmin?.name}
+//               </Typography>
+//               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+//                 {currentAdmin?.email}
+//               </Typography>
+//               <Chip
+//                 label={currentAdmin?.role?.toUpperCase()}
+//                 size="small"
+//                 sx={{
+//                   mt: 2,
+//                   backgroundColor: currentAdmin?.role === 'admin' ? '#144ae9' : '#144ae980',
+//                   color: 'white',
+//                   fontWeight: 600,
+//                   fontSize: '0.75rem'
+//                 }}
+//               />
+//             </Box>
+
+//             {/* INFO */}
+//             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 4, borderTop: '1px solid', borderColor: '#144ae920' }}>
+//               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+//                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+//                   <Shield size={18} color="#144ae9" />
+//                   <Typography variant="body2" color="text.secondary" fontWeight={500}>
+//                     Status
+//                   </Typography>
+//                 </Box>
+//                 <StatusChip status={currentAdmin?.status} />
+//               </Box>
+
+//               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+//                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+//                   <Briefcase size={18} color="#144ae9" />
+//                   <Typography variant="body2" color="text.secondary" fontWeight={500}>
+//                     Employee ID
+//                   </Typography>
+//                 </Box>
+//                 <Typography variant="body2" fontWeight={600} color="#144ae9">
+//                   {currentAdmin?.employeeId || 'N/A'}
+//                 </Typography>
+//               </Box>
+
+//               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+//                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+//                   <Calendar size={18} color="#144ae9" />
+//                   <Typography variant="body2" color="text.secondary" fontWeight={500}>
+//                     Joined
+//                   </Typography>
+//                 </Box>
+//                 <Typography variant="body2" color="text.primary" fontWeight={500}>
+//                   {currentAdmin?.createdAt 
+//                     ? new Date(currentAdmin.createdAt).toLocaleDateString()
+//                     : 'N/A'}
+//                 </Typography>
+//               </Box>
+
+//               {currentAdmin?.role === 'rtc' && (
+//                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+//                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+//                     <MapPin size={18} color="#144ae9" />
+//                     <Typography variant="body2" color="text.secondary" fontWeight={500}>
+//                       Districts
+//                     </Typography>
+//                   </Box>
+//                   <Typography variant="body2" fontWeight={600} color="#144ae9">
+//                     {currentAdmin?.assignedDistricts?.length || 0}
+//                   </Typography>
+//                 </Box>
+//               )}
+//             </Box>
+//           </Card>
+//         </Box>
+
+//         {/* EDIT FORM */}
+//         <Box sx={{ flex: 1 }}>
+//           <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+//             {/* BASIC INFO */}
+//             <Card sx={{ 
+//               p: 4, 
+//               border: '1px solid',
+//               borderColor: '#144ae920',
+//               backgroundColor: 'white'
+//             }}>
+//               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+//                 <Typography variant="h5" fontWeight={600} color="text.primary">
+//                   Basic Information
+//                 </Typography>
+//                 {!isEditing && (
+//                   <Button 
+//                     onClick={() => setIsEditing(true)}
+//                     sx={{ 
+//                       color: '#FFFFFF',
+//                       fontWeight: 600,
+//                         backgroundColor: '#144ae9'
+                      
+//                     }}
+//                   >
+//                     Edit Profile
+//                   </Button>
+//                 )}
+//               </Box>
+
+//               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+//                 {/* FIRST ROW */}
+//                 <Box sx={{ display: 'flex', gap: 4, flexDirection: { xs: 'column', md: 'row' } }}>
+//                   <TextField
+//                     label="Full Name *"
+//                     value={formData.name}
+//                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+//                     disabled={!isEditing}
+//                     error={errors.name}
+//                     required
+//                     startIcon={<User size={20} color="#144ae9" />}
+//                     fullWidth
+//                   />
+//                   <TextField
+//                     label="Email Address"
+//                     value={currentAdmin?.email || ''}
+//                     disabled
+//                     startIcon={<Mail size={20} color="#144ae9" />}
+//                     fullWidth
+//                   />
+//                 </Box>
+
+//                 {/* SECOND ROW */}
+//                 <Box sx={{ display: 'flex', gap: 4, flexDirection: { xs: 'column', md: 'row' } }}>
+//                   <TextField
+//                     label="Phone Number *"
+//                     type="tel"
+//                     value={formData.phone}
+//                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+//                     disabled={!isEditing}
+//                     error={errors.phone}
+//                     required
+//                     startIcon={<Phone size={20} color="#144ae9" />}
+//                     fullWidth
+//                   />
+//                   <TextField
+//                     label="Employee ID"
+//                     value={formData.employeeId}
+//                     onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
+//                     disabled={!isEditing}
+//                     startIcon={<Briefcase size={20} color="#144ae9" />}
+//                     fullWidth
+//                   />
+//                 </Box>
+
+//                 {/* DESIGNATION */}
+//                 <TextField
+//                   label="Designation"
+//                   value={formData.designation}
+//                   onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
+//                   disabled={!isEditing}
+//                   fullWidth
+//                 />
+//               </Box>
+//             </Card>
+
+//             {/* CHANGE PASSWORD */}
+//             {isEditing && (
+//               <Card sx={{ 
+//                 p: 4, 
+//                 border: '1px solid',
+//                 borderColor: '#144ae920',
+//                 backgroundColor: 'white'
+//               }}>
+//                 <Typography variant="h5" fontWeight={600} color="text.primary" sx={{ mb: 4 }}>
+//                   Change Password
+//                 </Typography>
+                
+//                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+//                   {/* CURRENT PASSWORD */}
+//                   <TextField
+//                     label="Current Password"
+//                     type="password"
+//                     value={formData.currentPassword}
+//                     onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
+//                     error={errors.currentPassword}
+//                     startIcon={<Lock size={20} color="#144ae9" />}
+//                     placeholder="Enter current password"
+//                     fullWidth
+//                   />
+
+//                   {/* NEW PASSWORDS */}
+//                   <Box sx={{ display: 'flex', gap: 4, flexDirection: { xs: 'column', md: 'row' } }}>
+//                     <TextField
+//                       label="New Password"
+//                       type="password"
+//                       value={formData.newPassword}
+//                       onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
+//                       error={errors.newPassword}
+//                       startIcon={<Lock size={20} color="#144ae9" />}
+//                       placeholder="Minimum 8 characters"
+//                       fullWidth
+//                     />
+//                     <TextField
+//                       label="Confirm New Password"
+//                       type="password"
+//                       value={formData.confirmPassword}
+//                       onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+//                       error={errors.confirmPassword}
+//                       startIcon={<Lock size={20} color="#144ae9" />}
+//                       placeholder="Re-enter new password"
+//                       fullWidth
+//                     />
+//                   </Box>
+
+//                   <Typography variant="body2" color="text.secondary">
+//                     Leave blank if you don't want to change your password
+//                   </Typography>
+//                 </Box>
+//               </Card>
+//             )}
+
+//             {/* SUBMIT BUTTONS */}
+//             {isEditing && (
+//               <Box sx={{ display: 'flex', gap: 3 }}>
+//                 <Button
+//                   type="submit"
+//                   disabled={loading}
+//                   startIcon={loading ? <div className="fixed inset-0 z-[9999]">
+//           <Loader message={"Loading..."} />
+//         </div> : <Save size={20} />}
+//                   size="large"
+//                   sx={{ 
+//                     backgroundColor: '#144ae9',
+//                     '&:hover': {
+//                       backgroundColor: '#0d3ec7'
+//                     }
+//                   }}
+//                 >
+//                   {loading ? 'Saving...' : 'Save Changes'}
+//                 </Button>
+//                 <Button
+//                   variant="outlined"
+//                   onClick={handleCancel}
+//                   size="large"
+//                   sx={{ 
+//                     borderColor: '#144ae9',
+//                     color: '#144ae9',
+//                     '&:hover': {
+//                       borderColor: '#0d3ec7',
+//                       backgroundColor: '#144ae910'
+//                     }
+//                   }}
+//                 >
+//                   Cancel
+//                 </Button>
+//               </Box>
+//             )}
+//           </Box>
+//         </Box>
+//       </Box>
+//     </Box>
+//   );
+// }
+
+
+
 // 'use client';
 // import { useState, useEffect } from 'react';
 // import { useDispatch, useSelector } from 'react-redux';
